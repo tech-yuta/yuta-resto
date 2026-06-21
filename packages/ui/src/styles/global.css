@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-@source '../../../apps/web/src';
+@source '..';
 
 @theme {
   --color-yuta-ink: #16211d;

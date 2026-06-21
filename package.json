@@ -9,9 +9,12 @@
   },
   "scripts": {
     "dev": "pnpm --filter @yuta/web dev",
+    "dev:admin": "pnpm --filter @yuta/admin dev",
     "build": "pnpm --filter @yuta/web build",
+    "build:admin": "pnpm --filter @yuta/admin build",
     "start": "pnpm --filter @yuta/web start",
     "typecheck": "pnpm --filter @yuta/web typecheck",
+    "typecheck:admin": "pnpm --filter @yuta/admin typecheck",
     "format": "prettier --write ."
   },
   "devDependencies": {
