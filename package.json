@@ -1,0 +1,20 @@
+{
+  "name": "yuta",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=24.17.0",
+    "pnpm": ">=11.8.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @yuta/web dev",
+    "build": "pnpm --filter @yuta/web build",
+    "start": "pnpm --filter @yuta/web start",
+    "typecheck": "pnpm --filter @yuta/web typecheck",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.8.4"
+  }
+}

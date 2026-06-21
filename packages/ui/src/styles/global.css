@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@source '../../../apps/web/src';
+
+@theme {
+  --color-yuta-ink: #16211d;
+  --color-yuta-paper: #f8f8f4;
+  --color-yuta-mist: #eef1ea;
+  --color-yuta-line: #dce3d9;
+  --color-yuta-accent: #b7ef5b;
+  --shadow-card: 0 12px 30px rgb(22 33 29 / 6%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-yuta-line);
+  }
+
+  html {
+    background: var(--color-yuta-paper);
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--color-yuta-paper);
+    color: var(--color-yuta-ink);
+    font-family: Arial, Helvetica, sans-serif;
+  }
+}
