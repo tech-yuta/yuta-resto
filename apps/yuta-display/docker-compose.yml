@@ -6,8 +6,7 @@ services:
     ports:
       - "3002:3000"
     environment:
-      DATABASE_URL: postgres://yuta:yuta@db:5432/luna_display
-      # Leave UPLOAD_DIR unset — defaults to ./public/uploads/display inside the app
+      DATABASE_URL: postgres://yuta:${POSTGRES_PASSWORD}@db:5432/luna_display
     volumes:
       - uploads:/app/apps/yuta-display/public/uploads/display
     depends_on:
@@ -15,11 +14,27 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Run once to apply DB migrations: docker compose run --rm migrate
+  migrate:
+    build:
+      context: ../..
+      dockerfile: apps/yuta-display/Dockerfile
+      target: builder
+    working_dir: /app
+    command: pnpm --filter @yuta/display db:migrate
+    environment:
+      DATABASE_URL: postgres://yuta:${POSTGRES_PASSWORD}@db:5432/luna_display
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - migrate
+
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: yuta
-      POSTGRES_PASSWORD: yuta
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: luna_display
     volumes:
       - pgdata:/var/lib/postgresql/data

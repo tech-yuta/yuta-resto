@@ -19,17 +19,19 @@ COPY --from=deps /app/apps/yuta-display/node_modules ./apps/yuta-display/node_mo
 COPY . .
 RUN pnpm --filter @yuta/display build
 
-# ── Production image ─────────────────────────────────────────────────────────
-FROM base AS runner
+# ── Production image (standalone — ~150 MB vs ~800 MB full) ──────────────────
+FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/yuta-display ./apps/yuta-display
+# Next.js standalone output bundles the Node server + required node_modules.
+# The static files and public directory must be copied separately.
+COPY --from=builder /app/apps/yuta-display/.next/standalone ./
+COPY --from=builder /app/apps/yuta-display/.next/static ./apps/yuta-display/.next/static
+COPY --from=builder /app/apps/yuta-display/public ./apps/yuta-display/public
 
 # Uploads persist via Docker volume mounted at this path
 VOLUME ["/app/apps/yuta-display/public/uploads/display"]
 
 EXPOSE 3000
-CMD ["pnpm", "--filter", "@yuta/display", "start", "--port", "3000"]
+CMD ["node", "apps/yuta-display/server.js"]
