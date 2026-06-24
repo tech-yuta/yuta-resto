@@ -14,9 +14,10 @@ RUN pnpm install --frozen-lockfile
 # ── Build ────────────────────────────────────────────────────────────────────
 FROM base AS builder
 WORKDIR /app
+# Root node_modules contains all hoisted workspace dependencies via pnpm.
+# Workspace packages (ui, core) do NOT get their own node_modules folder
+# unless they have unique unhoisted deps — do not COPY them conditionally.
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
-COPY --from=deps /app/packages/core/node_modules ./packages/core/node_modules
 COPY --from=deps /app/apps/yuta-display/node_modules ./apps/yuta-display/node_modules
 COPY . .
 RUN pnpm --filter @yuta/display build
