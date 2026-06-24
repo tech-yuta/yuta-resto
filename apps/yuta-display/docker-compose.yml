@@ -6,7 +6,7 @@ services:
     ports:
       - "3002:3000"
     environment:
-      DATABASE_URL: postgres://yuta:${POSTGRES_PASSWORD}@db:5432/luna_display
+      DATABASE_URL: ${DATABASE_URL}
     volumes:
       - uploads:/app/apps/yuta-display/public/uploads/display
     depends_on:
@@ -23,7 +23,7 @@ services:
     working_dir: /app
     command: pnpm --filter @yuta/display db:migrate
     environment:
-      DATABASE_URL: postgres://yuta:${POSTGRES_PASSWORD}@db:5432/luna_display
+      DATABASE_URL: ${DATABASE_URL}
     depends_on:
       db:
         condition: service_healthy
