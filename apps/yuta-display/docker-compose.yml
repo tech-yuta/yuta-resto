@@ -1,0 +1,35 @@
+services:
+  display:
+    build:
+      context: ../..
+      dockerfile: apps/yuta-display/Dockerfile
+    ports:
+      - "3002:3000"
+    environment:
+      DATABASE_URL: postgres://yuta:yuta@db:5432/luna_display
+      # Leave UPLOAD_DIR unset — defaults to ./public/uploads/display inside the app
+    volumes:
+      - uploads:/app/apps/yuta-display/public/uploads/display
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: yuta
+      POSTGRES_PASSWORD: yuta
+      POSTGRES_DB: luna_display
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yuta -d luna_display"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  uploads:
+  pgdata:

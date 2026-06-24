@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import { AdminThemeProvider } from '../components/admin-theme-provider';
-import { EmotionRegistry } from '../components/emotion-registry';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'YuTa Admin',
@@ -10,11 +9,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body>
-        <EmotionRegistry>
-          <AdminThemeProvider>{children}</AdminThemeProvider>
-        </EmotionRegistry>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

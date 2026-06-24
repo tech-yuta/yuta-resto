@@ -18,6 +18,13 @@ export const tools: ToolDefinition[] = [
     status: 'ready',
   },
   {
+    slug: 'display',
+    name: 'Yuta Display',
+    description: 'Digital signage — affichage de médias en boucle sur TV restaurant.',
+    category: 'Restaurant',
+    status: 'ready',
+  },
+  {
     slug: 'content-lab',
     name: 'Content Lab',
     description: 'Tạo, tổ chức và tinh chỉnh nội dung trong một luồng làm việc.',
