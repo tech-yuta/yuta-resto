@@ -15,6 +15,8 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
+COPY --from=deps /app/packages/core/node_modules ./packages/core/node_modules
 COPY --from=deps /app/apps/yuta-display/node_modules ./apps/yuta-display/node_modules
 COPY . .
 RUN pnpm --filter @yuta/display build
