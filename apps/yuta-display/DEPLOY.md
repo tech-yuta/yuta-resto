@@ -69,7 +69,7 @@ GRANT ALL PRIVILEGES ON DATABASE luna_display TO yuta;
 
 ### 1.2 Create the production env file
 
-Create an env file on the server, for example `.env.production`:
+Create an env file on the server, for example `apps/yuta-display/.env.production`:
 
 ```env
 DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/luna_display
@@ -127,17 +127,24 @@ docker inspect POSTGRES_CONTAINER_NAME --format '{{json .NetworkSettings.Network
 Run migrations only when the schema changes:
 
 ```bash
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
 ```
 
 This creates the application tables, for example `display_media`.
 The `--build` flag ensures the migration image includes the latest migration
 files from `apps/yuta-display/drizzle/`.
 
+If migration still fails without a clear error, run this debug command and
+inspect the output above the final pnpm error:
+
+```bash
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build --entrypoint sh migrate -lc 'pwd && ls -la drizzle && node -e "const u=new URL(process.env.DATABASE_URL); console.log({host:u.hostname, port:u.port, database:u.pathname.slice(1), user:u.username})" && pnpm db:migrate'
+```
+
 ### 1.5 Build and start the display app
 
 ```bash
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml up -d --build display
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml up -d --build display
 ```
 
 The app is exposed on port `3002` of the mini PC:
@@ -161,13 +168,13 @@ Use this when there are no new files in `apps/yuta-display/drizzle/`.
 
 ```bash
 git pull
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml up -d --build display
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml up -d --build display
 ```
 
 Check the logs:
 
 ```bash
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml logs -f display
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml logs -f display
 ```
 
 ## 3. Updating production when code and database changed
@@ -177,14 +184,14 @@ Use this when the update includes new Drizzle migration files in
 
 ```bash
 git pull
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml up -d --build display
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml up -d --build display
 ```
 
 Check the logs:
 
 ```bash
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml logs -f display
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml logs -f display
 ```
 
 ## 4. Quick checks
@@ -192,7 +199,7 @@ docker compose --env-file .env.production -f apps/yuta-display/docker-compose.ym
 Confirm containers:
 
 ```bash
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml ps
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml ps
 ```
 
 Open these URLs:
@@ -263,7 +270,7 @@ For migrations, use one of these options:
 Option A, easiest: run the migration once from the mini server terminal:
 
 ```bash
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
 ```
 
 Option B: temporarily deploy the `migrate` service in Portainer, let it finish,

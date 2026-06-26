@@ -15,14 +15,14 @@ services:
     restart: unless-stopped
 
   # Run once to apply DB migrations to the existing production database:
-  # docker compose --profile migrate run --rm migrate
+  # docker compose --profile migrate run --rm --build migrate
   migrate:
     build:
       context: ../..
       dockerfile: apps/yuta-display/Dockerfile
       target: builder
-    working_dir: /app
-    command: pnpm --filter @yuta/display db:migrate
+    working_dir: /app/apps/yuta-display
+    command: pnpm db:migrate
     environment:
       DATABASE_URL: ${DATABASE_URL}
     networks:
