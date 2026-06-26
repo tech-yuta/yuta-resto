@@ -10,13 +10,47 @@ Use this flow when the mini server already has PostgreSQL running, but
 
 ### 1.1 Create the database and user
 
-Connect to PostgreSQL as an admin user on the mini server:
+PostgreSQL runs in Docker on the mini server, so connect to the PostgreSQL
+container instead of using the host `sudo -u postgres psql` command.
+
+First find the admin user and default database configured for the existing
+PostgreSQL container:
 
 ```bash
-sudo -u postgres psql
+docker inspect luna-postgres --format '{{range .Config.Env}}{{println .}}{{end}}' | grep POSTGRES_
 ```
 
-Create a dedicated user and database:
+If it prints `POSTGRES_USER=luna_admin`, connect with that user and explicitly
+select an existing database:
+
+```bash
+docker exec -it luna-postgres psql -U luna_admin -d postgres
+```
+
+If the container was created with a different `POSTGRES_DB`, use that database
+instead:
+
+```bash
+docker exec -it luna-postgres psql -U luna_admin -d POSTGRES_DB_VALUE
+```
+
+If it prints `POSTGRES_USER=postgres`, connect with:
+
+```bash
+docker exec -it luna-postgres psql -U postgres -d postgres
+```
+
+Alternatively, in Portainer, open the `luna-postgres` container console and run
+`psql -U <POSTGRES_USER> -d <POSTGRES_DB_OR_postgres>`.
+
+First check whether the application user or database already exists:
+
+```sql
+\du
+\l
+```
+
+Create a dedicated user and database only if they do not already exist:
 
 ```sql
 CREATE USER yuta WITH PASSWORD 'replace_with_a_strong_password';
@@ -25,11 +59,12 @@ GRANT ALL PRIVILEGES ON DATABASE luna_display TO yuta;
 \q
 ```
 
-If the user or database already exists, do not recreate it. Check first:
+If `CREATE USER` fails because `yuta` already exists, only create the database
+and grant privileges:
 
 ```sql
-\du
-\l
+CREATE DATABASE luna_display OWNER yuta;
+GRANT ALL PRIVILEGES ON DATABASE luna_display TO yuta;
 ```
 
 ### 1.2 Create the production env file
@@ -92,10 +127,12 @@ docker inspect POSTGRES_CONTAINER_NAME --format '{{json .NetworkSettings.Network
 Run migrations only when the schema changes:
 
 ```bash
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm migrate
+docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
 ```
 
 This creates the application tables, for example `display_media`.
+The `--build` flag ensures the migration image includes the latest migration
+files from `apps/yuta-display/drizzle/`.
 
 ### 1.5 Build and start the display app
 
@@ -140,7 +177,7 @@ Use this when the update includes new Drizzle migration files in
 
 ```bash
 git pull
-docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm migrate
+docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
 docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml up -d --build display
 ```
 
@@ -171,3 +208,72 @@ If the app cannot connect to PostgreSQL, verify:
 - `POSTGRES_NETWORK` matches the existing PostgreSQL Docker network.
 - The PostgreSQL container name or service name is resolvable on that network.
 - The database exists before running migrations.
+
+## 5. Deploy with Portainer Stack
+
+Portainer Stack is a UI for deploying Docker Compose. Use this if you do not
+want to run `docker compose` manually from the terminal.
+
+### 5.1 Create the stack
+
+In Portainer:
+
+1. Go to **Stacks**.
+2. Click **Add stack**.
+3. Name the stack:
+
+```txt
+yuta-display
+```
+
+4. Use **Repository** if Portainer can pull this Git repository, or **Web
+   editor** if you want to paste the compose file manually.
+
+### 5.2 Environment variables
+
+In the stack environment variables, add:
+
+```env
+DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/luna_display
+POSTGRES_NETWORK=postgres_default
+```
+
+Do not add `UPLOAD_DIR` here. The compose file sets it to the mounted Docker
+volume path.
+
+### 5.3 Compose file
+
+Use the production compose file:
+
+```txt
+apps/yuta-display/docker-compose.yml
+```
+
+If Portainer asks for the compose path in a Git repository deployment, set it
+to that path.
+
+If using the Web editor, paste the content of
+`apps/yuta-display/docker-compose.yml`.
+
+### 5.4 Database migrations in Portainer
+
+Portainer does not always expose Compose profiles conveniently in the Stack UI.
+For migrations, use one of these options:
+
+Option A, easiest: run the migration once from the mini server terminal:
+
+```bash
+docker compose --env-file .env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build migrate
+```
+
+Option B: temporarily deploy the `migrate` service in Portainer, let it finish,
+then remove or disable it again.
+
+After migrations finish, deploy or redeploy the `display` service.
+
+### 5.5 Redeploy after code updates
+
+If the stack is connected to Git, use **Pull and redeploy** in Portainer.
+
+If the update includes database migration files, run the migration once before
+redeploying the display service.
