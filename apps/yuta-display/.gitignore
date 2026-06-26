@@ -1,1 +1,2 @@
-public/uploads/display
+public/uploads/display/*
+!public/uploads/display/.gitkeep
