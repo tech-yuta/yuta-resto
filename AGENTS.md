@@ -116,3 +116,29 @@ Named exports only. No default exports.
 ### State management
 
 No Redux, MobX, or Zustand unless explicitly added. Use React state and Server Components.
+
+---
+
+## Deployment Rules
+
+Shared production deployment conventions live in:
+
+```txt
+docs/DEPLOYMENT.md
+```
+
+All new YuTa apps with Docker deployment must follow those conventions unless
+the user explicitly requests a different production topology.
+
+Key defaults:
+
+- Production apps use the existing PostgreSQL container `luna-postgres`.
+- Production apps join the external Docker network `postgres_default`.
+- Use Docker hostnames in `DATABASE_URL`, never container IP addresses.
+- Keep production env files next to the app as `apps/<app-name>/.env.production`.
+- Run Docker Compose from the repository root with `--env-file` and `-f`.
+- Use a one-shot `migrate` service for database migrations.
+- Run migrations with `--build` so the latest migration files are included.
+- For runtime uploads, keep folders with `.gitkeep` and ignore uploaded media.
+- If uploaded files return `404` in Next.js standalone mode, add a `GET` route
+  that serves files from `UPLOAD_DIR`.
