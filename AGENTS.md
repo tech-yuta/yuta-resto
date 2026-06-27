@@ -8,11 +8,17 @@ This is the YuTa internal restaurant tool monorepo.
 apps/admin          — Admin dashboard (port 3001)
 apps/web            — Public web app (port 3000)
 apps/yuta-display   — Digital signage display (port 3002)
+apps/yuta-pos       — Internal restaurant POS (planned)
+packages/db         — Shared database package for YuTa ecosystem apps (planned)
 packages/core       — Shared business logic, tool registry
 packages/ui         — Shared UI component library (@yuta/ui)
 ```
 
-Future apps may include: `yuta-pos`, `yuta-staff`, `yuta-reservation`, `yuta-crm`.
+Future apps may include: `yuta-staff`, `yuta-reservation`, `yuta-crm`.
+
+`apps/yuta-display` is intentionally separate from the main YuTa operations
+ecosystem and keeps its own database setup. New operations apps such as
+`apps/yuta-pos` should use the shared `packages/db` package.
 
 ---
 
