@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: yuta-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-yuta_pos}
+      POSTGRES_USER: ${POSTGRES_USER:-yuta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yuta}
+    ports:
+      - '${POSTGRES_PORT:-55433}:5432'
+    volumes:
+      - yuta-postgres-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  yuta-postgres-dev-data:

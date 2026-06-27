@@ -104,3 +104,9 @@ The detailed product and technical specification lives in:
 ```txt
 docs/POS_MVP_Master_Spec.md
 ```
+
+Local database setup lives in:
+
+```txt
+docs/LOCAL_DATABASE.md
+```
