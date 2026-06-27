@@ -9,7 +9,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       UPLOAD_DIR: /app/apps/yuta-display/public/uploads/display
     volumes:
-      - uploads:/app/apps/yuta-display/public/uploads/display
+      - ./public/uploads/display:/app/apps/yuta-display/public/uploads/display
     networks:
       - postgres
     restart: unless-stopped
@@ -29,9 +29,6 @@ services:
       - postgres
     profiles:
       - migrate
-
-volumes:
-  uploads:
 
 networks:
   postgres:

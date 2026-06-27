@@ -153,11 +153,19 @@ The app is exposed on port `3002` of the mini PC:
 http://SERVER_IP:3002/display
 ```
 
-Uploads are stored in the Docker volume named `uploads` and mounted at:
+Uploads are stored on the mini server source folder:
+
+```txt
+/opt/luna/source/yuta-resto/apps/yuta-display/public/uploads/display
+```
+
+That folder is bind-mounted into the container at:
 
 ```txt
 /app/apps/yuta-display/public/uploads/display
 ```
+
+Only the `.gitkeep` file is tracked by Git. Uploaded media files are ignored.
 
 Do not use `docker-compose.dev.yml` in production. That file starts a local
 PostgreSQL container for development only.
@@ -245,8 +253,8 @@ DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/luna_display
 POSTGRES_NETWORK=postgres_default
 ```
 
-Do not add `UPLOAD_DIR` here. The compose file sets it to the mounted Docker
-volume path.
+Do not add `UPLOAD_DIR` here. The compose file sets it to the mounted uploads
+path inside the container.
 
 ### 5.3 Compose file
 
