@@ -9,7 +9,7 @@ apps/admin          — Admin dashboard (port 3001)
 apps/web            — Public web app (port 3000)
 apps/yuta-display   — Digital signage display (port 3002)
 apps/yuta-pos       — Internal restaurant POS (planned)
-packages/db         — Shared database package for YuTa ecosystem apps (planned)
+packages/db         — Shared database package for YuTa ecosystem apps
 packages/core       — Shared business logic, tool registry
 packages/ui         — Shared UI component library (@yuta/ui)
 ```
