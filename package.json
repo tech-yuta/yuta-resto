@@ -11,14 +11,17 @@
     "dev": "pnpm --filter @yuta/web dev",
     "dev:admin": "pnpm --filter @yuta/admin dev",
     "dev:display": "pnpm --filter @yuta/display dev",
+    "dev:pos": "pnpm --filter @yuta/pos dev",
     "build": "pnpm --filter @yuta/web build",
     "build:admin": "pnpm --filter @yuta/admin build",
     "build:display": "pnpm --filter @yuta/display build",
+    "build:pos": "pnpm --filter @yuta/pos build",
     "start": "pnpm --filter @yuta/web start",
     "start:display": "pnpm --filter @yuta/display start",
     "typecheck": "pnpm --filter @yuta/web typecheck",
     "typecheck:admin": "pnpm --filter @yuta/admin typecheck",
     "typecheck:display": "pnpm --filter @yuta/display typecheck",
+    "typecheck:pos": "pnpm --filter @yuta/pos typecheck",
     "format": "prettier --write ."
   },
   "devDependencies": {

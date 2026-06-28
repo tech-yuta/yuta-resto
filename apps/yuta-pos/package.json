@@ -1,11 +1,11 @@
 {
-  "name": "@yuta/admin",
+  "name": "@yuta/pos",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev -p 3003",
     "build": "next build",
-    "start": "next start -p 3001",
+    "start": "next start -p 3003",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
