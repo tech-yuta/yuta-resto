@@ -15,13 +15,13 @@ docker compose -f docker-compose.db.dev.yml up -d
 Default local connection:
 
 ```env
-DATABASE_URL=postgres://yuta:yuta@localhost:55433/yuta_pos
+DATABASE_URL=postgres://yuta:yuta@localhost:55433/yuta_resto
 ```
 
 Create `packages/db/.env.local` with that value:
 
 ```env
-DATABASE_URL=postgres://yuta:yuta@localhost:55433/yuta_pos
+DATABASE_URL=postgres://yuta:yuta@localhost:55433/yuta_resto
 ```
 
 Run migrations:
@@ -52,7 +52,7 @@ docker compose -f docker-compose.db.dev.yml down -v
 
 ```txt
 Container: yuta-postgres-dev
-Database:  yuta_pos
+Database:  yuta_resto
 User:      yuta
 Password:  yuta
 Host port: 55433
@@ -67,7 +67,7 @@ Do not use `docker-compose.db.dev.yml` in production.
 Production apps should use:
 
 ```env
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_pos
+DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
 POSTGRES_NETWORK=postgres_default
 ```
 

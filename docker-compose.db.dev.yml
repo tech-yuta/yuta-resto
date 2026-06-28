@@ -4,7 +4,7 @@ services:
     container_name: yuta-postgres-dev
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-yuta_pos}
+      POSTGRES_DB: ${POSTGRES_DB:-yuta_resto}
       POSTGRES_USER: ${POSTGRES_USER:-yuta}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yuta}
     ports:

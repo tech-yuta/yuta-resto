@@ -16,7 +16,7 @@ Each app should use its own database in the shared PostgreSQL server:
 
 ```txt
 luna_display
-yuta_pos
+yuta_resto
 yuta_reservation
 yuta_crm
 ```
