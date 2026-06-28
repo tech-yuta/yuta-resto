@@ -1,0 +1,233 @@
+import { createPrintService } from '@yuta/core';
+import { db } from '@yuta/db/client';
+import { Badge, Button, Card, Input, Separator } from '@yuta/ui';
+import { ArrowLeft, BarChart3, CheckCircle2, Printer, RefreshCw, XCircle } from 'lucide-react';
+import Link from 'next/link';
+import {
+  markPrintJobFailedAction,
+  markPrintJobPrintedAction,
+  retryPrintJobAction,
+} from './actions';
+
+export const dynamic = 'force-dynamic';
+
+type PrintPayloadSummary = {
+  orderNumber?: string;
+  tableLabel?: string;
+  itemCount?: number;
+};
+
+export default async function PosPrintsPage() {
+  const printService = createPrintService(db);
+  const jobs = await printService.listPrintJobs({ limit: 100 });
+  const counters = {
+    pending: jobs.filter((job) => job.status === 'pending').length,
+    printed: jobs.filter((job) => job.status === 'printed').length,
+    failed: jobs.filter((job) => job.status === 'failed').length,
+  };
+
+  return (
+    <main className="min-h-screen bg-yuta-paper px-4 py-6 text-yuta-ink md:px-8 md:py-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-yuta-line pb-5">
+          <div>
+            <Link href="/" className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-yuta-ink/60 hover:text-yuta-ink">
+              <ArrowLeft className="h-4 w-4" />
+              Retour admin
+            </Link>
+            <h1 className="text-3xl font-black tracking-tight">POS impressions</h1>
+            <p className="mt-1 text-sm text-yuta-ink/55">File mock des tickets cuisine</p>
+          </div>
+          <div className="flex gap-2">
+            <Button asChild variant="secondary">
+              <Link href="/pos/reports">
+                <BarChart3 className="h-4 w-4" />
+                Rapports
+              </Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/pos/menu">
+                <Printer className="h-4 w-4" />
+                Menu
+              </Link>
+            </Button>
+          </div>
+        </header>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <MetricCard label="En attente" value={String(counters.pending)} />
+          <MetricCard label="Imprimees" value={String(counters.printed)} />
+          <MetricCard label="Echecs" value={String(counters.failed)} />
+        </section>
+
+        <Card className="overflow-hidden p-0">
+          <div className="px-5 py-4">
+            <h2 className="text-lg font-bold">Jobs recents</h2>
+            <p className="mt-1 text-sm text-yuta-ink/55">{jobs.length} job(s)</p>
+          </div>
+          <Separator />
+          {jobs.length === 0 ? (
+            <div className="grid min-h-64 place-items-center p-8 text-center">
+              <div>
+                <Printer className="mx-auto h-10 w-10 text-yuta-ink/35" />
+                <h3 className="mt-4 font-bold">Aucun ticket</h3>
+                <p className="mt-1 text-sm text-yuta-ink/55">Les tickets cuisine apparaitront apres un envoi cuisine.</p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {jobs.map((job, index) => {
+                const summary = getPayloadSummary(job.payload);
+
+                return (
+                  <div key={job.id}>
+                    <div className="grid gap-4 px-5 py-4 xl:grid-cols-[1.1fr_0.9fr_0.7fr_1.4fr] xl:items-center">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-black">{summary.tableLabel ?? 'Ticket'}</p>
+                          <Badge variant={statusBadgeVariant(job.status)}>{statusLabel(job.status)}</Badge>
+                        </div>
+                        <p className="mt-1 text-sm font-semibold text-yuta-ink/55">{summary.orderNumber ?? job.id}</p>
+                        {job.errorMessage && <p className="mt-2 text-sm font-semibold text-yuta-ink">{job.errorMessage}</p>}
+                      </div>
+
+                      <div className="text-sm">
+                        <p className="font-semibold">{job.printerName}</p>
+                        <p className="text-yuta-ink/55">{typeLabel(job.jobType)} - {sourceLabel(job.source)}</p>
+                      </div>
+
+                      <div className="text-sm">
+                        <p className="font-semibold">{summary.itemCount ?? 0} article(s)</p>
+                        <p className="text-yuta-ink/55">{formatDateTime(job.createdAt)}</p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 xl:justify-end">
+                        {job.status !== 'printed' && (
+                          <form action={markPrintJobPrintedAction}>
+                            <input type="hidden" name="printJobId" value={job.id} />
+                            <Button type="submit" variant="accent" size="sm">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Marquer imprime
+                            </Button>
+                          </form>
+                        )}
+                        {job.status === 'failed' && (
+                          <form action={retryPrintJobAction}>
+                            <input type="hidden" name="printJobId" value={job.id} />
+                            <Button type="submit" variant="secondary" size="sm">
+                              <RefreshCw className="h-4 w-4" />
+                              Reessayer
+                            </Button>
+                          </form>
+                        )}
+                        {job.status !== 'failed' && job.status !== 'printed' && (
+                          <form action={markPrintJobFailedAction} className="flex min-w-72 flex-1 gap-2 xl:max-w-md">
+                            <input type="hidden" name="printJobId" value={job.id} />
+                            <Input name="errorMessage" placeholder="Erreur mock" required />
+                            <Button type="submit" variant="destructive" size="sm">
+                              <XCircle className="h-4 w-4" />
+                              Echec
+                            </Button>
+                          </form>
+                        )}
+                      </div>
+                    </div>
+                    {index < jobs.length - 1 && <Separator />}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      </div>
+    </main>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-yuta-ink/55">{label}</p>
+          <p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
+        </div>
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-yuta-accent">
+          <Printer className="h-5 w-5" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function getPayloadSummary(payload: unknown): PrintPayloadSummary {
+  if (!payload || typeof payload !== 'object') {
+    return {};
+  }
+
+  const record = payload as Record<string, unknown>;
+  const items = Array.isArray(record.items) ? record.items : [];
+
+  return {
+    orderNumber: typeof record.orderNumber === 'string' ? record.orderNumber : undefined,
+    tableLabel: typeof record.tableLabel === 'string' ? record.tableLabel : undefined,
+    itemCount: items.length,
+  };
+}
+
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    pending: 'En attente',
+    printing: 'Impression',
+    printed: 'Imprime',
+    failed: 'Echec',
+  };
+
+  return labels[status] ?? status;
+}
+
+function statusBadgeVariant(status: string): 'active' | 'inactive' | 'neutral' | 'destructive' | 'outline' {
+  if (status === 'printed') {
+    return 'active';
+  }
+
+  if (status === 'failed') {
+    return 'destructive';
+  }
+
+  if (status === 'pending') {
+    return 'outline';
+  }
+
+  return 'neutral';
+}
+
+function typeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    kitchen_ticket: 'Ticket cuisine',
+    customer_receipt: 'Ticket client',
+    test: 'Test',
+  };
+
+  return labels[type] ?? type;
+}
+
+function sourceLabel(source: string): string {
+  const labels: Record<string, string> = {
+    pos: 'POS',
+    kitchen: 'Cuisine',
+    delivery: 'Livraison',
+    manual: 'Manuel',
+  };
+
+  return labels[source] ?? source;
+}
+
+function formatDateTime(date: Date): string {
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}

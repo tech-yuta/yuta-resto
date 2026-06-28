@@ -1,6 +1,6 @@
 'use server';
 
-import { createOrderService, createPaymentService } from '@yuta/core';
+import { createOrderService, createPaymentService, createPrintService } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { users } from '@yuta/db/schema';
 import { eq } from 'drizzle-orm';
@@ -87,11 +87,14 @@ export async function sendOrderToKitchenAction(formData: FormData): Promise<void
     orderId: formData.get('orderId'),
   });
   const orderService = createOrderService(db);
+  const printService = createPrintService(db);
 
   await orderService.sendOrderToKitchen(values.orderId);
+  await printService.createKitchenTicketPrintJob(values.orderId);
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath('/kitchen');
+  revalidatePath('/pos/prints');
 }
 
 export async function markOrderItemPreparingAction(formData: FormData): Promise<void> {

@@ -15,6 +15,7 @@ import {
   orderItems,
   orders,
   payments,
+  printJobs,
   users,
   type MenuItem,
   type Order,
@@ -28,6 +29,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createComboService } from '../src/combos';
 import { createOrderService } from '../src/orders';
 import { createPaymentService } from '../src/payments';
+import { createPrintService } from '../src/prints';
 
 const databaseUrl =
   process.env.DATABASE_TEST_URL ?? 'postgres://yuta:yuta@localhost:55433/yuta_resto_test';
@@ -94,6 +96,40 @@ describe('YuTa core services', () => {
     expect(detail.status).toBe('sent');
     expect(detail.items).toHaveLength(2);
     expect(detail.items.every((item) => item.status === 'sent' && item.sentAt !== null)).toBe(true);
+  });
+
+  it('creates and updates a kitchen ticket print job', async () => {
+    const orderService = createOrderService(db);
+    const printService = createPrintService(db);
+    const order = await createTestOrder(context.user.id);
+    await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 2 });
+    await orderService.sendOrderToKitchen(order.id);
+
+    const job = await printService.createKitchenTicketPrintJob(order.id);
+
+    expect(job.status).toBe('pending');
+    expect(job.source).toBe('pos');
+    expect(job.jobType).toBe('kitchen_ticket');
+    expect(job.payload).toMatchObject({
+      orderId: order.id,
+      tableLabel: order.tableLabel,
+      items: [{ name: 'Test Bun bo', quantity: 2, station: 'kitchen' }],
+    });
+
+    const failedJob = await printService.markPrintJobFailed({
+      printJobId: job.id,
+      errorMessage: 'Mock printer offline',
+    });
+    expect(failedJob.status).toBe('failed');
+    expect(failedJob.errorMessage).toBe('Mock printer offline');
+
+    const retriedJob = await printService.retryPrintJob(job.id);
+    expect(retriedJob.status).toBe('pending');
+    expect(retriedJob.errorMessage).toBeNull();
+
+    const printedJob = await printService.markPrintJobPrinted(job.id);
+    expect(printedJob.status).toBe('printed');
+    expect(printedJob.printedAt).toBeInstanceOf(Date);
   });
 
   it('applies a main dish plus drink combo discount', async () => {
@@ -391,6 +427,7 @@ async function cleanupRuntimeData(): Promise<void> {
     await db.delete(checkItems).where(inArray(checkItems.checkId, checkIds));
     await db.delete(checks).where(inArray(checks.id, checkIds));
   }
+  await db.delete(printJobs);
   await db.delete(orderItems).where(inArray(orderItems.orderId, orderIds));
   await db.delete(orders).where(inArray(orders.id, orderIds));
 }
