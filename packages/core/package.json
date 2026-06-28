@@ -8,7 +8,9 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@yuta/db": "workspace:*",
@@ -17,6 +19,8 @@
   },
   "devDependencies": {
     "@types/node": "^26.0.0",
-    "typescript": "^6.0.3"
+    "postgres": "^3.4.7",
+    "typescript": "^6.0.3",
+    "vitest": "^4.0.15"
   }
 }
