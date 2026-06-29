@@ -3,9 +3,14 @@ import { db } from '@yuta/db/client';
 import { menuCategories, menuItems } from '@yuta/db/schema';
 import { Badge, Button, Card, Separator, cn } from '@yuta/ui';
 import { and, asc, eq } from 'drizzle-orm';
-import { ArrowLeft, ChefHat, CreditCard, Plus } from 'lucide-react';
+import { ArrowLeft, ChefHat, CreditCard, Minus, Plus, X } from 'lucide-react';
 import Link from 'next/link';
-import { addOrderItemAction, sendOrderToKitchenAction } from '../../actions';
+import {
+  addOrderItemAction,
+  cancelOrderItemAction,
+  sendOrderToKitchenAction,
+  updateOrderItemQuantityAction,
+} from '../../actions';
 
 type OrderPageProps = {
   params: Promise<{
@@ -122,15 +127,67 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
                 <p className="text-sm text-yuta-ink/55">Aucun article pour le moment.</p>
               ) : (
                 order.items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-yuta-line bg-yuta-paper p-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold">{item.quantity} x {item.itemNameSnapshot}</p>
-                        <Badge variant={item.status === 'pending' ? 'outline' : 'neutral'}>{itemStatusLabel(item.status)}</Badge>
+                  <div key={item.id} className={cn(
+                    'grid gap-3 rounded-xl border border-yuta-line bg-yuta-paper p-3',
+                    item.status === 'cancelled' && 'opacity-60',
+                  )}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold">{item.quantity} x {item.itemNameSnapshot}</p>
+                          <Badge variant={item.status === 'pending' ? 'outline' : item.status === 'cancelled' ? 'destructive' : 'neutral'}>
+                            {itemStatusLabel(item.status)}
+                          </Badge>
+                        </div>
+                        {item.note && <p className="text-sm text-yuta-ink/55">{item.note}</p>}
                       </div>
-                      {item.note && <p className="text-sm text-yuta-ink/55">{item.note}</p>}
+                      <p className="font-bold">{formatEuros(item.unitPriceCentsSnapshot * item.quantity)}</p>
                     </div>
-                    <p className="font-bold">{formatEuros(item.unitPriceCentsSnapshot * item.quantity)}</p>
+                    {order.status !== 'paid' && order.status !== 'cancelled' && item.status !== 'cancelled' && (
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <form action={updateOrderItemQuantityAction}>
+                            <input type="hidden" name="orderId" value={order.id} />
+                            <input type="hidden" name="orderItemId" value={item.id} />
+                            <input type="hidden" name="quantity" value={Math.max(1, item.quantity - 1)} />
+                            <Button
+                              type="submit"
+                              variant="secondary"
+                              size="icon"
+                              disabled={item.status !== 'pending' || item.quantity <= 1}
+                              aria-label="Reduire la quantite"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                          </form>
+                          <span className="grid h-9 min-w-9 place-items-center rounded-xl border border-yuta-line bg-white px-3 text-sm font-black">
+                            {item.quantity}
+                          </span>
+                          <form action={updateOrderItemQuantityAction}>
+                            <input type="hidden" name="orderId" value={order.id} />
+                            <input type="hidden" name="orderItemId" value={item.id} />
+                            <input type="hidden" name="quantity" value={item.quantity + 1} />
+                            <Button
+                              type="submit"
+                              variant="secondary"
+                              size="icon"
+                              disabled={item.status !== 'pending'}
+                              aria-label="Augmenter la quantite"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </form>
+                        </div>
+                        <form action={cancelOrderItemAction}>
+                          <input type="hidden" name="orderId" value={order.id} />
+                          <input type="hidden" name="orderItemId" value={item.id} />
+                          <Button type="submit" variant="ghost" size="sm">
+                            <X className="h-4 w-4" />
+                            Annuler
+                          </Button>
+                        </form>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

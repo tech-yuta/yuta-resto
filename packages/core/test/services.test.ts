@@ -1,4 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { and, eq, inArray } from 'drizzle-orm';
 import {
   checkDiscountItems,
@@ -29,6 +32,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createComboService } from '../src/combos';
 import { createOrderService } from '../src/orders';
 import { createPaymentService } from '../src/payments';
+import { processPendingPrintJobs } from '../src/print-worker';
 import { createPrintService } from '../src/prints';
 
 const databaseUrl =
@@ -130,6 +134,87 @@ describe('YuTa core services', () => {
     const printedJob = await printService.markPrintJobPrinted(job.id);
     expect(printedJob.status).toBe('printed');
     expect(printedJob.printedAt).toBeInstanceOf(Date);
+  });
+
+  it('creates a customer receipt print job for a paid order', async () => {
+    const paymentService = createPaymentService(db);
+    const printService = createPrintService(db);
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    await paymentService.payFullOrder({ orderId: order.id, method: 'card', amountCents: 1400 });
+
+    const job = await printService.createCustomerReceiptPrintJob({ orderId: order.id });
+
+    expect(job.jobType).toBe('customer_receipt');
+    expect(job.printerName).toBe('mock-receipt');
+    expect(job.payload).toMatchObject({
+      orderId: order.id,
+      totalCents: 1400,
+      paidCents: 1400,
+      items: [
+        { name: 'Test Bun bo', quantity: 1, amountCents: 1300 },
+        { name: 'Test Coca', quantity: 1, amountCents: 300 },
+      ],
+      payments: [{ method: 'card', amountCents: 1400 }],
+    });
+  });
+
+  it('creates a customer receipt print job for a paid split check', async () => {
+    const paymentService = createPaymentService(db);
+    const printService = createPrintService(db);
+    const { order, items } = await createOrderWithItemRecords([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    const [check] = await paymentService.createChecksByItems({
+      orderId: order.id,
+      checks: [
+        {
+          checkLabel: 'Client 1',
+          items: [
+            { orderItemId: items[0].id, quantity: 1 },
+            { orderItemId: items[1].id, quantity: 1 },
+          ],
+        },
+      ],
+    });
+    await paymentService.payCheck({ checkId: check.id, method: 'cash', amountCents: 1400 });
+
+    const job = await printService.createCustomerReceiptPrintJob({
+      orderId: order.id,
+      checkId: check.id,
+    });
+
+    expect(job.payload).toMatchObject({
+      orderId: order.id,
+      checkId: check.id,
+      checkLabel: 'Client 1',
+      totalCents: 1400,
+      paidCents: 1400,
+      payments: [{ method: 'cash', amountCents: 1400 }],
+    });
+  });
+
+  it('processes pending print jobs with the mock worker', async () => {
+    const orderService = createOrderService(db);
+    const printService = createPrintService(db);
+    const outputDir = await mkdtemp(path.join(tmpdir(), 'yuta-print-worker-'));
+    const order = await createTestOrder(context.user.id);
+    await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
+    await orderService.sendOrderToKitchen(order.id);
+    const job = await printService.createKitchenTicketPrintJob(order.id);
+
+    try {
+      const result = await processPendingPrintJobs(db, { outputDir });
+
+      expect(result).toMatchObject({ scanned: 1, printed: 1, failed: 0, skipped: 0 });
+      await expect(readFile(path.join(outputDir, `${job.id}.txt`), 'utf8')).resolves.toContain('Test Bun bo');
+      await expect(printService.getPrintJob(job.id)).resolves.toMatchObject({ status: 'printed' });
+    } finally {
+      await rm(outputDir, { recursive: true, force: true });
+    }
   });
 
   it('applies a main dish plus drink combo discount', async () => {

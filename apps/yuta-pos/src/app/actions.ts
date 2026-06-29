@@ -26,6 +26,17 @@ const orderItemIdFormSchema = z.object({
   orderItemId: z.string().uuid(),
 });
 
+const updateOrderItemQuantityFormSchema = z.object({
+  orderId: z.string().uuid(),
+  orderItemId: z.string().uuid(),
+  quantity: z.coerce.number().int().positive(),
+});
+
+const cancelOrderItemFormSchema = z.object({
+  orderId: z.string().uuid(),
+  orderItemId: z.string().uuid(),
+});
+
 const payFullOrderFormSchema = z.object({
   orderId: z.string().uuid(),
   method: z.enum(['cash', 'card', 'ticket_resto', 'other']),
@@ -97,6 +108,38 @@ export async function sendOrderToKitchenAction(formData: FormData): Promise<void
   revalidatePath('/pos/prints');
 }
 
+export async function updateOrderItemQuantityAction(formData: FormData): Promise<void> {
+  const values = updateOrderItemQuantityFormSchema.parse({
+    orderId: formData.get('orderId'),
+    orderItemId: formData.get('orderItemId'),
+    quantity: formData.get('quantity'),
+  });
+  const orderService = createOrderService(db);
+
+  await orderService.updateOrderItemQuantity({
+    orderItemId: values.orderItemId,
+    quantity: values.quantity,
+  });
+
+  revalidatePath(`/orders/${values.orderId}`);
+}
+
+export async function cancelOrderItemAction(formData: FormData): Promise<void> {
+  const values = cancelOrderItemFormSchema.parse({
+    orderId: formData.get('orderId'),
+    orderItemId: formData.get('orderItemId'),
+  });
+  const orderService = createOrderService(db);
+
+  await orderService.cancelOrderItem({
+    orderItemId: values.orderItemId,
+    reason: 'POS item cancellation',
+  });
+
+  revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath('/kitchen');
+}
+
 export async function markOrderItemPreparingAction(formData: FormData): Promise<void> {
   const values = orderItemIdFormSchema.parse({
     orderItemId: formData.get('orderItemId'),
@@ -128,6 +171,7 @@ export async function payFullOrderAction(formData: FormData): Promise<void> {
     tenderedCents: rawTenderedCents === '' ? undefined : rawTenderedCents,
   });
   const paymentService = createPaymentService(db);
+  const printService = createPrintService(db);
 
   await paymentService.payFullOrder({
     orderId: values.orderId,
@@ -135,9 +179,11 @@ export async function payFullOrderAction(formData: FormData): Promise<void> {
     amountCents: values.amountCents,
     tenderedCents: values.tenderedCents,
   });
+  await printService.createCustomerReceiptPrintJob({ orderId: values.orderId });
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
+  revalidatePath('/pos/prints');
   redirect(`/orders/${values.orderId}`);
 }
 
@@ -167,6 +213,7 @@ export async function payCheckAction(formData: FormData): Promise<void> {
     tenderedCents: rawTenderedCents === '' ? undefined : rawTenderedCents,
   });
   const paymentService = createPaymentService(db);
+  const printService = createPrintService(db);
 
   await paymentService.payCheck({
     checkId: values.checkId,
@@ -174,9 +221,14 @@ export async function payCheckAction(formData: FormData): Promise<void> {
     amountCents: values.amountCents,
     tenderedCents: values.tenderedCents,
   });
+  await printService.createCustomerReceiptPrintJob({
+    orderId: values.orderId,
+    checkId: values.checkId,
+  });
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
+  revalidatePath('/pos/prints');
 }
 
 export async function createChecksByItemsAction(formData: FormData): Promise<void> {

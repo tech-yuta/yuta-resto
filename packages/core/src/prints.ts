@@ -1,6 +1,6 @@
-import { asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import type { DbClient } from '@yuta/db/client';
-import { printJobs, type PrintJob } from '@yuta/db/schema';
+import { printJobs, type Payment, type PrintJob } from '@yuta/db/schema';
 import { z } from 'zod';
 
 type PrintJobStatus = 'pending' | 'printing' | 'printed' | 'failed';
@@ -20,8 +20,38 @@ type KitchenTicketPayload = {
   }[];
 };
 
+type CustomerReceiptPayload = {
+  orderId: string;
+  orderNumber: string;
+  tableLabel: string;
+  orderType: string;
+  checkId?: string;
+  checkLabel?: string;
+  createdAt: string;
+  subtotalCents: number;
+  discountCents: number;
+  totalCents: number;
+  paidCents: number;
+  items: {
+    name: string;
+    quantity: number;
+    unitPriceCents: number;
+    amountCents: number;
+  }[];
+  payments: {
+    method: string;
+    amountCents: number;
+    paidAt: string | null;
+  }[];
+};
+
 const orderIdSchema = z.object({
   orderId: z.string().uuid(),
+});
+
+const createCustomerReceiptSchema = z.object({
+  orderId: z.string().uuid(),
+  checkId: z.string().uuid().optional(),
 });
 
 const printJobIdSchema = z.object({
@@ -31,6 +61,12 @@ const printJobIdSchema = z.object({
 const listPrintJobsSchema = z
   .object({
     status: z.enum(['pending', 'printing', 'printed', 'failed']).optional(),
+    limit: z.number().int().positive().max(200).default(50),
+  })
+  .optional();
+
+const listPendingPrintJobsSchema = z
+  .object({
     limit: z.number().int().positive().max(200).default(50),
   })
   .optional();
@@ -104,6 +140,29 @@ export function createPrintService(db: DbClient) {
     return createdJob;
   }
 
+  async function createCustomerReceiptPrintJob(input: {
+    orderId: string;
+    checkId?: string;
+  }): Promise<PrintJob> {
+    const values = createCustomerReceiptSchema.parse(input);
+    const payload = values.checkId
+      ? await buildCheckReceiptPayload(values.orderId, values.checkId)
+      : await buildOrderReceiptPayload(values.orderId);
+
+    const [createdJob] = await db
+      .insert(printJobs)
+      .values({
+        source: 'pos',
+        printerName: 'mock-receipt',
+        jobType: 'customer_receipt',
+        status: 'pending',
+        payload,
+      })
+      .returning();
+
+    return createdJob;
+  }
+
   async function listPrintJobs(input?: { status?: PrintJobStatus; limit?: number }): Promise<PrintJob[]> {
     const values = listPrintJobsSchema.parse(input);
 
@@ -121,12 +180,37 @@ export function createPrintService(db: DbClient) {
     });
   }
 
-  async function listPendingPrintJobs(): Promise<PrintJob[]> {
+  async function listPendingPrintJobs(input?: { limit?: number }): Promise<PrintJob[]> {
+    const values = listPendingPrintJobsSchema.parse(input);
+
     return db.query.printJobs.findMany({
       where: eq(printJobs.status, 'pending'),
       orderBy: [asc(printJobs.createdAt)],
-      limit: 50,
+      limit: values?.limit ?? 50,
     });
+  }
+
+  async function markPrintJobPrinting(printJobId: string): Promise<PrintJob> {
+    const values = printJobIdSchema.parse({ printJobId });
+    const [updatedJob] = await db
+      .update(printJobs)
+      .set({
+        status: 'printing',
+        errorMessage: null,
+      })
+      .where(and(eq(printJobs.id, values.printJobId), eq(printJobs.status, 'pending')))
+      .returning();
+
+    return requirePrintJob(updatedJob);
+  }
+
+  async function getPrintJob(printJobId: string): Promise<PrintJob> {
+    const values = printJobIdSchema.parse({ printJobId });
+    const job = await db.query.printJobs.findFirst({
+      where: eq(printJobs.id, values.printJobId),
+    });
+
+    return requirePrintJob(job);
   }
 
   async function markPrintJobPrinted(printJobId: string): Promise<PrintJob> {
@@ -175,12 +259,100 @@ export function createPrintService(db: DbClient) {
 
   return {
     createKitchenTicketPrintJob,
+    createCustomerReceiptPrintJob,
     listPrintJobs,
     listPendingPrintJobs,
+    getPrintJob,
+    markPrintJobPrinting,
     markPrintJobPrinted,
     markPrintJobFailed,
     retryPrintJob,
   };
+
+  async function buildOrderReceiptPayload(orderId: string): Promise<CustomerReceiptPayload> {
+    const order = await db.query.orders.findFirst({
+      where: (orders, { eq }) => eq(orders.id, orderId),
+      with: {
+        items: true,
+        payments: true,
+      },
+    });
+
+    if (!order) {
+      throw new PrintServiceError('Order not found.', 'not_found');
+    }
+
+    const activeItems = order.items.filter((item) => item.status !== 'cancelled');
+    const paidPayments = order.payments.filter((payment) => payment.status === 'paid');
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      tableLabel: order.tableLabel,
+      orderType: order.orderType,
+      createdAt: new Date().toISOString(),
+      subtotalCents: order.subtotalCents,
+      discountCents: order.discountCents,
+      totalCents: order.totalCents,
+      paidCents: sumPayments(paidPayments),
+      items: activeItems.map((item) => ({
+        name: item.itemNameSnapshot,
+        quantity: item.quantity,
+        unitPriceCents: item.unitPriceCentsSnapshot,
+        amountCents: item.unitPriceCentsSnapshot * item.quantity,
+      })),
+      payments: paidPayments.map(formatPayment),
+    };
+  }
+
+  async function buildCheckReceiptPayload(
+    orderId: string,
+    checkId: string,
+  ): Promise<CustomerReceiptPayload> {
+    const [order, check] = await Promise.all([
+      db.query.orders.findFirst({
+        where: (orders, { eq }) => eq(orders.id, orderId),
+      }),
+      db.query.checks.findFirst({
+        where: (checks, { eq }) => eq(checks.id, checkId),
+        with: {
+          items: {
+            with: {
+              orderItem: true,
+            },
+          },
+          payments: true,
+        },
+      }),
+    ]);
+
+    if (!order || !check || check.orderId !== order.id) {
+      throw new PrintServiceError('Check not found.', 'not_found');
+    }
+
+    const paidPayments = check.payments.filter((payment) => payment.status === 'paid');
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      tableLabel: order.tableLabel,
+      orderType: order.orderType,
+      checkId: check.id,
+      checkLabel: check.checkLabel,
+      createdAt: new Date().toISOString(),
+      subtotalCents: check.subtotalCents,
+      discountCents: check.discountCents,
+      totalCents: check.totalCents,
+      paidCents: sumPayments(paidPayments),
+      items: check.items.map((item) => ({
+        name: item.orderItem.itemNameSnapshot,
+        quantity: item.quantity,
+        unitPriceCents: item.orderItem.unitPriceCentsSnapshot,
+        amountCents: item.amountCentsSnapshot,
+      })),
+      payments: paidPayments.map(formatPayment),
+    };
+  }
 }
 
 function requirePrintJob(job: PrintJob | undefined): PrintJob {
@@ -189,4 +361,16 @@ function requirePrintJob(job: PrintJob | undefined): PrintJob {
   }
 
   return job;
+}
+
+function sumPayments(payments: Payment[]): number {
+  return payments.reduce((total, payment) => total + payment.amountCents, 0);
+}
+
+function formatPayment(payment: Payment): CustomerReceiptPayload['payments'][number] {
+  return {
+    method: payment.method,
+    amountCents: payment.amountCents,
+    paidAt: payment.paidAt?.toISOString() ?? null,
+  };
 }

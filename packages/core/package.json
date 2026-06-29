@@ -9,6 +9,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "print:worker": "tsx src/print-worker-cli.ts",
+    "print:worker:watch": "tsx src/print-worker-cli.ts --watch",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -19,7 +21,9 @@
   },
   "devDependencies": {
     "@types/node": "^26.0.0",
+    "dotenv": "^16.5.0",
     "postgres": "^3.4.7",
+    "tsx": "^4.20.6",
     "typescript": "^6.0.3",
     "vitest": "^4.0.15"
   }

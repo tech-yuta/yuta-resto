@@ -18,6 +18,8 @@ Full payment
 Split by items
 Split equally
 Mock print jobs
+Kitchen ticket print job on send to kitchen
+Customer receipt print job on payment
 ```
 
 Out of scope:
@@ -110,3 +112,39 @@ Local database setup lives in:
 ```txt
 docs/LOCAL_DATABASE.md
 ```
+
+## Mock Print Worker
+
+The MVP print flow is database-backed:
+
+```txt
+POS send to kitchen or payment
+Create print_jobs row with status pending
+Worker claims pending job as printing
+Worker writes mock output
+Worker marks job printed or failed
+```
+
+Run one batch locally:
+
+```bash
+corepack pnpm --filter @yuta/core print:worker
+```
+
+Run continuously:
+
+```bash
+corepack pnpm --filter @yuta/core print:worker:watch
+```
+
+Optional env values:
+
+```txt
+PRINT_WORKER_OUTPUT_DIR=.tmp/prints
+PRINT_WORKER_BATCH_SIZE=10
+PRINT_WORKER_INTERVAL_MS=3000
+PRINT_WORKER_FAIL_RATE=0
+```
+
+`PRINT_WORKER_OUTPUT_DIR` makes the mock printer write one text file per job.
+Without it, the worker only updates job status in the database.
