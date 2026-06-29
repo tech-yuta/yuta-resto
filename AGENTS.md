@@ -123,6 +123,23 @@ Named exports only. No default exports.
 
 No Redux, MobX, or Zustand unless explicitly added. Use React state and Server Components.
 
+### Documentation maintenance
+
+Whenever an agent changes app behavior, user flows, routes, setup commands,
+deployment behavior, database behavior, or operational rules, the agent MUST
+update the relevant docs in the same change.
+
+For POS-related work, keep these docs current:
+
+- `docs/POS_USER_GUIDE.md` for operator-facing usage flows.
+- `docs/YUTA_POS.md` for POS architecture, scope, and implementation notes.
+- `docs/LOCAL_DATABASE.md` for local database setup changes.
+- `docs/DEPLOYMENT.md` for production or Docker deployment changes.
+
+Do not rely on memory for newly added behavior. Document important decisions
+such as cancellation/restore rules, print job behavior, payment behavior,
+admin workflows, and known MVP limits when they change.
+
 ---
 
 ## Deployment Rules

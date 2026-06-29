@@ -101,6 +101,12 @@ Create table-management UI for MVP
 
 ## Implementation Reference
 
+The operator guide lives in:
+
+```txt
+docs/POS_USER_GUIDE.md
+```
+
 The detailed product and technical specification lives in:
 
 ```txt

@@ -154,6 +154,20 @@ Whenever you add, rename, or remove a component from `packages/ui/src/`, you MUS
 
 Do this in the same edit — never leave these files out of sync with the actual `packages/ui` exports.
 
+Whenever you change app behavior, user flows, routes, setup commands,
+deployment behavior, database behavior, or operational rules, update the
+relevant docs in the same change.
+
+For POS-related changes, keep these docs current:
+- `docs/POS_USER_GUIDE.md` for operator-facing usage flows
+- `docs/YUTA_POS.md` for POS architecture, scope, and implementation notes
+- `docs/LOCAL_DATABASE.md` for local database setup changes
+- `docs/DEPLOYMENT.md` for production or Docker deployment changes
+
+Document important decisions such as cancellation/restore rules, print job
+behavior, payment behavior, admin workflows, and known MVP limits when they
+change.
+
 ---
 
 ## CSS Import
