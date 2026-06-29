@@ -37,6 +37,11 @@ const cancelOrderItemFormSchema = z.object({
   orderItemId: z.string().uuid(),
 });
 
+const restoreOrderItemFormSchema = z.object({
+  orderId: z.string().uuid(),
+  orderItemId: z.string().uuid(),
+});
+
 const payFullOrderFormSchema = z.object({
   orderId: z.string().uuid(),
   method: z.enum(['cash', 'card', 'ticket_resto', 'other']),
@@ -134,6 +139,21 @@ export async function cancelOrderItemAction(formData: FormData): Promise<void> {
   await orderService.cancelOrderItem({
     orderItemId: values.orderItemId,
     reason: 'POS item cancellation',
+  });
+
+  revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath('/kitchen');
+}
+
+export async function restoreOrderItemAction(formData: FormData): Promise<void> {
+  const values = restoreOrderItemFormSchema.parse({
+    orderId: formData.get('orderId'),
+    orderItemId: formData.get('orderItemId'),
+  });
+  const orderService = createOrderService(db);
+
+  await orderService.restoreOrderItem({
+    orderItemId: values.orderItemId,
   });
 
   revalidatePath(`/orders/${values.orderId}`);

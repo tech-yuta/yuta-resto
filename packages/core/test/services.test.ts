@@ -330,6 +330,31 @@ describe('YuTa core services', () => {
     expect((await getOrder(order.id)).totalCents).toBe(300);
   });
 
+  it('restores a cancelled pending item', async () => {
+    const orderService = createOrderService(db);
+    const order = await createTestOrder(context.user.id);
+    const bunBo = await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
+
+    await orderService.cancelOrderItem({ orderItemId: bunBo.id, reason: 'Test cancellation' });
+    const restoredItem = await orderService.restoreOrderItem({ orderItemId: bunBo.id });
+
+    expect(restoredItem.status).toBe('pending');
+    expect((await getOrder(order.id)).totalCents).toBe(1300);
+  });
+
+  it('restores a cancelled sent item back to kitchen queue', async () => {
+    const orderService = createOrderService(db);
+    const order = await createTestOrder(context.user.id);
+    const bunBo = await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
+    await orderService.sendOrderToKitchen(order.id);
+
+    await orderService.cancelOrderItem({ orderItemId: bunBo.id, reason: 'Test cancellation' });
+    const restoredItem = await orderService.restoreOrderItem({ orderItemId: bunBo.id });
+
+    expect(restoredItem.status).toBe('sent');
+    expect((await getOrder(order.id)).status).toBe('sent');
+  });
+
   it('keeps historical order item snapshots after menu price changes', async () => {
     const orderService = createOrderService(db);
     const order = await createTestOrder(context.user.id);

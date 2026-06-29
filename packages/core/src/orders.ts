@@ -44,6 +44,10 @@ const cancelOrderItemSchema = z.object({
   reason: z.string().trim().max(2000).optional(),
 });
 
+const restoreOrderItemSchema = z.object({
+  orderItemId: z.string().uuid(),
+});
+
 const orderItemIdSchema = z.object({
   orderItemId: z.string().uuid(),
 });
@@ -56,6 +60,7 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type AddOrderItemInput = z.infer<typeof addOrderItemSchema>;
 export type UpdateOrderItemQuantityInput = z.infer<typeof updateOrderItemQuantitySchema>;
 export type CancelOrderItemInput = z.infer<typeof cancelOrderItemSchema>;
+export type RestoreOrderItemInput = z.infer<typeof restoreOrderItemSchema>;
 
 export type OrderDetail = Order & {
   items: OrderItem[];
@@ -164,6 +169,30 @@ export function createOrderService(db: DbClient) {
     await refreshOrderStatus(item.orderId);
 
     return cancelledItem;
+  }
+
+  async function restoreOrderItem(input: RestoreOrderItemInput): Promise<OrderItem> {
+    const values = restoreOrderItemSchema.parse(input);
+    const item = await getRequiredOrderItem(values.orderItemId);
+
+    if (item.status !== 'cancelled') {
+      return item;
+    }
+
+    const order = await getRequiredOrder(item.orderId);
+    assertOrderCanChangeItems(order);
+
+    const restoredStatus: Extract<OrderItemStatus, 'pending' | 'sent'> = item.sentAt ? 'sent' : 'pending';
+    const [restoredItem] = await db
+      .update(orderItems)
+      .set({ status: restoredStatus })
+      .where(eq(orderItems.id, item.id))
+      .returning();
+
+    await recalculateOrderTotals(item.orderId);
+    await refreshOrderStatus(item.orderId);
+
+    return restoredItem;
   }
 
   async function sendOrderToKitchen(orderId: string): Promise<OrderDetail> {
@@ -348,6 +377,7 @@ export function createOrderService(db: DbClient) {
     addOrderItem,
     updateOrderItemQuantity,
     cancelOrderItem,
+    restoreOrderItem,
     sendOrderToKitchen,
     markOrderItemPreparing,
     markOrderItemReady,

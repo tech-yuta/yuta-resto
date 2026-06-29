@@ -3,11 +3,12 @@ import { db } from '@yuta/db/client';
 import { menuCategories, menuItems } from '@yuta/db/schema';
 import { Badge, Button, Card, Separator, cn } from '@yuta/ui';
 import { and, asc, eq } from 'drizzle-orm';
-import { ArrowLeft, ChefHat, CreditCard, Minus, Plus, X } from 'lucide-react';
+import { ArrowLeft, ChefHat, CreditCard, Minus, Plus, RotateCcw, X } from 'lucide-react';
 import Link from 'next/link';
 import {
   addOrderItemAction,
   cancelOrderItemAction,
+  restoreOrderItemAction,
   sendOrderToKitchenAction,
   updateOrderItemQuantityAction,
 } from '../../actions';
@@ -143,6 +144,18 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
                       </div>
                       <p className="font-bold">{formatEuros(item.unitPriceCentsSnapshot * item.quantity)}</p>
                     </div>
+                    {order.status !== 'paid' && order.status !== 'cancelled' && item.status === 'cancelled' && (
+                      <div className="flex justify-end">
+                        <form action={restoreOrderItemAction}>
+                          <input type="hidden" name="orderId" value={order.id} />
+                          <input type="hidden" name="orderItemId" value={item.id} />
+                          <Button type="submit" variant="secondary" size="sm">
+                            <RotateCcw className="h-4 w-4" />
+                            Restaurer
+                          </Button>
+                        </form>
+                      </div>
+                    )}
                     {order.status !== 'paid' && order.status !== 'cancelled' && item.status !== 'cancelled' && (
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
