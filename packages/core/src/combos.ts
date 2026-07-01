@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, ne, sql } from 'drizzle-orm';
 import {
   checkDiscountItems,
   checkDiscounts,
@@ -126,16 +126,90 @@ export function calculateComboDiscountsForItems(
 export function createComboService(db: DbClient) {
   async function optimizeOrderCombos(orderId: string): Promise<CalculatedComboDiscount[]> {
     const { orderId: parsedOrderId } = orderIdSchema.parse({ orderId });
-    const order = await getRequiredOrder(parsedOrderId);
-    const items = await getOrderCalculationItems(parsedOrderId);
-    const rules = await getActiveComboRules();
-    const discounts = calculateComboDiscountsForItems(items, rules);
 
-    await clearOrderComboDiscounts(parsedOrderId);
-    await insertOrderDiscounts(parsedOrderId, discounts);
-    await updateOrderDiscountTotals(order, discounts);
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${parsedOrderId}))`);
 
-    return discounts;
+      const order = await tx.query.orders.findFirst({
+        where: eq(orders.id, parsedOrderId),
+      });
+
+      if (!order) {
+        throw new ComboServiceError('Order not found.', 'not_found');
+      }
+
+      const items = await tx.query.orderItems.findMany({
+        where: and(eq(orderItems.orderId, parsedOrderId), ne(orderItems.status, 'cancelled')),
+        orderBy: [asc(orderItems.createdAt), asc(orderItems.id)],
+      });
+      const rules = await tx.query.comboRules.findMany({
+        where: eq(comboRules.isActive, true),
+        with: {
+          groups: {
+            with: {
+              items: true,
+            },
+            orderBy: [asc(comboRuleGroups.sortOrder)],
+          },
+        },
+        orderBy: [asc(comboRules.priority), asc(comboRules.name)],
+      });
+      const discounts = calculateComboDiscountsForItems(
+        items.map((item) => ({
+          id: item.id,
+          menuItemId: item.menuItemId,
+          unitPriceCentsSnapshot: item.unitPriceCentsSnapshot,
+          quantity: item.quantity,
+          createdAt: item.createdAt,
+        })),
+        rules,
+      );
+      const existingDiscounts = await tx.query.orderDiscounts.findMany({
+        where: and(eq(orderDiscounts.orderId, parsedOrderId), isNotNull(orderDiscounts.comboRuleId)),
+      });
+
+      if (existingDiscounts.length > 0) {
+        const discountIds = existingDiscounts.map((discount) => discount.id);
+
+        await tx
+          .delete(orderDiscountItems)
+          .where(inArray(orderDiscountItems.orderDiscountId, discountIds));
+        await tx.delete(orderDiscounts).where(inArray(orderDiscounts.id, discountIds));
+      }
+
+      for (const discount of discounts) {
+        const [createdDiscount] = await tx
+          .insert(orderDiscounts)
+          .values({
+            orderId: parsedOrderId,
+            comboRuleId: discount.comboRuleId,
+            nameSnapshot: discount.nameSnapshot,
+            discountCents: discount.discountCents,
+          })
+          .returning();
+
+        if (discount.itemApplications.length > 0) {
+          await tx.insert(orderDiscountItems).values(
+            discount.itemApplications.map((item) => ({
+              orderDiscountId: createdDiscount.id,
+              orderItemId: item.itemId,
+              quantityApplied: item.quantityApplied,
+            })),
+          );
+        }
+      }
+
+      const discountCents = sumDiscounts(discounts);
+      await tx
+        .update(orders)
+        .set({
+          discountCents,
+          totalCents: Math.max(0, order.subtotalCents - discountCents),
+        })
+        .where(eq(orders.id, parsedOrderId));
+
+      return discounts;
+    });
   }
 
   async function clearOrderComboDiscounts(orderId: string): Promise<void> {

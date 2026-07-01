@@ -1,7 +1,7 @@
 import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
 import { Badge, Button, Card, Separator } from '@yuta/ui';
-import { and, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, or } from 'drizzle-orm';
 import { ArrowLeft, CreditCard, ExternalLink, ReceiptText } from 'lucide-react';
 import Link from 'next/link';
 
@@ -15,8 +15,8 @@ type OrderView = 'open' | 'paid_today' | 'all_today';
 
 const views: Array<{ value: OrderView; label: string }> = [
   { value: 'open', label: 'Ouvertes' },
-  { value: 'paid_today', label: 'Payees' },
-  { value: 'all_today', label: 'Aujourd hui' },
+  { value: 'paid_today', label: 'Payees aujourd hui' },
+  { value: 'all_today', label: 'Activite aujourd hui' },
 ];
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
@@ -28,9 +28,9 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
       selectedView === 'open'
         ? inArray(orders.status, ['draft', 'sent', 'preparing', 'ready', 'served'])
         : selectedView === 'paid_today'
-          ? and(eq(orders.status, 'paid'), gte(orders.createdAt, today))
-          : gte(orders.createdAt, today),
-    orderBy: [desc(orders.createdAt)],
+          ? and(eq(orders.status, 'paid'), gte(orders.paidAt, today))
+          : or(gte(orders.createdAt, today), gte(orders.paidAt, today)),
+    orderBy: [desc(selectedView === 'paid_today' ? orders.paidAt : orders.createdAt)],
     with: {
       items: true,
     },

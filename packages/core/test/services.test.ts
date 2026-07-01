@@ -136,6 +136,37 @@ describe('YuTa core services', () => {
     expect(printedJob.printedAt).toBeInstanceOf(Date);
   });
 
+  it('creates kitchen ticket print jobs for only the newly sent item batch', async () => {
+    const orderService = createOrderService(db);
+    const printService = createPrintService(db);
+    const order = await createTestOrder(context.user.id);
+    const firstItem = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    await orderService.sendOrderToKitchen(order.id);
+    await printService.createKitchenTicketPrintJob({
+      orderId: order.id,
+      orderItemIds: [firstItem.id],
+    });
+
+    const secondItem = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.coca.id,
+      quantity: 1,
+    });
+    await orderService.sendOrderToKitchen(order.id);
+    const secondJob = await printService.createKitchenTicketPrintJob({
+      orderId: order.id,
+      orderItemIds: [secondItem.id],
+    });
+
+    expect(secondJob.payload).toMatchObject({
+      items: [{ name: 'Test Coca', quantity: 1, station: 'bar' }],
+    });
+  });
+
   it('creates a customer receipt print job for a paid order', async () => {
     const paymentService = createPaymentService(db);
     const printService = createPrintService(db);
@@ -194,6 +225,32 @@ describe('YuTa core services', () => {
       totalCents: 1400,
       paidCents: 1400,
       payments: [{ method: 'cash', amountCents: 1400 }],
+    });
+  });
+
+  it('creates a customer receipt print job for a paid equal split check', async () => {
+    const paymentService = createPaymentService(db);
+    const printService = createPrintService(db);
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    const [check] = await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
+    await paymentService.payCheck({ checkId: check.id, method: 'card', amountCents: check.totalCents });
+
+    const job = await printService.createCustomerReceiptPrintJob({
+      orderId: order.id,
+      checkId: check.id,
+    });
+
+    expect(job.payload).toMatchObject({
+      orderId: order.id,
+      checkId: check.id,
+      checkLabel: 'Part 1',
+      totalCents: 700,
+      paidCents: 700,
+      items: [{ name: 'Part 1', quantity: 1, amountCents: 700 }],
+      payments: [{ method: 'card', amountCents: 700 }],
     });
   });
 
@@ -292,6 +349,36 @@ describe('YuTa core services', () => {
     expect(createdChecks.map((check) => check.totalCents)).toEqual([1400, 1400]);
   });
 
+  it('clears order-level combo discounts when switching to split by items', async () => {
+    const order = await createOrderWithItemRecords([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    const comboService = createComboService(db);
+    const paymentService = createPaymentService(db);
+    await comboService.optimizeOrderCombos(order.order.id);
+
+    const createdChecks = await paymentService.createChecksByItems({
+      orderId: order.order.id,
+      checks: [
+        {
+          checkLabel: 'Client 1',
+          items: [{ orderItemId: order.items[0].id, quantity: 1 }],
+        },
+        {
+          checkLabel: 'Client 2',
+          items: [{ orderItemId: order.items[1].id, quantity: 1 }],
+        },
+      ],
+    });
+    const updatedOrder = await getOrder(order.order.id);
+
+    expect(updatedOrder.paymentMode).toBe('split_by_items');
+    expect(updatedOrder.discountCents).toBe(0);
+    expect(updatedOrder.totalCents).toBe(1600);
+    expect(createdChecks.map((check) => check.totalCents)).toEqual([1300, 300]);
+  });
+
   it('splits equally using the optimized order total', async () => {
     const order = await createOrderWithItems([
       { menuItemId: context.items.bunBo.id, quantity: 2 },
@@ -303,6 +390,100 @@ describe('YuTa core services', () => {
 
     expect(createdChecks.map((check) => check.totalCents)).toEqual([934, 933, 933]);
     expect(createdChecks.reduce((total, check) => total + check.totalCents, 0)).toBe(2800);
+  });
+
+  it('voids unpaid checks when replacing a split mode', async () => {
+    const { order, items } = await createOrderWithItemRecords([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    const paymentService = createPaymentService(db);
+    const itemChecks = await paymentService.createChecksByItems({
+      orderId: order.id,
+      checks: [
+        {
+          checkLabel: 'Client 1',
+          items: [{ orderItemId: items[0].id, quantity: 1 }],
+        },
+        {
+          checkLabel: 'Client 2',
+          items: [{ orderItemId: items[1].id, quantity: 1 }],
+        },
+      ],
+    });
+
+    const equalChecks = await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
+    const replacedChecks = await db.query.checks.findMany({
+      where: inArray(checks.id, itemChecks.map((check) => check.id)),
+    });
+
+    expect(replacedChecks.every((check) => check.status === 'void')).toBe(true);
+    expect(equalChecks).toHaveLength(2);
+    expect(equalChecks.every((check) => check.status === 'open')).toBe(true);
+  });
+
+  it('prevents replacing a split after a check is paid', async () => {
+    const { order, items } = await createOrderWithItemRecords([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    const paymentService = createPaymentService(db);
+    const [check] = await paymentService.createChecksByItems({
+      orderId: order.id,
+      checks: [
+        {
+          checkLabel: 'Client 1',
+          items: [{ orderItemId: items[0].id, quantity: 1 }],
+        },
+        {
+          checkLabel: 'Client 2',
+          items: [{ orderItemId: items[1].id, quantity: 1 }],
+        },
+      ],
+    });
+
+    await paymentService.payCheck({
+      checkId: check.id,
+      method: 'card',
+      amountCents: check.totalCents,
+    });
+
+    await expect(paymentService.splitOrderEqually({ orderId: order.id, parts: 2 })).rejects.toMatchObject({
+      code: 'invalid_status',
+    });
+  });
+
+  it('cancels an unpaid split and returns the order to single payment mode', async () => {
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    const paymentService = createPaymentService(db);
+    const splitChecks = await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
+
+    const updatedOrder = await paymentService.cancelOrderSplit(order.id);
+    const cancelledChecks = await db.query.checks.findMany({
+      where: inArray(checks.id, splitChecks.map((check) => check.id)),
+    });
+
+    expect(updatedOrder.paymentMode).toBe('single');
+    expect(updatedOrder.discountCents).toBe(200);
+    expect(updatedOrder.totalCents).toBe(1400);
+    expect(cancelledChecks.every((check) => check.status === 'void')).toBe(true);
+  });
+
+  it('prevents cancelling a split after a check is paid', async () => {
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    const paymentService = createPaymentService(db);
+    const [check] = await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
+    await paymentService.payCheck({ checkId: check.id, method: 'card', amountCents: check.totalCents });
+
+    await expect(paymentService.cancelOrderSplit(order.id)).rejects.toMatchObject({
+      code: 'invalid_status',
+    });
   });
 
   it('marks an order paid only when fully paid', async () => {

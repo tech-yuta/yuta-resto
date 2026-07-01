@@ -14,12 +14,12 @@ Free text table labels
 Fast menu item entry
 Kitchen workflow
 Combo discounts at payment time
-Full payment
+Full and partial payment
 Split by items
 Split equally
 Mock print jobs
-Kitchen ticket print job on send to kitchen
-Customer receipt print job on payment
+Kitchen ticket print job for each sent item batch
+Customer receipt print job when an order or check is fully paid
 ```
 
 Out of scope:
@@ -69,6 +69,7 @@ packages/ui
 `apps/admin` is the back-office surface for POS setup and reporting:
 
 ```txt
+Staff users
 Menu categories
 Menu items
 Combo rules
@@ -107,6 +108,12 @@ The operator guide lives in:
 docs/POS_USER_GUIDE.md
 ```
 
+The QA checklist lives in:
+
+```txt
+docs/POS_QA_CHECKLIST.md
+```
+
 The detailed product and technical specification lives in:
 
 ```txt
@@ -130,6 +137,8 @@ Worker claims pending job as printing
 Worker writes mock output
 Worker marks job printed or failed
 ```
+
+Kitchen ticket jobs are batch-based. If an order is sent to kitchen, then more items are added and sent later, the second ticket contains only the newly sent items.
 
 Run one batch locally:
 

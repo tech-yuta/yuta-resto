@@ -11,10 +11,17 @@ type SplitItemsPageProps = {
   params: Promise<{
     orderId: string;
   }>;
+  searchParams: Promise<{
+    clients?: string;
+    error?: string;
+  }>;
 };
 
-export default async function SplitItemsPage({ params }: SplitItemsPageProps) {
+const clientCountOptions = [2, 3, 4, 5, 6, 8, 10, 12];
+
+export default async function SplitItemsPage({ params, searchParams }: SplitItemsPageProps) {
   const { orderId } = await params;
+  const { clients, error } = await searchParams;
   const comboService = createComboService(db);
 
   await comboService.optimizeOrderCombos(orderId);
@@ -32,6 +39,15 @@ export default async function SplitItemsPage({ params }: SplitItemsPageProps) {
   }
 
   const activeItems = order.items.filter((item) => item.status !== 'cancelled');
+  const activeChecks = order.checks.filter((check) => check.status !== 'void');
+  const itemSplitChecks = activeChecks.filter((check) => check.splitMode === 'items');
+  const requestedClientCount = parseClientCount(clients);
+  const clientCount = requestedClientCount ?? (itemSplitChecks.length > 0 ? itemSplitChecks.length : 2);
+  const splitClients = Array.from({ length: clientCount }, (_, index) => ({
+    key: `client${index + 1}`,
+    label: `Client ${index + 1}`,
+  }));
+  const gridTemplateColumns = `minmax(180px, 1fr) repeat(${splitClients.length}, 82px)`;
 
   return (
     <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
@@ -55,29 +71,65 @@ export default async function SplitItemsPage({ params }: SplitItemsPageProps) {
             </div>
             <div>
               <h2 className="font-bold">Clients</h2>
-              <p className="text-sm text-yuta-ink/55">MVP: deux clients fixes</p>
+              <p className="text-sm text-yuta-ink/55">{splitClients.length} client(s)</p>
             </div>
+          </div>
+
+          {error && (
+            <div className="mt-5 rounded-xl border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
+              {errorMessage(error)}
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-yuta-ink/55">Nombre de clients</span>
+            {clientCountOptions.map((option) => (
+              <Button
+                key={option}
+                asChild
+                variant={option === splitClients.length ? 'primary' : 'secondary'}
+                size="sm"
+              >
+                <Link href={`/orders/${order.id}/payment/items?clients=${option}`}>{option}</Link>
+              </Button>
+            ))}
           </div>
 
           <form action={createChecksByItemsAction} className="mt-5 grid gap-4">
             <input type="hidden" name="orderId" value={order.id} />
-            <div className="grid grid-cols-[1fr_90px_90px] gap-3 px-1 text-xs font-bold uppercase text-yuta-ink/45">
-              <span>Article</span>
-              <span>Client 1</span>
-              <span>Client 2</span>
-            </div>
-            <Separator />
-            <div className="grid gap-3">
-              {activeItems.map((item) => (
-                <div key={item.id} className="grid grid-cols-[1fr_90px_90px] items-center gap-3 rounded-xl border border-yuta-line bg-yuta-paper p-3">
-                  <div>
-                    <p className="font-bold">{item.quantity} x {item.itemNameSnapshot}</p>
-                    <p className="text-sm text-yuta-ink/55">{formatEuros(item.unitPriceCentsSnapshot)} / unite</p>
-                  </div>
-                  <QuantityInput label={`Client 1 ${item.itemNameSnapshot}`} name={`client1:${item.id}`} max={item.quantity} />
-                  <QuantityInput label={`Client 2 ${item.itemNameSnapshot}`} name={`client2:${item.id}`} max={item.quantity} />
+            <input type="hidden" name="clientCount" value={splitClients.length} />
+            <div className="overflow-x-auto pb-2">
+              <div className="min-w-max">
+                <div className="grid gap-3 px-1 text-xs font-bold uppercase text-yuta-ink/45" style={{ gridTemplateColumns }}>
+                  <span>Article</span>
+                  {splitClients.map((client) => (
+                    <span key={client.key}>{client.label}</span>
+                  ))}
                 </div>
-              ))}
+                <Separator className="my-3" />
+                <div className="grid gap-3">
+                  {activeItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid items-center gap-3 rounded-xl border border-yuta-line bg-yuta-paper p-3"
+                      style={{ gridTemplateColumns }}
+                    >
+                      <div>
+                        <p className="font-bold">{item.quantity} x {item.itemNameSnapshot}</p>
+                        <p className="text-sm text-yuta-ink/55">{formatEuros(item.unitPriceCentsSnapshot)} / unite</p>
+                      </div>
+                      {splitClients.map((client) => (
+                        <QuantityInput
+                          key={client.key}
+                          label={`${client.label} ${item.itemNameSnapshot}`}
+                          name={`${client.key}:${item.id}`}
+                          max={item.quantity}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
             <Button type="submit" variant="accent" size="lg" disabled={activeItems.length === 0 || order.status === 'paid'}>
               Creer les tickets
@@ -96,6 +148,25 @@ function QuantityInput({ label, name, max }: { label: string; name: string; max:
       <Input id={name} name={name} type="number" min={0} max={max} defaultValue={0} inputMode="numeric" />
     </div>
   );
+}
+
+function parseClientCount(value: string | undefined): number | null {
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 2 || parsedValue > 12) {
+    return null;
+  }
+
+  return parsedValue;
+}
+
+function errorMessage(error: string): string {
+  const messages: Record<string, string> = {
+    empty: 'Selectionnez au moins un article pour creer les tickets.',
+    quantity: 'La quantite repartie depasse la quantite disponible pour au moins un article.',
+  };
+
+  return messages[error] ?? 'Impossible de creer les tickets avec cette selection.';
 }
 
 function formatEuros(cents: number): string {

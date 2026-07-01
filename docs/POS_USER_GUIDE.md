@@ -15,6 +15,7 @@ Useful admin pages:
 
 ```txt
 http://localhost:3001/pos/menu
+http://localhost:3001/pos/staff
 http://localhost:3001/pos/combos
 http://localhost:3001/pos/reports
 http://localhost:3001/pos/prints
@@ -48,6 +49,12 @@ corepack pnpm --filter @yuta/core print:worker:watch
 
 The print worker processes `print_jobs` rows created by kitchen sends and payments.
 
+The QA checklist lives in:
+
+```txt
+docs/POS_QA_CHECKLIST.md
+```
+
 ## POS Home
 
 Open:
@@ -66,13 +73,17 @@ Open the order history
 
 To create an order:
 
-1. Enter a table or reference in `Table / Repere`.
-2. Choose the order type:
+1. Choose the current employee in `Employe`.
+2. Use `Changer` to save the employee as the default POS session user when needed.
+3. Enter a table or reference in `Table / Repere`.
+4. Choose the order type:
    - `Sur place`
    - `A emporter`
    - `Livraison`
-3. Submit the form.
-4. The app opens the order screen.
+5. Submit the form.
+6. The app opens the order screen.
+
+The selected employee is stored in a local cookie. It is not a login system; it only identifies the staff member for internal order and payment tracking.
 
 ## Order Screen
 
@@ -192,10 +203,12 @@ Views:
 ```txt
 Ouvertes
 Payees aujourd hui
-Aujourd hui
+Activite aujourd hui
 ```
 
 Use this page to reopen old or active orders.
+
+`Payees aujourd hui` uses the payment date. `Activite aujourd hui` shows orders created today or paid today.
 
 ## Payment
 
@@ -213,7 +226,17 @@ Combo discounts are optimized at payment time.
 
 ### Full Payment
 
-Use the full payment section when one customer pays the whole remaining amount.
+Use the full payment section when one customer pays all or part of the remaining amount.
+
+Payment amount fields use euro values, not cents:
+
+```txt
+31
+31,00
+31.00
+```
+
+Do not enter `3100` for 31 EUR.
 
 Supported methods:
 
@@ -224,7 +247,15 @@ ticket_resto
 other
 ```
 
-When the full order is paid:
+When a payment is saved:
+
+```txt
+The paid amount is recorded
+The selected POS employee is stored as paidBy
+The order stays open until the remaining amount reaches 0
+```
+
+When the full order is completely paid:
 
 ```txt
 The order is marked paid
@@ -237,9 +268,11 @@ Use equal split when the table wants to divide the total into N parts.
 
 1. Enter the number of parts.
 2. Create the split.
-3. Pay each check.
+3. Pay each check fully or in partial payments.
 
 The order is marked paid only when all checks are paid.
+
+Use `Annuler le partage` to return to full-order payment when no split ticket has been paid yet. Once a split ticket is paid, the split cannot be cancelled.
 
 ### Split By Items
 
@@ -249,14 +282,58 @@ Open:
 Choisir les articles
 ```
 
-The current MVP supports two fixed clients:
+Choose the number of clients directly on the split-by-items screen. This is independent from equal split.
 
 ```txt
-Client 1
-Client 2
+Default -> 2 clients
+Choose 3 -> Client 1, Client 2, Client 3
+Choose 4 -> Client 1, Client 2, Client 3, Client 4
 ```
 
-Assign item quantities to each client, then create checks. Each paid check creates its own `customer_receipt` print job.
+Assign item quantities to each client, then create checks. Each check can be paid fully or in partial payments. A `customer_receipt` print job is created when the check is completely paid.
+
+The selected POS employee is stored as `paidBy` for each payment.
+
+Use `Annuler le partage` to return to full-order payment when no split ticket has been paid yet. Once a split ticket is paid, the split cannot be cancelled.
+
+## Admin Staff
+
+Open:
+
+```txt
+http://localhost:3001/pos/staff
+```
+
+Use this page to manage POS staff users:
+
+```txt
+Create employee
+Edit name
+Edit email
+Set role
+Activate or deactivate
+```
+
+Roles:
+
+```txt
+Admin
+Manager
+Service
+Cuisine
+```
+
+The POS employee selector shows active users with these roles:
+
+```txt
+admin
+manager
+staff
+```
+
+Kitchen-only users are managed here but are not shown in the POS order creator selector.
+
+Do not delete users from the database. Deactivate users to preserve order and payment history.
 
 ## Admin Menu
 
@@ -405,9 +482,12 @@ cancel item
 restore item
 toggle menu availability
 mark payment status
+void replaced split checks
 ```
 
 This keeps historical order data consistent.
+
+When an unpaid split is replaced by another split mode, the old open checks are marked `void` instead of being deleted. Once any split check is paid, the split mode cannot be replaced.
 
 ### Menu Snapshots
 
@@ -420,6 +500,10 @@ kitchen station snapshot
 ```
 
 Changing the menu later does not change old order totals or kitchen history.
+
+### Kitchen Ticket Batches
+
+Each `Envoyer cuisine` action creates a kitchen ticket only for the items that were still `A envoyer` at the moment of that send. Adding more items later and sending again creates a new ticket for the new batch.
 
 ### Display App Is Separate
 
@@ -442,7 +526,7 @@ No table map
 No staff login flow
 No physical ESC/POS printer integration
 No real fiscal receipt
-Split by items UI is currently fixed to two clients
+Split by items client count is selected directly on the split-by-items screen
 No partial kitchen status inside a single item row quantity
 ```
 

@@ -1,6 +1,6 @@
 import { AdminShell } from '../components/admin-shell';
 import { Button } from '@yuta/ui';
-import { BarChart3, Printer, Utensils } from 'lucide-react';
+import { BarChart3, Printer, Users, Utensils } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminHome() {
@@ -18,6 +18,12 @@ export default function AdminHome() {
           <Link href="/pos/combos">
             <Utensils className="h-4 w-4" />
             POS combos
+          </Link>
+        </Button>
+        <Button asChild variant="secondary">
+          <Link href="/pos/staff">
+            <Users className="h-4 w-4" />
+            POS equipe
           </Link>
         </Button>
         <Button asChild variant="secondary">

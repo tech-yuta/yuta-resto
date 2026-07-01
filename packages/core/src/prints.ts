@@ -49,6 +49,11 @@ const orderIdSchema = z.object({
   orderId: z.string().uuid(),
 });
 
+const createKitchenTicketSchema = z.object({
+  orderId: z.string().uuid(),
+  orderItemIds: z.array(z.string().uuid()).optional(),
+});
+
 const createCustomerReceiptSchema = z.object({
   orderId: z.string().uuid(),
   checkId: z.string().uuid().optional(),
@@ -87,8 +92,12 @@ export class PrintServiceError extends Error {
 }
 
 export function createPrintService(db: DbClient) {
-  async function createKitchenTicketPrintJob(orderId: string): Promise<PrintJob> {
-    const values = orderIdSchema.parse({ orderId });
+  async function createKitchenTicketPrintJob(
+    input: string | { orderId: string; orderItemIds?: string[] },
+  ): Promise<PrintJob> {
+    const values = createKitchenTicketSchema.parse(
+      typeof input === 'string' ? { orderId: input } : input,
+    );
     const order = await db.query.orders.findFirst({
       where: (orders, { eq }) => eq(orders.id, values.orderId),
       with: {
@@ -100,7 +109,9 @@ export function createPrintService(db: DbClient) {
       throw new PrintServiceError('Order not found.', 'not_found');
     }
 
+    const allowedItemIds = values.orderItemIds ? new Set(values.orderItemIds) : null;
     const printableItems = order.items
+      .filter((item) => !allowedItemIds || allowedItemIds.has(item.id))
       .filter((item) => item.status !== 'pending' && item.status !== 'cancelled')
       .sort((left, right) => {
         const stationOrder = left.kitchenStationSnapshot.localeCompare(right.kitchenStationSnapshot);
@@ -331,6 +342,22 @@ export function createPrintService(db: DbClient) {
     }
 
     const paidPayments = check.payments.filter((payment) => payment.status === 'paid');
+    const receiptItems =
+      check.items.length > 0
+        ? check.items.map((item) => ({
+            name: item.orderItem.itemNameSnapshot,
+            quantity: item.quantity,
+            unitPriceCents: item.orderItem.unitPriceCentsSnapshot,
+            amountCents: item.amountCentsSnapshot,
+          }))
+        : [
+            {
+              name: check.checkLabel,
+              quantity: 1,
+              unitPriceCents: check.totalCents,
+              amountCents: check.totalCents,
+            },
+          ];
 
     return {
       orderId: order.id,
@@ -344,12 +371,7 @@ export function createPrintService(db: DbClient) {
       discountCents: check.discountCents,
       totalCents: check.totalCents,
       paidCents: sumPayments(paidPayments),
-      items: check.items.map((item) => ({
-        name: item.orderItem.itemNameSnapshot,
-        quantity: item.quantity,
-        unitPriceCents: item.orderItem.unitPriceCentsSnapshot,
-        amountCents: item.amountCentsSnapshot,
-      })),
+      items: receiptItems,
       payments: paidPayments.map(formatPayment),
     };
   }

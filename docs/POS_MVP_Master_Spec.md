@@ -159,6 +159,8 @@ Rules:
 - Split by items creates checks and recalculates combo discounts inside each check.
 - Split equally optimizes the full order first, then divides the final total.
 - For split by items, combo discounts apply only inside the same check.
+- Replacing an unpaid split marks old open checks as `void`.
+- Once any split check is paid, the split mode cannot be replaced.
 
 ### 5.5 No Hard Delete
 
@@ -617,6 +619,7 @@ Open payment screen
   -> show final total
   -> create payment
   -> mark order as paid if paid amount covers total
+  -> create customer receipt print job only when the order is fully paid
 ```
 
 ### 11.2 Split By Items
@@ -630,6 +633,7 @@ Create checks
   -> run optimizeCheckCombos for each check
   -> each check can be paid separately
   -> order is paid when all checks are paid
+  -> create a customer receipt print job only when a check is fully paid
 ```
 
 Assigned check item quantities cannot exceed the original order item quantity.
@@ -710,6 +714,8 @@ Mock printer output to text/log file
 Mark job as printed or failed
 Retry failed jobs
 ```
+
+Kitchen tickets are batch-based. If additional items are added after an earlier kitchen send, the next kitchen ticket should contain only the newly sent items.
 
 Later, this can become `apps/yuta-print-gateway` and convert jobs to ESC/POS for a real thermal printer.
 

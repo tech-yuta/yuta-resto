@@ -3,28 +3,79 @@ import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
 import { Badge, Button, Card, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Separator } from '@yuta/ui';
 import { eq } from 'drizzle-orm';
-import { ArrowLeft, Banknote, CreditCard, ListChecks, Split } from 'lucide-react';
+import { ArrowLeft, Banknote, CreditCard, ListChecks, Split, Tags } from 'lucide-react';
 import Link from 'next/link';
-import { payCheckAction, payFullOrderAction, splitOrderEquallyAction } from '../../../actions';
+import { cancelOrderSplitAction, payCheckAction, payFullOrderAction, splitOrderEquallyAction } from '../../../actions';
 
 type PaymentPageProps = {
   params: Promise<{
     orderId: string;
   }>;
+  searchParams: Promise<{
+    error?: string;
+  }>;
 };
 
-export default async function PaymentPage({ params }: PaymentPageProps) {
+export default async function PaymentPage({ params, searchParams }: PaymentPageProps) {
   const { orderId } = await params;
+  const { error } = await searchParams;
   const comboService = createComboService(db);
+  const existingOrder = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+    with: {
+      checks: true,
+    },
+  });
 
-  await comboService.optimizeOrderCombos(orderId);
+  if (!existingOrder) {
+    throw new Error('Order not found.');
+  }
+
+  const hasActiveItemSplitChecks = existingOrder.checks.some(
+    (check) => check.splitMode === 'items' && check.status !== 'void',
+  );
+
+  if (hasActiveItemSplitChecks) {
+    await comboService.clearOrderComboDiscounts(orderId);
+  } else {
+    await comboService.optimizeOrderCombos(orderId);
+  }
 
   const order = await db.query.orders.findFirst({
     where: eq(orders.id, orderId),
     with: {
-      checks: true,
+      checks: {
+        with: {
+          items: {
+            with: {
+              orderItem: true,
+            },
+          },
+          discounts: {
+            with: {
+              items: {
+                with: {
+                  checkItem: {
+                    with: {
+                      orderItem: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       items: true,
-      discounts: true,
+      discounts: {
+        with: {
+          items: {
+            with: {
+              orderItem: true,
+            },
+          },
+        },
+      },
       payments: true,
     },
   });
@@ -36,10 +87,13 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
   const paidCents = order.payments
     .filter((payment) => payment.status === 'paid')
     .reduce((total, payment) => total + payment.amountCents, 0);
+  const activeOrderItems = order.items.filter((item) => item.status !== 'cancelled');
+  const cancelledOrderItems = order.items.filter((item) => item.status === 'cancelled');
   const remainingCents = Math.max(0, order.totalCents - paidCents);
-  const equalChecks = order.checks.filter((check) => check.splitMode === 'equal');
-  const itemChecks = order.checks.filter((check) => check.splitMode === 'items');
+  const equalChecks = order.checks.filter((check) => check.splitMode === 'equal' && check.status !== 'void');
+  const itemChecks = order.checks.filter((check) => check.splitMode === 'items' && check.status !== 'void');
   const splitChecks = [...equalChecks, ...itemChecks];
+  const hasPaidSplitCheck = splitChecks.some((check) => check.status === 'paid');
 
   return (
     <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
@@ -56,34 +110,81 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
           <Badge variant={order.status === 'paid' ? 'active' : 'neutral'}>{order.status === 'paid' ? 'Payee' : 'A encaisser'}</Badge>
         </header>
 
+        {error && (
+          <div className="rounded-xl border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
+            {paymentErrorMessage(error)}
+          </div>
+        )}
+
         <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
           <Card className="p-0">
             <div className="p-5">
-              <h2 className="text-lg font-bold">Recapitulatif</h2>
-              <p className="mt-1 text-sm text-yuta-ink/55">Combos appliques automatiquement</p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold">Recapitulatif</h2>
+                  <p className="mt-1 text-sm text-yuta-ink/55">Les combos sont calcules au paiement.</p>
+                </div>
+                {order.discountCents > 0 ? (
+                  <Badge variant="active" className="gap-1">
+                    <Tags className="h-3.5 w-3.5" />
+                    Combo actif
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">Aucune remise</Badge>
+                )}
+              </div>
             </div>
             <Separator />
             <div className="grid gap-3 p-5">
-              {order.items.map((item) => (
+              {activeOrderItems.map((item) => (
                 <div key={item.id} className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold">{item.quantity} x {item.itemNameSnapshot}</p>
-                    {item.status === 'cancelled' && <p className="text-sm text-yuta-ink/45">Annule</p>}
                   </div>
                   <p className="font-bold">{formatEuros(item.unitPriceCentsSnapshot * item.quantity)}</p>
                 </div>
               ))}
+              {cancelledOrderItems.length > 0 && (
+                <div className="mt-2 grid gap-2 rounded-xl border border-yuta-line bg-yuta-paper p-3">
+                  <p className="text-xs font-black uppercase text-yuta-ink/45">Articles annules</p>
+                  {cancelledOrderItems.map((item) => (
+                    <div key={item.id} className="flex items-start justify-between gap-3 text-yuta-ink/55">
+                      <div>
+                        <p className="font-semibold line-through">{item.quantity} x {item.itemNameSnapshot}</p>
+                        <p className="mt-0.5 text-xs font-bold">Annule - non facture</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold line-through">{formatEuros(item.unitPriceCentsSnapshot * item.quantity)}</p>
+                        <p className="mt-0.5 text-xs font-black">0,00 €</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {order.discounts.length > 0 && (
               <>
                 <Separator />
-                <div className="grid gap-3 p-5">
-                  <h3 className="text-sm font-bold text-yuta-ink/60">Remises</h3>
+                <div className="grid gap-3 bg-yuta-mist p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="inline-flex items-center gap-2 text-sm font-black text-yuta-ink">
+                      <Tags className="h-4 w-4" />
+                      Remises combos
+                    </h3>
+                    <span className="text-sm font-black text-yuta-ink">-{formatEuros(order.discountCents)}</span>
+                  </div>
                   {order.discounts.map((discount) => (
-                    <div key={discount.id} className="flex items-center justify-between gap-3">
-                      <p className="font-semibold">{discount.nameSnapshot}</p>
-                      <p className="font-bold">-{formatEuros(discount.discountCents)}</p>
+                    <div key={discount.id} className="rounded-xl border border-yuta-line bg-white px-3 py-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">{discount.nameSnapshot}</p>
+                          <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
+                            {formatDiscountItems(discount.items)}
+                          </p>
+                        </div>
+                        <p className="font-black">-{formatEuros(discount.discountCents)}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -92,9 +193,13 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
 
             <Separator />
             <div className="grid gap-2 p-5">
-              <AmountRow label="Sous-total" value={order.subtotalCents} />
-              <AmountRow label="Remises" value={-order.discountCents} />
-              <AmountRow label="Deja paye" value={-paidCents} />
+              <AmountRow label="Sous-total articles" value={order.subtotalCents} />
+              <AmountRow label="Remises combos" value={-order.discountCents} />
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-yuta-line bg-yuta-paper px-3 py-2">
+                <span className="font-black">Total apres combos</span>
+                <span className="text-lg font-black">{formatEuros(order.totalCents)}</span>
+              </div>
+              <AmountRow label="Deja paye" value={paidCents} />
               <div className="mt-2 flex items-center justify-between border-t border-yuta-line pt-4">
                 <span className="text-lg font-black">Reste a payer</span>
                 <span className="text-2xl font-black">{formatEuros(remainingCents)}</span>
@@ -116,13 +221,32 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
 
               <form action={payFullOrderAction} className="mt-5 grid gap-4">
                 <input type="hidden" name="orderId" value={order.id} />
-                <input type="hidden" name="amountCents" value={remainingCents} />
 
                 <PaymentMethodSelect id="method" />
 
                 <div className="grid gap-2">
-                  <Label htmlFor="tenderedCents">Montant donne en centimes</Label>
-                  <Input id="tenderedCents" name="tenderedCents" type="number" min={remainingCents} placeholder={String(remainingCents)} />
+                  <Label htmlFor="amountCents">Montant a encaisser</Label>
+                  <Input
+                    id="amountCents"
+                    name="amountCents"
+                    type="text"
+                    inputMode="decimal"
+                    pattern="^\d+([,.]\d{0,2})?$"
+                    defaultValue={formatEurosInput(remainingCents)}
+                    required
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="tenderedCents">Montant recu</Label>
+                  <Input
+                    id="tenderedCents"
+                    name="tenderedCents"
+                    type="text"
+                    inputMode="decimal"
+                    pattern="^\d+([,.]\d{0,2})?$"
+                    placeholder={formatEurosInput(remainingCents)}
+                  />
                 </div>
 
                 <Button type="submit" variant="accent" size="lg" disabled={remainingCents === 0 || splitChecks.length > 0}>
@@ -130,6 +254,24 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
                   Encaisser {formatEuros(remainingCents)}
                 </Button>
               </form>
+              {splitChecks.length > 0 && (
+                <div className="mt-4 rounded-xl border border-yuta-line bg-yuta-mist p-3">
+                  <p className="text-sm font-semibold text-yuta-ink/70">
+                    Paiement complet bloque car un partage est actif.
+                  </p>
+                  <form action={cancelOrderSplitAction} className="mt-3">
+                    <input type="hidden" name="orderId" value={order.id} />
+                    <Button type="submit" variant="secondary" className="w-full" disabled={hasPaidSplitCheck}>
+                      Annuler le partage
+                    </Button>
+                  </form>
+                  {hasPaidSplitCheck && (
+                    <p className="mt-2 text-xs font-semibold text-yuta-ink/55">
+                      Impossible apres encaissement d un ticket.
+                    </p>
+                  )}
+                </div>
+              )}
             </Card>
 
             <Card>
@@ -157,7 +299,7 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
               {equalChecks.length > 0 && (
                 <>
                   <Separator className="my-5" />
-                  <CheckPaymentList checks={equalChecks} orderId={order.id} />
+                  <CheckPaymentList checks={equalChecks} payments={order.payments} orderId={order.id} />
                 </>
               )}
             </Card>
@@ -180,7 +322,7 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
               {itemChecks.length > 0 && (
                 <>
                   <Separator className="my-5" />
-                  <CheckPaymentList checks={itemChecks} orderId={order.id} />
+                  <CheckPaymentList checks={itemChecks} payments={order.payments} orderId={order.id} />
                 </>
               )}
             </Card>
@@ -191,33 +333,141 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
   );
 }
 
-function CheckPaymentList({ checks, orderId }: { checks: Array<{ id: string; checkLabel: string; status: string; totalCents: number }>; orderId: string }) {
+function CheckPaymentList({
+  checks,
+  payments,
+  orderId,
+}: {
+  checks: Array<{
+    id: string;
+    checkLabel: string;
+    splitMode: string;
+    status: string;
+    subtotalCents: number;
+    discountCents: number;
+    totalCents: number;
+    items: Array<{
+      quantity: number;
+      amountCentsSnapshot: number;
+      orderItem: {
+        itemNameSnapshot: string;
+        unitPriceCentsSnapshot: number;
+      };
+    }>;
+    discounts: Array<{
+      id: string;
+      nameSnapshot: string;
+      discountCents: number;
+      items: Array<{
+        quantityApplied: number;
+        checkItem: {
+          orderItem: {
+            itemNameSnapshot: string;
+          };
+        };
+      }>;
+    }>;
+  }>;
+  payments: Array<{ checkId: string | null; amountCents: number; status: string }>;
+  orderId: string;
+}) {
   return (
     <div className="grid gap-3">
-      {checks.map((check) => (
-        <div key={check.id} className="rounded-xl border border-yuta-line bg-yuta-paper p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="font-bold">{check.checkLabel}</p>
-              <p className="text-sm text-yuta-ink/55">{formatEuros(check.totalCents)}</p>
+      {checks.map((check) => {
+        const paidCents = payments
+          .filter((payment) => payment.checkId === check.id && payment.status === 'paid')
+          .reduce((total, payment) => total + payment.amountCents, 0);
+        const remainingCents = Math.max(0, check.totalCents - paidCents);
+
+        return (
+          <div key={check.id} className="rounded-xl border border-yuta-line bg-yuta-paper p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-bold">{check.checkLabel}</p>
+                <p className="text-sm text-yuta-ink/55">{check.splitMode === 'equal' ? 'Part egale' : 'Articles assignes'}</p>
+              </div>
+              <Badge variant={check.status === 'paid' ? 'active' : 'outline'}>
+                {check.status === 'paid' ? 'Payee' : 'Ouverte'}
+              </Badge>
             </div>
-            <Badge variant={check.status === 'paid' ? 'active' : 'outline'}>
-              {check.status === 'paid' ? 'Payee' : 'Ouverte'}
-            </Badge>
+
+            <div className="mt-3 grid gap-2 rounded-xl border border-yuta-line bg-white p-3">
+              {check.items.length > 0 ? (
+                <div className="grid gap-1.5">
+                  {check.items.map((item) => (
+                    <div key={`${check.id}-${item.orderItem.itemNameSnapshot}-${item.quantity}`} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-semibold text-yuta-ink/70">
+                        {item.quantity} x {item.orderItem.itemNameSnapshot}
+                      </span>
+                      <span className="font-bold">{formatEuros(item.amountCentsSnapshot)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-semibold text-yuta-ink/70">Part egale</span>
+                  <span className="font-bold">{formatEuros(check.subtotalCents)}</span>
+                </div>
+              )}
+
+              {check.discounts.length > 0 && (
+                <div className="grid gap-1.5 rounded-lg bg-yuta-mist p-2">
+                  <div className="flex items-center justify-between gap-3 text-xs font-black">
+                    <span className="inline-flex items-center gap-1">
+                      <Tags className="h-3.5 w-3.5" />
+                      Combos de ce ticket
+                    </span>
+                    <span>-{formatEuros(check.discountCents)}</span>
+                  </div>
+                  {check.discounts.map((discount) => (
+                    <div key={discount.id} className="flex items-start justify-between gap-3 rounded-lg bg-white px-2 py-1.5 text-xs">
+                      <div>
+                        <p className="font-bold">{discount.nameSnapshot}</p>
+                        <p className="mt-0.5 font-semibold text-yuta-ink/55">{formatCheckDiscountItems(discount.items)}</p>
+                      </div>
+                      <span className="font-black">-{formatEuros(discount.discountCents)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid gap-1 border-t border-yuta-line pt-2">
+                <AmountRow label="Sous-total ticket" value={check.subtotalCents} />
+                <AmountRow label="Remises ticket" value={-check.discountCents} />
+                <AmountRow label="Total ticket" value={check.totalCents} />
+                <AmountRow label="Deja paye" value={paidCents} />
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <span className="font-black">Reste ticket</span>
+                  <span className="text-lg font-black">{formatEuros(remainingCents)}</span>
+                </div>
+              </div>
+            </div>
+
+            {check.status !== 'paid' && (
+              <form action={payCheckAction} className="mt-3 grid gap-3">
+                <input type="hidden" name="orderId" value={orderId} />
+                <input type="hidden" name="checkId" value={check.id} />
+                <PaymentMethodSelect id={`method-${check.id}`} />
+                <div className="grid gap-2">
+                  <Label htmlFor={`amount-${check.id}`}>Montant</Label>
+                  <Input
+                    id={`amount-${check.id}`}
+                    name="amountCents"
+                    type="text"
+                    inputMode="decimal"
+                    pattern="^\d+([,.]\d{0,2})?$"
+                    defaultValue={formatEurosInput(remainingCents)}
+                    required
+                  />
+                </div>
+                <Button type="submit" variant="accent" className="w-full" disabled={remainingCents === 0}>
+                  Encaisser {formatEuros(remainingCents)}
+                </Button>
+              </form>
+            )}
           </div>
-          {check.status !== 'paid' && (
-            <form action={payCheckAction} className="mt-3 grid gap-3">
-              <input type="hidden" name="orderId" value={orderId} />
-              <input type="hidden" name="checkId" value={check.id} />
-              <input type="hidden" name="amountCents" value={check.totalCents} />
-              <PaymentMethodSelect id={`method-${check.id}`} />
-              <Button type="submit" variant="accent" className="w-full">
-                Encaisser {formatEuros(check.totalCents)}
-              </Button>
-            </form>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -250,9 +500,64 @@ function AmountRow({ label, value }: { label: string; value: number }) {
   );
 }
 
+function paymentErrorMessage(error: string): string {
+  const messages: Record<string, string> = {
+    invalid_input: 'Le montant donne doit couvrir le montant encaisse.',
+    invalid_status: 'Cette commande ou ce ticket ne peut pas etre encaisse.',
+    invalid_split: 'La repartition des tickets est invalide.',
+    overpayment: 'Le montant encaisse depasse le reste a payer.',
+    not_found: 'Commande ou ticket introuvable.',
+  };
+
+  return messages[error] ?? 'Impossible d enregistrer le paiement.';
+}
+
+function formatDiscountItems(
+  items: Array<{
+    quantityApplied: number;
+    orderItem: {
+      itemNameSnapshot: string;
+    };
+  }>,
+): string {
+  if (items.length === 0) {
+    return 'Articles combo non disponibles';
+  }
+
+  return items
+    .map((item) => `${item.quantityApplied} x ${item.orderItem.itemNameSnapshot}`)
+    .join(' + ');
+}
+
+function formatCheckDiscountItems(
+  items: Array<{
+    quantityApplied: number;
+    checkItem: {
+      orderItem: {
+        itemNameSnapshot: string;
+      };
+    };
+  }>,
+): string {
+  if (items.length === 0) {
+    return 'Articles combo non disponibles';
+  }
+
+  return items
+    .map((item) => `${item.quantityApplied} x ${item.checkItem.orderItem.itemNameSnapshot}`)
+    .join(' + ');
+}
+
 function formatEuros(cents: number): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
+  }).format(cents / 100);
+}
+
+function formatEurosInput(cents: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(cents / 100);
 }

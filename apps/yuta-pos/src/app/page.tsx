@@ -1,9 +1,27 @@
+import { db } from '@yuta/db/client';
+import { users } from '@yuta/db/schema';
 import { Button, Card, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@yuta/ui';
+import { asc, inArray } from 'drizzle-orm';
 import { ChefHat, ClipboardList, Utensils } from 'lucide-react';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { createOrderAction } from './actions';
+import { createOrderAction, selectStaffAction } from './actions';
 
-export default function PosHome() {
+const selectedStaffCookieName = 'yuta_pos_staff_id';
+
+export default async function PosHome() {
+  const cookieStore = await cookies();
+  const selectedStaffUserId = cookieStore.get(selectedStaffCookieName)?.value;
+  const staffUsers = await db.query.users.findMany({
+    where: (usersTable) => inArray(usersTable.role, ['admin', 'manager', 'staff']),
+    orderBy: [asc(users.name)],
+  });
+  const activeStaffUsers = staffUsers.filter((user) => user.isActive);
+  const selectedStaffUser =
+    activeStaffUsers.find((user) => user.id === selectedStaffUserId) ??
+    activeStaffUsers.find((user) => user.email === 'staff@yuta.local') ??
+    activeStaffUsers[0];
+
   return (
     <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -36,6 +54,32 @@ export default function PosHome() {
         <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
           <Card className="p-5 md:p-6">
             <form action={createOrderAction} className="grid gap-5">
+              <div className="rounded-2xl border border-yuta-line bg-yuta-mist p-4">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="grid min-w-56 flex-1 gap-2">
+                    <Label htmlFor="staffUserId">Employe</Label>
+                    <Select name="staffUserId" defaultValue={selectedStaffUser?.id} required>
+                      <SelectTrigger id="staffUserId" className="h-11 bg-white">
+                        <SelectValue placeholder="Choisir employe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeStaffUsers.map((staffUser) => (
+                          <SelectItem key={staffUser.id} value={staffUser.id}>
+                            {staffUser.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button formAction={selectStaffAction} variant="secondary">
+                    Changer
+                  </Button>
+                </div>
+                <p className="mt-2 text-sm font-semibold text-yuta-ink/55">
+                  Session: {selectedStaffUser?.name ?? 'Aucun employe actif'}
+                </p>
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="tableLabel">Table / Repere</Label>
                 <Input
@@ -62,7 +106,7 @@ export default function PosHome() {
                 </Select>
               </div>
 
-              <Button type="submit" variant="accent" size="lg" className="h-13 justify-center">
+              <Button type="submit" variant="accent" size="lg" className="h-13 justify-center" disabled={!selectedStaffUser}>
                 Creer commande
               </Button>
             </form>

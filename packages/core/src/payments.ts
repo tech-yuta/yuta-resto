@@ -1,7 +1,5 @@
-import { and, asc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
 import {
-  checkDiscountItems,
-  checkDiscounts,
   checkItems,
   checks,
   orderItems,
@@ -138,7 +136,9 @@ export function createPaymentService(db: DbClient) {
     const order = await getRequiredOrder(values.orderId);
 
     assertOrderPayable(order);
-    await clearOpenChecks(order.id);
+    await assertNoPaidChecks(order.id);
+    await comboService.clearOrderComboDiscounts(order.id);
+    await voidOpenChecks(order.id);
 
     const activeItems = await db.query.orderItems.findMany({
       where: and(eq(orderItems.orderId, order.id), ne(orderItems.status, 'cancelled')),
@@ -223,7 +223,8 @@ export function createPaymentService(db: DbClient) {
     let order = await getRequiredOrder(values.orderId);
 
     assertOrderPayable(order);
-    await clearOpenChecks(order.id);
+    await assertNoPaidChecks(order.id);
+    await voidOpenChecks(order.id);
     await comboService.optimizeOrderCombos(order.id);
     order = await getRequiredOrder(order.id);
 
@@ -291,6 +292,24 @@ export function createPaymentService(db: DbClient) {
     return payment;
   }
 
+  async function cancelOrderSplit(orderId: string): Promise<Order> {
+    const { orderId: parsedOrderId } = orderIdSchema.parse({ orderId });
+    const order = await getRequiredOrder(parsedOrderId);
+
+    assertOrderPayable(order);
+    await assertNoPaidChecks(order.id);
+    await voidOpenChecks(order.id);
+    await comboService.optimizeOrderCombos(order.id);
+
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({ paymentMode: 'single' })
+      .where(eq(orders.id, order.id))
+      .returning();
+
+    return updatedOrder;
+  }
+
   async function getPaymentSummary(orderId: string): Promise<PaymentSummary> {
     const { orderId: parsedOrderId } = orderIdSchema.parse({ orderId });
     const order = await getRequiredOrder(parsedOrderId);
@@ -315,28 +334,21 @@ export function createPaymentService(db: DbClient) {
     };
   }
 
-  async function clearOpenChecks(orderId: string): Promise<void> {
-    const existingChecks = await db.query.checks.findMany({
-      where: and(eq(checks.orderId, orderId), ne(checks.status, 'paid')),
+  async function voidOpenChecks(orderId: string): Promise<void> {
+    await db
+      .update(checks)
+      .set({ status: 'void' })
+      .where(and(eq(checks.orderId, orderId), ne(checks.status, 'paid')));
+  }
+
+  async function assertNoPaidChecks(orderId: string): Promise<void> {
+    const paidChecks = await db.query.checks.findMany({
+      where: and(eq(checks.orderId, orderId), eq(checks.status, 'paid')),
     });
 
-    if (existingChecks.length === 0) {
-      return;
+    if (paidChecks.length > 0) {
+      throw new PaymentServiceError('Cannot replace a split after a check has been paid.', 'invalid_status');
     }
-
-    const checkIds = existingChecks.map((check) => check.id);
-    const existingCheckDiscounts = await db.query.checkDiscounts.findMany({
-      where: inArray(checkDiscounts.checkId, checkIds),
-    });
-
-    if (existingCheckDiscounts.length > 0) {
-      const discountIds = existingCheckDiscounts.map((discount) => discount.id);
-      await db.delete(checkDiscountItems).where(inArray(checkDiscountItems.checkDiscountId, discountIds));
-      await db.delete(checkDiscounts).where(inArray(checkDiscounts.id, discountIds));
-    }
-
-    await db.delete(checkItems).where(inArray(checkItems.checkId, checkIds));
-    await db.delete(checks).where(inArray(checks.id, checkIds));
   }
 
   async function createPaidPayment(values: {
@@ -419,11 +431,11 @@ export function createPaymentService(db: DbClient) {
   }
 
   async function markOrderPaidIfAllChecksPaid(orderId: string): Promise<void> {
-    const orderChecks = await db.query.checks.findMany({
-      where: eq(checks.orderId, orderId),
+    const payableChecks = await db.query.checks.findMany({
+      where: and(eq(checks.orderId, orderId), ne(checks.status, 'void')),
     });
 
-    if (orderChecks.length > 0 && orderChecks.every((check) => check.status === 'paid')) {
+    if (payableChecks.length > 0 && payableChecks.every((check) => check.status === 'paid')) {
       await markOrderPaid(orderId);
     }
   }
@@ -433,6 +445,7 @@ export function createPaymentService(db: DbClient) {
     createChecksByItems,
     splitOrderEqually,
     payCheck,
+    cancelOrderSplit,
     getPaymentSummary,
   };
 }

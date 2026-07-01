@@ -1,16 +1,25 @@
 'use server';
 
-import { createOrderService, createPaymentService, createPrintService } from '@yuta/core';
+import { createOrderService, createPaymentService, createPrintService, PaymentServiceError } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { users } from '@yuta/db/schema';
-import { eq } from 'drizzle-orm';
+import { checks, orderItems, orders, users } from '@yuta/db/schema';
+import { and, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+
+const selectedStaffCookieName = 'yuta_pos_staff_id';
+const staffSelectableRoles = ['admin', 'manager', 'staff'] as const;
 
 const createOrderFormSchema = z.object({
   tableLabel: z.string().trim().min(1).max(255),
   orderType: z.enum(['dine_in', 'takeaway', 'delivery']),
+  staffUserId: z.string().uuid().optional(),
+});
+
+const selectStaffFormSchema = z.object({
+  staffUserId: z.string().uuid(),
 });
 
 const addOrderItemFormSchema = z.object({
@@ -25,6 +34,16 @@ const orderIdFormSchema = z.object({
 const orderItemIdFormSchema = z.object({
   orderItemId: z.string().uuid(),
 });
+
+const moneyCentsSchema = z.preprocess(
+  parseEuroAmountToCents,
+  z.number().int().positive(),
+);
+
+const optionalMoneyCentsSchema = z.preprocess(
+  (value) => (value === null || value === '' ? undefined : parseEuroAmountToCents(value)),
+  z.coerce.number().int().positive().optional(),
+);
 
 const updateOrderItemQuantityFormSchema = z.object({
   orderId: z.string().uuid(),
@@ -45,8 +64,8 @@ const restoreOrderItemFormSchema = z.object({
 const payFullOrderFormSchema = z.object({
   orderId: z.string().uuid(),
   method: z.enum(['cash', 'card', 'ticket_resto', 'other']),
-  amountCents: z.coerce.number().int().positive(),
-  tenderedCents: z.coerce.number().int().positive().optional(),
+  amountCents: moneyCentsSchema,
+  tenderedCents: optionalMoneyCentsSchema,
 });
 
 const splitOrderEquallyFormSchema = z.object({
@@ -58,25 +77,50 @@ const payCheckFormSchema = z.object({
   orderId: z.string().uuid(),
   checkId: z.string().uuid(),
   method: z.enum(['cash', 'card', 'ticket_resto', 'other']),
-  amountCents: z.coerce.number().int().positive(),
-  tenderedCents: z.coerce.number().int().positive().optional(),
+  amountCents: moneyCentsSchema,
+  tenderedCents: optionalMoneyCentsSchema,
 });
 
 const createChecksByItemsFormSchema = z.object({
   orderId: z.string().uuid(),
 });
 
+export async function selectStaffAction(formData: FormData): Promise<void> {
+  const values = selectStaffFormSchema.parse({
+    staffUserId: formData.get('staffUserId'),
+  });
+  const staffUser = await db.query.users.findFirst({
+    where: eq(users.id, values.staffUserId),
+  });
+
+  if (!isSelectableStaffUser(staffUser)) {
+    throw new Error('Selected staff user is not available.');
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(selectedStaffCookieName, staffUser.id, {
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30,
+  });
+
+  revalidatePath('/');
+}
+
 export async function createOrderAction(formData: FormData): Promise<void> {
   const values = createOrderFormSchema.parse({
     tableLabel: formData.get('tableLabel'),
     orderType: formData.get('orderType'),
+    staffUserId: formData.get('staffUserId') || undefined,
   });
-  const createdBy = await getDefaultStaffUserId();
+  const staffUser = values.staffUserId
+    ? await getSelectableStaffUserById(values.staffUserId)
+    : await getSelectedStaffUser();
   const orderService = createOrderService(db);
   const order = await orderService.createOrder({
     tableLabel: values.tableLabel,
     orderType: values.orderType,
-    createdBy,
+    createdBy: staffUser.id,
   });
 
   redirect(`/orders/${order.id}`);
@@ -104,9 +148,15 @@ export async function sendOrderToKitchenAction(formData: FormData): Promise<void
   });
   const orderService = createOrderService(db);
   const printService = createPrintService(db);
+  const pendingItems = await db.query.orderItems.findMany({
+    where: and(eq(orderItems.orderId, values.orderId), eq(orderItems.status, 'pending')),
+  });
 
   await orderService.sendOrderToKitchen(values.orderId);
-  await printService.createKitchenTicketPrintJob(values.orderId);
+  await printService.createKitchenTicketPrintJob({
+    orderId: values.orderId,
+    orderItemIds: pendingItems.map((item) => item.id),
+  });
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath('/kitchen');
@@ -193,13 +243,28 @@ export async function payFullOrderAction(formData: FormData): Promise<void> {
   const paymentService = createPaymentService(db);
   const printService = createPrintService(db);
 
-  await paymentService.payFullOrder({
-    orderId: values.orderId,
-    method: values.method,
-    amountCents: values.amountCents,
-    tenderedCents: values.tenderedCents,
+  try {
+    await paymentService.payFullOrder({
+      orderId: values.orderId,
+      method: values.method,
+      amountCents: values.amountCents,
+      tenderedCents: values.tenderedCents,
+      paidBy: (await getSelectedStaffUser()).name,
+    });
+  } catch (error) {
+    if (error instanceof PaymentServiceError) {
+      redirect(`/orders/${values.orderId}/payment?error=${error.code}`);
+    }
+
+    throw error;
+  }
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.id, values.orderId),
   });
-  await printService.createCustomerReceiptPrintJob({ orderId: values.orderId });
+
+  if (order?.status === 'paid') {
+    await printService.createCustomerReceiptPrintJob({ orderId: values.orderId });
+  }
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
@@ -221,6 +286,28 @@ export async function splitOrderEquallyAction(formData: FormData): Promise<void>
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
+  redirect(`/orders/${values.orderId}/payment`);
+}
+
+export async function cancelOrderSplitAction(formData: FormData): Promise<void> {
+  const values = orderIdFormSchema.parse({
+    orderId: formData.get('orderId'),
+  });
+  const paymentService = createPaymentService(db);
+
+  try {
+    await paymentService.cancelOrderSplit(values.orderId);
+  } catch (error) {
+    if (error instanceof PaymentServiceError) {
+      redirect(`/orders/${values.orderId}/payment?error=${error.code}`);
+    }
+
+    throw error;
+  }
+
+  revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath(`/orders/${values.orderId}/payment`);
+  redirect(`/orders/${values.orderId}/payment`);
 }
 
 export async function payCheckAction(formData: FormData): Promise<void> {
@@ -235,43 +322,105 @@ export async function payCheckAction(formData: FormData): Promise<void> {
   const paymentService = createPaymentService(db);
   const printService = createPrintService(db);
 
-  await paymentService.payCheck({
-    checkId: values.checkId,
-    method: values.method,
-    amountCents: values.amountCents,
-    tenderedCents: values.tenderedCents,
+  try {
+    await paymentService.payCheck({
+      checkId: values.checkId,
+      method: values.method,
+      amountCents: values.amountCents,
+      tenderedCents: values.tenderedCents,
+      paidBy: (await getSelectedStaffUser()).name,
+    });
+  } catch (error) {
+    if (error instanceof PaymentServiceError) {
+      redirect(`/orders/${values.orderId}/payment?error=${error.code}`);
+    }
+
+    throw error;
+  }
+  const check = await db.query.checks.findFirst({
+    where: eq(checks.id, values.checkId),
   });
-  await printService.createCustomerReceiptPrintJob({
-    orderId: values.orderId,
-    checkId: values.checkId,
-  });
+
+  if (check?.status === 'paid') {
+    await printService.createCustomerReceiptPrintJob({
+      orderId: values.orderId,
+      checkId: values.checkId,
+    });
+  }
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
   revalidatePath('/pos/prints');
+  redirect(`/orders/${values.orderId}/payment`);
 }
 
 export async function createChecksByItemsAction(formData: FormData): Promise<void> {
   const values = createChecksByItemsFormSchema.parse({
     orderId: formData.get('orderId'),
   });
-  const paymentService = createPaymentService(db);
-  const checkInputs = ['client1', 'client2'].map((clientKey, index) => ({
-    checkLabel: `Client ${index + 1}`,
-    items: Array.from(formData.entries())
-      .filter(([key]) => key.startsWith(`${clientKey}:`))
-      .map(([key, value]) => ({
-        orderItemId: key.slice(`${clientKey}:`.length),
-        quantity: Number(value),
-      }))
-      .filter((item) => Number.isInteger(item.quantity) && item.quantity > 0),
-  }));
-  const checks = checkInputs.filter((check) => check.items.length > 0);
+  const itemsByClient = new Map<number, Array<{ orderItemId: string; quantity: number }>>();
+  const requestedClientCount = Number(formData.get('clientCount'));
 
-  if (checks.length === 0) {
-    throw new Error('At least one check must include items.');
+  for (const [key, value] of formData.entries()) {
+    const match = /^client(\d+):(.+)$/.exec(key);
+    if (!match) {
+      continue;
+    }
+
+    const clientIndex = Number(match[1]);
+    const quantity = Number(value);
+    if (!Number.isInteger(clientIndex) || clientIndex < 1 || !Number.isInteger(quantity) || quantity <= 0) {
+      continue;
+    }
+
+    const items = itemsByClient.get(clientIndex) ?? [];
+    items.push({
+      orderItemId: match[2],
+      quantity,
+    });
+    itemsByClient.set(clientIndex, items);
   }
 
+  const checkInputs = Array.from(itemsByClient.entries())
+    .toSorted(([leftIndex], [rightIndex]) => leftIndex - rightIndex)
+    .map(([clientIndex, items]) => ({
+      checkLabel: `Client ${clientIndex}`,
+      items,
+    }));
+  const checks = checkInputs.filter((check) => check.items.length > 0);
+  const clientCount = Number.isInteger(requestedClientCount)
+    ? requestedClientCount
+    : Math.max(2, ...Array.from(itemsByClient.keys()));
+  const itemSplitUrl = `/orders/${values.orderId}/payment/items?clients=${clientCount}`;
+
+  if (checks.length === 0) {
+    redirect(`${itemSplitUrl}&error=empty`);
+  }
+
+  const activeItems = await db.query.orderItems.findMany({
+    where: and(eq(orderItems.orderId, values.orderId), ne(orderItems.status, 'cancelled')),
+  });
+  const activeQuantityByItemId = new Map(activeItems.map((item) => [item.id, item.quantity]));
+  const assignedQuantityByItemId = new Map<string, number>();
+
+  for (const check of checks) {
+    for (const item of check.items) {
+      assignedQuantityByItemId.set(
+        item.orderItemId,
+        (assignedQuantityByItemId.get(item.orderItemId) ?? 0) + item.quantity,
+      );
+    }
+  }
+
+  for (const [orderItemId, assignedQuantity] of assignedQuantityByItemId.entries()) {
+    const availableQuantity = activeQuantityByItemId.get(orderItemId);
+
+    if (availableQuantity === undefined || assignedQuantity > availableQuantity) {
+      redirect(`${itemSplitUrl}&error=quantity`);
+    }
+  }
+
+  const paymentService = createPaymentService(db);
   await paymentService.createChecksByItems({
     orderId: values.orderId,
     checks,
@@ -282,14 +431,75 @@ export async function createChecksByItemsAction(formData: FormData): Promise<voi
   redirect(`/orders/${values.orderId}/payment`);
 }
 
-async function getDefaultStaffUserId(): Promise<string> {
-  const staffUser =
-    (await db.query.users.findFirst({ where: eq(users.email, 'staff@yuta.local') })) ??
-    (await db.query.users.findFirst({ where: eq(users.role, 'staff') }));
+async function getSelectedStaffUser(): Promise<typeof users.$inferSelect> {
+  const cookieStore = await cookies();
+  const selectedStaffUserId = cookieStore.get(selectedStaffCookieName)?.value;
+
+  if (selectedStaffUserId) {
+    const selectedStaffUser = await db.query.users.findFirst({
+      where: eq(users.id, selectedStaffUserId),
+    });
+
+    if (
+      selectedStaffUser &&
+      selectedStaffUser.isActive &&
+      staffSelectableRoles.includes(selectedStaffUser.role as (typeof staffSelectableRoles)[number])
+    ) {
+      return selectedStaffUser;
+    }
+  }
+
+  const seededStaffUser = await db.query.users.findFirst({ where: eq(users.email, 'staff@yuta.local') });
+  if (isSelectableStaffUser(seededStaffUser)) {
+    return seededStaffUser;
+  }
+
+  const staffUser = (await db.query.users.findMany({ where: eq(users.role, 'staff') })).find(
+    (user) => user.isActive,
+  );
 
   if (!staffUser) {
     throw new Error('No active staff user found. Run `corepack pnpm --filter @yuta/db db:seed` first.');
   }
 
-  return staffUser.id;
+  return staffUser;
+}
+
+async function getSelectableStaffUserById(staffUserId: string): Promise<typeof users.$inferSelect> {
+  const staffUser = await db.query.users.findFirst({
+    where: eq(users.id, staffUserId),
+  });
+
+  if (!isSelectableStaffUser(staffUser)) {
+    throw new Error('Selected staff user is not available.');
+  }
+
+  return staffUser;
+}
+
+function isSelectableStaffUser(user: typeof users.$inferSelect | undefined): user is typeof users.$inferSelect {
+  return Boolean(
+    user?.isActive && staffSelectableRoles.includes(user.role as (typeof staffSelectableRoles)[number]),
+  );
+}
+
+function parseEuroAmountToCents(value: unknown): number {
+  if (typeof value !== 'string') {
+    return Number.NaN;
+  }
+
+  const normalizedValue = value.trim().replace(/\s/g, '').replace(',', '.');
+  if (!/^\d+(\.\d{0,2})?$/.test(normalizedValue)) {
+    return Number.NaN;
+  }
+
+  const [eurosPart, centsPart = ''] = normalizedValue.split('.');
+  const euros = Number(eurosPart);
+  const cents = Number(centsPart.padEnd(2, '0'));
+
+  if (!Number.isInteger(euros) || !Number.isInteger(cents)) {
+    return Number.NaN;
+  }
+
+  return euros * 100 + cents;
 }
