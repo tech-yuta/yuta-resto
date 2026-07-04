@@ -8,6 +8,10 @@
   --color-yuta-mist: #eef1ea;
   --color-yuta-line: #dce3d9;
   --color-yuta-accent: #b7ef5b;
+  --color-yuta-success: #128a4a;
+  --color-yuta-warning: #f2a900;
+  --color-yuta-danger: #e02424;
+  --color-yuta-info: #dce8ff;
   --shadow-card: 0 12px 30px rgb(22 33 29 / 6%);
 }
 

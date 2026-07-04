@@ -1,10 +1,17 @@
 import { createOrderService } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { menuCategories, menuItems } from '@yuta/db/schema';
-import { Badge, Button, Card, Input, Separator, cn } from '@yuta/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  SegmentedNav,
+  Separator,
+  cn,
+} from '@yuta/ui';
 import { and, asc, eq } from 'drizzle-orm';
 import {
-  ArrowLeft,
   ChefHat,
   CreditCard,
   Minus,
@@ -15,6 +22,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
+import { PosHeader } from '../../components/PosHeader';
 import {
   addOrderItemAction,
   cancelOrderItemAction,
@@ -80,73 +88,54 @@ export default async function OrderPage({
   return (
     <main className="min-h-screen bg-yuta-paper text-yuta-ink">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 md:px-6 md:py-6">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-yuta-ink px-4 py-3 text-white shadow-card">
-          <div className="flex min-w-0 items-center gap-3">
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="shrink-0 text-white hover:bg-white/10"
-            >
-              <Link href="/" aria-label="Retour">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-xl font-black tracking-normal md:text-2xl">
-                  {order.tableLabel}
-                </h1>
-                <Badge variant="active">
-                  {orderTypeLabel(order.orderType)}
-                </Badge>
-              </div>
-              <p className="mt-0.5 text-xs font-semibold text-white/60">
-                {order.orderNumber}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <form action={sendOrderToKitchenAction}>
-              <input type="hidden" name="orderId" value={order.id} />
-              <Button
-                variant="accent"
-                disabled={
-                  pendingItemCount === 0 ||
-                  order.status === 'paid' ||
-                  order.status === 'cancelled'
-                }
-              >
-                <ChefHat className="h-4 w-4" />
-                Envoyer en cuisine
+        <PosHeader
+          title={
+            <span className="inline-flex flex-wrap items-center gap-2">
+              {order.tableLabel}
+              <Badge variant="info">{orderTypeLabel(order.orderType)}</Badge>
+            </span>
+          }
+          description={order.orderNumber}
+          actions={
+            <>
+              <Button asChild variant="secondary" size="touch">
+                <Link href="/">Retour</Link>
               </Button>
-            </form>
-            <Button asChild variant="secondary">
-              <Link href={`/orders/${order.id}/payment`}>
-                <CreditCard className="h-4 w-4" />
-                Paiement
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10"
-              aria-label="Plus d actions"
-            >
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </div>
-        </header>
+              <form action={sendOrderToKitchenAction}>
+                <input type="hidden" name="orderId" value={order.id} />
+                <Button
+                  variant="kitchen"
+                  disabled={
+                    pendingItemCount === 0 ||
+                    order.status === 'paid' ||
+                    order.status === 'cancelled'
+                  }
+                >
+                  <ChefHat className="h-4 w-4" />
+                  Envoyer en cuisine
+                </Button>
+              </form>
+              <Button asChild variant="secondary" size="touch">
+                <Link href={`/orders/${order.id}/payment`}>
+                  <CreditCard className="h-4 w-4" />
+                  Paiement
+                </Link>
+              </Button>
+              <Button variant="ghost" size="icon" aria-label="Plus d actions">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </>
+          }
+        />
 
         <section className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_360px]">
-          <Card className="rounded-lg p-0 lg:sticky lg:top-6 lg:self-start">
+          <Card padding="none" className="lg:sticky lg:top-6 lg:self-start">
             <div className="border-b border-yuta-line p-4">
               <h2 className="text-sm font-black uppercase tracking-normal text-yuta-ink/55">
                 Categories
               </h2>
             </div>
-            <nav className="flex gap-2 overflow-x-auto p-3 lg:grid lg:gap-1 lg:overflow-visible">
+            <SegmentedNav className="p-3 lg:grid lg:gap-1 lg:overflow-visible">
               {categories.map((categoryItem) => (
                 <Button
                   key={categoryItem.id}
@@ -164,10 +153,10 @@ export default async function OrderPage({
                   </Link>
                 </Button>
               ))}
-            </nav>
+            </SegmentedNav>
           </Card>
 
-          <Card className="min-h-[620px] rounded-lg p-0">
+          <Card padding="none" className="min-h-[620px]">
             <div className="grid gap-4 border-b border-yuta-line p-4 md:grid-cols-[1fr_260px] md:items-center">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -194,7 +183,8 @@ export default async function OrderPage({
                   name="q"
                   defaultValue={searchQuery}
                   placeholder="Rechercher un article..."
-                  className="h-11 rounded-lg pl-9"
+                  inputSize="touch"
+                  className="pl-9"
                 />
               </form>
             </div>
@@ -247,7 +237,7 @@ export default async function OrderPage({
             )}
           </Card>
 
-          <Card className="rounded-lg p-0 lg:sticky lg:top-6 lg:self-start">
+          <Card padding="none" className="lg:sticky lg:top-6 lg:self-start">
             <div className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -518,9 +508,16 @@ function stationLabel(station: string): string {
 
 function statusBadgeVariant(
   status: string,
-): 'active' | 'inactive' | 'neutral' | 'destructive' | 'outline' {
+):
+  | 'active'
+  | 'inactive'
+  | 'neutral'
+  | 'destructive'
+  | 'outline'
+  | 'warning'
+  | 'success' {
   if (status === 'paid' || status === 'ready') {
-    return 'active';
+    return 'success';
   }
 
   if (status === 'cancelled') {
@@ -531,7 +528,7 @@ function statusBadgeVariant(
     return 'outline';
   }
 
-  return 'neutral';
+  return status === 'preparing' || status === 'sent' ? 'warning' : 'neutral';
 }
 
 function formatEuros(cents: number): string {

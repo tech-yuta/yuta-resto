@@ -78,7 +78,7 @@ export function PaymentCaptureForm({
               key={value}
               type="button"
               variant={method === value ? 'primary' : 'secondary'}
-              className="h-16 flex-col rounded-lg"
+              size="tile"
               disabled={disabled}
               onClick={() => setMethod(value)}
             >
@@ -106,6 +106,7 @@ export function PaymentCaptureForm({
           pattern="^\d+([,.]\d{0,2})?$"
           value={amountValue}
           onChange={(event) => setAmountValue(event.target.value)}
+          inputSize="touch"
           required
         />
         <p className="text-xs font-semibold text-yuta-ink/55">
@@ -138,6 +139,7 @@ export function PaymentCaptureForm({
             placeholder={amountValue || defaultAmount}
             value={tenderedValue}
             onChange={(event) => setTenderedValue(event.target.value)}
+            inputSize="touch"
           />
           <div className="flex items-center justify-between gap-3 text-sm font-semibold">
             <span className="text-yuta-ink/60">Monnaie à rendre</span>

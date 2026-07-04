@@ -1,9 +1,8 @@
 import { db } from '@yuta/db/client';
 import { orderItems, orders } from '@yuta/db/schema';
-import { Badge, Button, Card, Separator } from '@yuta/ui';
+import { Badge, Button, Card, SegmentedNav, Separator } from '@yuta/ui';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import {
-  ArrowLeft,
   ChefHat,
   Check,
   Clock,
@@ -11,7 +10,7 @@ import {
   History,
   ListChecks,
   Martini,
-  Menu,
+  Plus,
   RotateCcw,
   Soup,
   Wifi,
@@ -22,6 +21,7 @@ import {
   markOrderItemReadyAction,
   markOrderItemSentAction,
 } from '../actions';
+import { PosHeader } from '../components/PosHeader';
 
 type KitchenPageProps = {
   searchParams: Promise<{
@@ -82,46 +82,32 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
   const counts = countItemsByStatus(stationItems);
 
   return (
-    <main className="min-h-screen bg-yuta-paper text-yuta-ink">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-5 md:px-6 md:py-6">
-        <header className="overflow-hidden rounded-lg border border-yuta-line bg-white shadow-card">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-yuta-ink px-4 py-3 text-white">
-            <div className="flex min-w-0 items-center gap-3">
-              <Button
-                asChild
-                variant="ghost"
-                size="icon"
-                className="shrink-0 text-white hover:bg-white/10"
-              >
-                <Link href="/pos" aria-label="Retour POS">
-                  <ArrowLeft className="h-5 w-5" />
+    <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+        <PosHeader
+          title="Cuisine"
+          description="Suivi des préparations du service"
+          actions={
+            <>
+              <Badge variant="outline" size="lg" className="hidden md:flex">
+                {items.length} article(s)
+              </Badge>
+              <Button asChild variant="primary" size="touch">
+                <Link href="/pos">
+                  <Plus className="h-4 w-4" />
+                  Nouvelle commande
                 </Link>
               </Button>
-              <div>
-                <h1 className="text-xl font-black tracking-normal md:text-2xl">
-                  Cuisine
-                </h1>
-                <p className="mt-0.5 text-xs font-semibold text-white/60">
-                  {stationLabel(selectedStation)} -{' '}
-                  {statusFilterLabel(selectedStatus)}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="active">{items.length} article(s)</Badge>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/10"
-                aria-label="Menu cuisine"
-              >
-                <Menu className="h-5 w-5" />
+              <Button asChild variant="secondary" size="touch">
+                <Link href="/">Commandes</Link>
               </Button>
-            </div>
-          </div>
+            </>
+          }
+        />
 
+        <Card padding="none">
           <div className="grid gap-3 p-4">
-            <nav className="flex gap-2 overflow-x-auto pb-1">
+            <SegmentedNav>
               {stations.map(({ value, label, icon: Icon }) => (
                 <Button
                   key={value}
@@ -136,9 +122,9 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                   </Link>
                 </Button>
               ))}
-            </nav>
+            </SegmentedNav>
 
-            <nav className="flex gap-2 overflow-x-auto pb-1">
+            <SegmentedNav>
               {statusFilters.map(({ value, label, icon: Icon }) => (
                 <Button
                   key={value}
@@ -156,12 +142,12 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                   </Link>
                 </Button>
               ))}
-            </nav>
+            </SegmentedNav>
           </div>
-        </header>
+        </Card>
 
         {groups.length === 0 ? (
-          <Card className="grid min-h-80 place-items-center rounded-lg text-center">
+          <Card className="grid min-h-80 place-items-center text-center">
             <div>
               <ChefHat className="mx-auto h-10 w-10 text-yuta-ink/35" />
               <h2 className="mt-4 text-lg font-black">Aucun article</h2>
@@ -175,7 +161,8 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
             {groups.map((group) => (
               <Card
                 key={group.order.id}
-                className="overflow-hidden rounded-lg p-0"
+                padding="none"
+                className="overflow-hidden"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div>
@@ -325,11 +312,11 @@ function countForFilter(
 
 function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
   if (status === 'preparing') {
-    return <Badge variant="neutral">En préparation</Badge>;
+    return <Badge variant="warning">En préparation</Badge>;
   }
 
   if (status === 'ready') {
-    return <Badge variant="active">Prêt</Badge>;
+    return <Badge variant="success">Prêt</Badge>;
   }
 
   return <Badge variant="outline">À préparer</Badge>;
@@ -337,7 +324,7 @@ function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
 
 function renderOrderStatusBadge(status: OrderStatus) {
   if (status === 'paid') {
-    return <Badge variant="active">Payée</Badge>;
+    return <Badge variant="success">Payée</Badge>;
   }
 
   if (status === 'cancelled') {
@@ -364,18 +351,14 @@ function renderKitchenActions(
       <div className="grid grid-cols-2 gap-2 md:w-64">
         <form action={markOrderItemPreparingAction}>
           <input type="hidden" name="orderItemId" value={item.id} />
-          <Button
-            type="submit"
-            variant="secondary"
-            className="w-full rounded-lg"
-          >
+          <Button type="submit" variant="secondary" className="w-full">
             <RotateCcw className="h-4 w-4" />
             Réouvrir
           </Button>
         </form>
         <form action={markOrderItemSentAction}>
           <input type="hidden" name="orderItemId" value={item.id} />
-          <Button type="submit" variant="ghost" className="w-full rounded-lg">
+          <Button type="submit" variant="ghost" className="w-full">
             Envoye
           </Button>
         </form>
@@ -393,7 +376,7 @@ function renderKitchenActions(
         }
       >
         <input type="hidden" name="orderItemId" value={item.id} />
-        <Button type="submit" variant="secondary" className="w-full rounded-lg">
+        <Button type="submit" variant="kitchen" className="w-full">
           {item.status === 'preparing' ? (
             <RotateCcw className="h-4 w-4" />
           ) : (
@@ -404,7 +387,7 @@ function renderKitchenActions(
       </form>
       <form action={markOrderItemReadyAction}>
         <input type="hidden" name="orderItemId" value={item.id} />
-        <Button type="submit" variant="accent" className="w-full rounded-lg">
+        <Button type="submit" variant="success" className="w-full">
           Prêt
         </Button>
       </form>

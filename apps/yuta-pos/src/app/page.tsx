@@ -1,6 +1,6 @@
 import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
-import { Badge, Button, Card, Separator } from '@yuta/ui';
+import { Badge, Button, Card, SegmentedNav, Separator } from '@yuta/ui';
 import { and, desc, eq, gte, inArray, or } from 'drizzle-orm';
 import {
   ChefHat,
@@ -10,6 +10,7 @@ import {
   ReceiptText,
 } from 'lucide-react';
 import Link from 'next/link';
+import { PosHeader } from './components/PosHeader';
 
 type OrdersHomePageProps = {
   searchParams: Promise<{
@@ -55,35 +56,28 @@ export default async function OrdersHomePage({
   return (
     <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <header className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-yuta-line bg-white px-4 py-3 shadow-card">
-          <div>
-            <p className="text-xs font-black uppercase tracking-normal text-yuta-ink/45">
-              YuTa POS
-            </p>
-            <h1 className="text-2xl font-black tracking-normal md:text-3xl">
-              Commandes
-            </h1>
-            <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
-              Suivi des commandes du service
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="primary">
-              <Link href="/pos">
-                <Plus className="h-4 w-4" />
-                Nouvelle commande
-              </Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/kitchen">
-                <ChefHat className="h-4 w-4" />
-                Cuisine
-              </Link>
-            </Button>
-          </div>
-        </header>
+        <PosHeader
+          title="Commandes"
+          description="Suivi des commandes du service"
+          actions={
+            <>
+              <Button asChild variant="primary" size="touch">
+                <Link href="/pos">
+                  <Plus className="h-4 w-4" />
+                  Nouvelle commande
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" size="touch">
+                <Link href="/kitchen">
+                  <ChefHat className="h-4 w-4" />
+                  Cuisine
+                </Link>
+              </Button>
+            </>
+          }
+        />
 
-        <nav className="flex gap-2 overflow-x-auto pb-1">
+        <SegmentedNav>
           {views.map((item) => (
             <Button
               key={item.value}
@@ -94,7 +88,7 @@ export default async function OrdersHomePage({
               <Link href={`/?view=${item.value}`}>{item.label}</Link>
             </Button>
           ))}
-        </nav>
+        </SegmentedNav>
 
         {orderRows.length === 0 ? (
           <Card className="grid min-h-80 place-items-center text-center">
@@ -113,7 +107,7 @@ export default async function OrdersHomePage({
             </div>
           </Card>
         ) : (
-          <Card className="overflow-hidden p-0">
+          <Card padding="none" className="overflow-hidden">
             <div className="hidden grid-cols-[1.2fr_1fr_0.8fr_0.8fr_0.8fr] gap-4 px-5 py-3 text-xs font-bold uppercase text-yuta-ink/45 md:grid">
               <span>Repère</span>
               <span>Commande</span>

@@ -34,28 +34,42 @@ NEVER introduce MUI, Ant Design, Chakra UI, Mantine, or any other component libr
 
 Use Tailwind CSS token classes — never raw hex values in `className` or `style={{}}`:
 
-| Token | Hex | Purpose |
-|---|---|---|
-| `yuta-ink` | `#16211d` | Text, dark backgrounds |
-| `yuta-paper` | `#f8f8f4` | Page background |
-| `yuta-mist` | `#eef1ea` | Hover, subtle backgrounds |
-| `yuta-line` | `#dce3d9` | Borders, dividers |
-| `yuta-accent` | `#b7ef5b` | CTAs, active, highlights |
+| Token          | Hex       | Purpose                                     |
+| -------------- | --------- | ------------------------------------------- |
+| `yuta-ink`     | `#16211d` | Text, dark backgrounds                      |
+| `yuta-paper`   | `#f8f8f4` | Page background                             |
+| `yuta-mist`    | `#eef1ea` | Hover, subtle backgrounds                   |
+| `yuta-line`    | `#dce3d9` | Borders, dividers                           |
+| `yuta-accent`  | `#b7ef5b` | CTAs, active, highlights                    |
+| `yuta-success` | `#128a4a` | Ready, paid, success states                 |
+| `yuta-warning` | `#f2a900` | Kitchen, preparation, warning states        |
+| `yuta-danger`  | `#e02424` | Destructive and error states                |
+| `yuta-info`    | `#dce8ff` | Informational badges and subtle backgrounds |
 
 ### Available `@yuta/ui` components
 
 ```
-Button       — variants: primary | secondary | accent | ghost | destructive | link
-              sizes: default | sm | lg | icon
-Badge        — variants: active | inactive | neutral | destructive | outline
+Button       — variants: primary | secondary | accent | ghost | destructive | link | kitchen | success
+              sizes: default | sm | lg | icon | touch | tile
+Badge        — variants: active | inactive | neutral | destructive | outline | info | warning | success
+              sizes: default | sm | lg
 Card         — container with border + shadow-card
+              variants: default | mist | paper | dark
+              padding: default | none | sm | lg
+              radius: default | sm | lg
 Input        — styled text/number/email/etc input
+              inputSize: default | touch | compact
+              align: left | center | right
 Label        — form label
 Textarea     — styled textarea
 Select       — SelectTrigger, SelectContent, SelectItem, SelectValue, SelectGroup
 Dialog       — DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
 Checkbox     — Radix UI, use Controller from react-hook-form
 Separator    — horizontal/vertical divider
+MetricCard   — compact label/value metric block
+ActionPanel  — framed action block with optional icon, title, description
+PageHeader   — standard page header with optional media/actions
+SegmentedNav — horizontal segmented navigation container
 Toaster      — toast via sonner
 cn()         — utility: clsx + tailwind-merge
 ```
@@ -67,11 +81,13 @@ Use `lucide-react` only. Never `@mui/icons-material`.
 ### CSS setup per app
 
 `globals.css` must start with:
+
 ```css
 @import '@yuta/ui/styles/global.css';
 ```
 
 `postcss.config.mjs` must contain:
+
 ```js
 const config = { plugins: { '@tailwindcss/postcss': {} } };
 export default config;
@@ -80,6 +96,7 @@ export default config;
 ### Maintenance
 
 Whenever a component is added, renamed, or removed from `packages/ui/src/`, the agent MUST update:
+
 - The component list in this file (`AGENTS.md`)
 - The component list in `.github/copilot-instructions.md`
 

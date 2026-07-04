@@ -3,9 +3,10 @@ import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
 import { Badge, Button, Card, Input, Label } from '@yuta/ui';
 import { eq } from 'drizzle-orm';
-import { ArrowLeft, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import Link from 'next/link';
 import { createChecksByItemsAction } from '../../../../actions';
+import { PosHeader } from '../../../../components/PosHeader';
 
 type SplitItemsPageProps = {
   params: Promise<{
@@ -59,32 +60,22 @@ export default async function SplitItemsPage({
   return (
     <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-6 md:py-6">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-yuta-ink px-4 py-3 text-white shadow-card">
-          <div className="flex min-w-0 items-center gap-3">
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="shrink-0 text-white hover:bg-white/10"
-            >
-              <Link
-                href={`/orders/${order.id}/payment`}
-                aria-label="Retour paiement"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-xl font-black tracking-normal md:text-2xl">
-                Séparer par articles
-              </h1>
-              <p className="mt-0.5 text-xs font-semibold text-white/60">
-                {order.tableLabel}
-              </p>
-            </div>
-          </div>
-          <Badge variant="active">{activeItems.length} article(s)</Badge>
-        </header>
+        <PosHeader
+          title="Séparer par articles"
+          description={order.tableLabel}
+          actions={
+            <>
+              <Badge variant="success" size="lg">
+                {activeItems.length} article(s)
+              </Badge>
+              <Button asChild variant="secondary" size="touch">
+                <Link href={`/orders/${order.id}/payment`}>
+                  Retour paiement
+                </Link>
+              </Button>
+            </>
+          }
+        />
 
         <Card className="rounded-lg p-0">
           <div className="flex items-center gap-3">

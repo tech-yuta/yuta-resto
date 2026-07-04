@@ -1,9 +1,9 @@
 import { createComboService } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
-import { Badge, Button, Card, Separator } from '@yuta/ui';
+import { ActionPanel, Badge, Button, Card, Separator } from '@yuta/ui';
 import { eq } from 'drizzle-orm';
-import { ArrowLeft, CreditCard, ListChecks, Split, Tags } from 'lucide-react';
+import { CreditCard, ListChecks, Split, Tags } from 'lucide-react';
 import Link from 'next/link';
 import {
   cancelOrderSplitAction,
@@ -11,6 +11,7 @@ import {
   payFullOrderAction,
   splitOrderEquallyAction,
 } from '../../../actions';
+import { PosHeader } from '../../../components/PosHeader';
 import { PaymentCaptureForm } from './PaymentCaptureForm';
 
 type PaymentPageProps = {
@@ -119,24 +120,23 @@ export default async function PaymentPage({
   return (
     <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-6 md:py-6">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-yuta-line pb-5">
-          <div>
-            <Link
-              href={`/orders/${order.id}`}
-              className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-yuta-ink/60 hover:text-yuta-ink"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Retour commande
-            </Link>
-            <h1 className="text-2xl font-black tracking-tight md:text-3xl">
-              Paiement - {order.tableLabel}
-            </h1>
-            <p className="mt-1 text-sm text-yuta-ink/55">{order.orderNumber}</p>
-          </div>
-          <Badge variant={order.status === 'paid' ? 'active' : 'neutral'}>
-            {order.status === 'paid' ? 'Payée' : 'À encaisser'}
-          </Badge>
-        </header>
+        <PosHeader
+          title={`Paiement - ${order.tableLabel}`}
+          description={order.orderNumber}
+          actions={
+            <>
+              <Badge
+                variant={order.status === 'paid' ? 'success' : 'warning'}
+                size="lg"
+              >
+                {order.status === 'paid' ? 'Payée' : 'À encaisser'}
+              </Badge>
+              <Button asChild variant="secondary" size="touch">
+                <Link href={`/orders/${order.id}`}>Retour commande</Link>
+              </Button>
+            </>
+          }
+        />
 
         {error && (
           <div className="rounded-xl border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
@@ -274,19 +274,11 @@ export default async function PaymentPage({
           </Card>
 
           <div className="grid gap-5">
-            <Card className="rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-yuta-accent">
-                  <CreditCard className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold">Payer tout</h2>
-                  <p className="text-sm text-yuta-ink/55">
-                    Encaissement complet
-                  </p>
-                </div>
-              </div>
-
+            <ActionPanel
+              title="Payer tout"
+              description="Encaissement complet"
+              icon={<CreditCard className="h-5 w-5" />}
+            >
               <PaymentCaptureForm
                 action={payFullOrderAction}
                 orderId={order.id}
@@ -317,21 +309,13 @@ export default async function PaymentPage({
                   )}
                 </div>
               )}
-            </Card>
+            </ActionPanel>
 
-            <Card className="rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-yuta-mist">
-                  <Split className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold">Partager en parts égales</h2>
-                  <p className="text-sm text-yuta-ink/55">
-                    Diviser le total optimise
-                  </p>
-                </div>
-              </div>
-
+            <ActionPanel
+              title="Partager en parts égales"
+              description="Diviser le total optimisé"
+              icon={<Split className="h-5 w-5" />}
+            >
               <form
                 action={splitOrderEquallyAction}
                 className="mt-5 grid gap-3"
@@ -379,21 +363,13 @@ export default async function PaymentPage({
                   />
                 </>
               )}
-            </Card>
+            </ActionPanel>
 
-            <Card className="rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-yuta-mist">
-                  <ListChecks className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold">Séparer par articles</h2>
-                  <p className="text-sm text-yuta-ink/55">
-                    Créer des tickets par client
-                  </p>
-                </div>
-              </div>
-
+            <ActionPanel
+              title="Séparer par articles"
+              description="Créer des tickets par client"
+              icon={<ListChecks className="h-5 w-5" />}
+            >
               <Button
                 asChild
                 variant="secondary"
@@ -415,7 +391,7 @@ export default async function PaymentPage({
                   />
                 </>
               )}
-            </Card>
+            </ActionPanel>
           </div>
         </section>
       </div>
