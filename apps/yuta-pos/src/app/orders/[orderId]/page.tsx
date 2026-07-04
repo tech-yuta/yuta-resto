@@ -177,7 +177,7 @@ export default async function OrderPage({
                   </Badge>
                 </div>
                 <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
-                  {pendingItemCount} article(s) a envoyer en cuisine
+                  {pendingItemCount} article(s) à envoyer en cuisine
                 </p>
               </div>
 
@@ -471,12 +471,12 @@ function AmountRow({ label, value }: { label: string; value: number }) {
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
     draft: 'Brouillon',
-    sent: 'Envoyee',
-    preparing: 'Preparation',
-    ready: 'Prete',
+    sent: 'Envoyée',
+    preparing: 'Préparation',
+    ready: 'Prête',
     served: 'Servie',
-    paid: 'Payee',
-    cancelled: 'Annulee',
+    paid: 'Payée',
+    cancelled: 'Annulée',
   };
 
   return labels[status] ?? status;
@@ -484,12 +484,12 @@ function statusLabel(status: string): string {
 
 function itemStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    pending: 'A envoyer',
+    pending: 'À envoyer',
     sent: 'Cuisine',
-    preparing: 'Preparation',
-    ready: 'Pret',
+    preparing: 'Préparation',
+    ready: 'Prêt',
     served: 'Servi',
-    cancelled: 'Annule',
+    cancelled: 'Annulé',
   };
 
   return labels[status] ?? status;
@@ -498,7 +498,7 @@ function itemStatusLabel(status: string): string {
 function orderTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     dine_in: 'Sur place',
-    takeaway: 'A emporter',
+    takeaway: 'À emporter',
     delivery: 'Livraison',
   };
 

@@ -47,9 +47,9 @@ const statusFilters: Array<{
   icon: typeof ListChecks;
 }> = [
   { value: 'all', label: 'Tous', icon: ListChecks },
-  { value: 'sent', label: 'A preparer', icon: Flame },
-  { value: 'preparing', label: 'En preparation', icon: History },
-  { value: 'ready', label: 'Pret', icon: Check },
+  { value: 'sent', label: 'À préparer', icon: Flame },
+  { value: 'preparing', label: 'En préparation', icon: History },
+  { value: 'ready', label: 'Prêt', icon: Check },
 ];
 
 export default async function KitchenPage({ searchParams }: KitchenPageProps) {
@@ -93,7 +93,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                 size="icon"
                 className="shrink-0 text-white hover:bg-white/10"
               >
-                <Link href="/" aria-label="Retour POS">
+                <Link href="/pos" aria-label="Retour POS">
                   <ArrowLeft className="h-5 w-5" />
                 </Link>
               </Button>
@@ -236,10 +236,10 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
         )}
 
         <footer className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yuta-line bg-white px-4 py-3 text-xs font-bold text-yuta-ink/55 shadow-card">
-          <span>Derniere mise a jour : {formatTime(new Date())}</span>
+          <span>Dernière mise à jour : {formatTime(new Date())}</span>
           <span className="inline-flex items-center gap-1 text-yuta-ink">
             <Wifi className="h-3.5 w-3.5 text-green-600" />
-            Connecte
+            Connecté
           </span>
         </footer>
       </div>
@@ -325,23 +325,23 @@ function countForFilter(
 
 function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
   if (status === 'preparing') {
-    return <Badge variant="neutral">En preparation</Badge>;
+    return <Badge variant="neutral">En préparation</Badge>;
   }
 
   if (status === 'ready') {
-    return <Badge variant="active">Pret</Badge>;
+    return <Badge variant="active">Prêt</Badge>;
   }
 
-  return <Badge variant="outline">A preparer</Badge>;
+  return <Badge variant="outline">À préparer</Badge>;
 }
 
 function renderOrderStatusBadge(status: OrderStatus) {
   if (status === 'paid') {
-    return <Badge variant="active">Payee</Badge>;
+    return <Badge variant="active">Payée</Badge>;
   }
 
   if (status === 'cancelled') {
-    return <Badge variant="destructive">Annulee</Badge>;
+    return <Badge variant="destructive">Annulée</Badge>;
   }
 
   return null;
@@ -354,7 +354,7 @@ function renderKitchenActions(
   if (orderStatus === 'cancelled') {
     return (
       <div className="rounded-lg border border-yuta-line bg-yuta-mist px-3 py-2 text-sm font-semibold text-yuta-ink/60">
-        Commande annulee
+        Commande annulée
       </div>
     );
   }
@@ -370,7 +370,7 @@ function renderKitchenActions(
             className="w-full rounded-lg"
           >
             <RotateCcw className="h-4 w-4" />
-            Reouvrir
+            Réouvrir
           </Button>
         </form>
         <form action={markOrderItemSentAction}>
@@ -399,13 +399,13 @@ function renderKitchenActions(
           ) : (
             <Flame className="h-4 w-4" />
           )}
-          {item.status === 'preparing' ? 'Retour' : 'Preparer'}
+          {item.status === 'preparing' ? 'Retour' : 'Préparer'}
         </Button>
       </form>
       <form action={markOrderItemReadyAction}>
         <input type="hidden" name="orderItemId" value={item.id} />
         <Button type="submit" variant="accent" className="w-full rounded-lg">
-          Pret
+          Prêt
         </Button>
       </form>
     </div>
@@ -446,9 +446,9 @@ function stationLabel(station: Station): string {
 function statusFilterLabel(status: KitchenStatusFilter): string {
   const labels: Record<KitchenStatusFilter, string> = {
     all: 'Tous',
-    sent: 'A preparer',
-    preparing: 'En preparation',
-    ready: 'Pret',
+    sent: 'À préparer',
+    preparing: 'En préparation',
+    ready: 'Prêt',
   };
 
   return labels[status];
@@ -457,7 +457,7 @@ function statusFilterLabel(status: KitchenStatusFilter): string {
 function orderTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     dine_in: 'Sur place',
-    takeaway: 'A emporter',
+    takeaway: 'À emporter',
     delivery: 'Livraison',
   };
 

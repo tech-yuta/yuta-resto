@@ -1,256 +1,238 @@
 import { db } from '@yuta/db/client';
-import { users } from '@yuta/db/schema';
-import {
-  Button,
-  Card,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@yuta/ui';
-import { asc, inArray } from 'drizzle-orm';
+import { orders } from '@yuta/db/schema';
+import { Badge, Button, Card, Separator } from '@yuta/ui';
+import { and, desc, eq, gte, inArray, or } from 'drizzle-orm';
 import {
   ChefHat,
-  ClipboardList,
-  Clock3,
-  MonitorSmartphone,
-  ShieldCheck,
-  Sparkles,
-  Timer,
-  Utensils,
+  CreditCard,
+  ExternalLink,
+  Plus,
+  ReceiptText,
 } from 'lucide-react';
-import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { createOrderAction, selectStaffAction } from './actions';
 
-const selectedStaffCookieName = 'yuta_pos_staff_id';
+type OrdersHomePageProps = {
+  searchParams: Promise<{
+    view?: string;
+  }>;
+};
 
-export default async function PosHome() {
-  const cookieStore = await cookies();
-  const selectedStaffUserId = cookieStore.get(selectedStaffCookieName)?.value;
-  const staffUsers = await db.query.users.findMany({
-    where: (usersTable) =>
-      inArray(usersTable.role, ['admin', 'manager', 'staff']),
-    orderBy: [asc(users.name)],
+type OrderView = 'open' | 'paid_today' | 'all_today';
+
+const views: Array<{ value: OrderView; label: string }> = [
+  { value: 'open', label: 'Ouvertes' },
+  { value: 'paid_today', label: 'Payées aujourd’hui' },
+  { value: 'all_today', label: 'Activité aujourd’hui' },
+];
+
+export default async function OrdersHomePage({
+  searchParams,
+}: OrdersHomePageProps) {
+  const { view } = await searchParams;
+  const selectedView = parseView(view);
+  const today = startOfToday();
+  const orderRows = await db.query.orders.findMany({
+    where:
+      selectedView === 'open'
+        ? inArray(orders.status, [
+            'draft',
+            'sent',
+            'preparing',
+            'ready',
+            'served',
+          ])
+        : selectedView === 'paid_today'
+          ? and(eq(orders.status, 'paid'), gte(orders.paidAt, today))
+          : or(gte(orders.createdAt, today), gte(orders.paidAt, today)),
+    orderBy: [
+      desc(selectedView === 'paid_today' ? orders.paidAt : orders.createdAt),
+    ],
+    with: {
+      items: true,
+    },
   });
-  const activeStaffUsers = staffUsers.filter((user) => user.isActive);
-  const selectedStaffUser =
-    activeStaffUsers.find((user) => user.id === selectedStaffUserId) ??
-    activeStaffUsers.find((user) => user.email === 'staff@yuta.local') ??
-    activeStaffUsers[0];
 
   return (
     <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
-      <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className="grid content-start gap-6">
-          <header className="grid gap-2">
-            <p className="text-sm font-black uppercase tracking-normal text-yuta-ink/55">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+        <header className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-yuta-line bg-white px-4 py-3 shadow-card">
+          <div>
+            <p className="text-xs font-black uppercase tracking-normal text-yuta-ink/45">
               YuTa POS
             </p>
-            <h1 className="text-3xl font-black leading-tight tracking-normal md:text-4xl">
-              Prise de commande restaurant
+            <h1 className="text-2xl font-black tracking-normal md:text-3xl">
+              Commandes
             </h1>
-            <p className="text-sm font-semibold leading-6 text-yuta-ink/65">
-              Interface rapide pour creer une commande, l envoyer en cuisine et
-              encaisser sans perdre le fil du service.
+            <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
+              Suivi des commandes du service
             </p>
-          </header>
-
-          <section className="grid gap-3">
-            <h2 className="text-sm font-black uppercase tracking-normal text-yuta-ink">
-              Principes cles
-            </h2>
-            <Principle
-              icon={Timer}
-              title="Rapide"
-              description="Moins de clics pour creer une commande."
-            />
-            <Principle
-              icon={MonitorSmartphone}
-              title="Clair"
-              description="Les informations importantes restent visibles."
-            />
-            <Principle
-              icon={Sparkles}
-              title="Simple"
-              description="Apprentissage facile pour le staff."
-            />
-            <Principle
-              icon={ShieldCheck}
-              title="Fiable"
-              description="L etat de commande reste explicite."
-            />
-          </section>
-
-          <section className="grid gap-3">
-            <h2 className="text-sm font-black uppercase tracking-normal text-yuta-ink">
-              Apps
-            </h2>
-            <Button asChild variant="secondary" className="justify-start">
-              <Link href="/orders">
-                <ClipboardList className="h-4 w-4" />
-                Commandes
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="primary">
+              <Link href="/pos">
+                <Plus className="h-4 w-4" />
+                Nouvelle commande
               </Link>
             </Button>
-            <Button asChild variant="secondary" className="justify-start">
+            <Button asChild variant="secondary">
               <Link href="/kitchen">
                 <ChefHat className="h-4 w-4" />
                 Cuisine
               </Link>
             </Button>
-          </section>
-        </aside>
+          </div>
+        </header>
 
-        <div className="flex min-w-0 flex-col gap-5">
-          <header className="flex items-center justify-between gap-4 rounded-lg border border-yuta-line bg-white px-4 py-3 shadow-card">
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-lg bg-yuta-accent text-yuta-ink">
-                <Utensils className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-normal text-yuta-ink/45">
-                  Main POS flow
-                </p>
-                <h2 className="text-xl font-black tracking-normal">
+        <nav className="flex gap-2 overflow-x-auto pb-1">
+          {views.map((item) => (
+            <Button
+              key={item.value}
+              asChild
+              variant={item.value === selectedView ? 'primary' : 'secondary'}
+              className="shrink-0"
+            >
+              <Link href={`/?view=${item.value}`}>{item.label}</Link>
+            </Button>
+          ))}
+        </nav>
+
+        {orderRows.length === 0 ? (
+          <Card className="grid min-h-80 place-items-center text-center">
+            <div>
+              <ReceiptText className="mx-auto h-10 w-10 text-yuta-ink/35" />
+              <h2 className="mt-4 text-lg font-bold">Aucune commande</h2>
+              <p className="mt-1 text-sm text-yuta-ink/55">
+                Cette vue est vide pour le moment.
+              </p>
+              <Button asChild variant="primary" className="mt-4">
+                <Link href="/pos">
+                  <Plus className="h-4 w-4" />
                   Nouvelle commande
-                </h2>
-              </div>
+                </Link>
+              </Button>
             </div>
-            <div className="hidden items-center gap-2 text-sm font-bold text-yuta-ink/55 md:flex">
-              <Clock3 className="h-4 w-4" />
-              Service actif
+          </Card>
+        ) : (
+          <Card className="overflow-hidden p-0">
+            <div className="hidden grid-cols-[1.2fr_1fr_0.8fr_0.8fr_0.8fr] gap-4 px-5 py-3 text-xs font-bold uppercase text-yuta-ink/45 md:grid">
+              <span>Repère</span>
+              <span>Commande</span>
+              <span>Statut</span>
+              <span>Total</span>
+              <span className="text-right">Actions</span>
             </div>
-          </header>
-
-          <section className="grid gap-5 xl:grid-cols-[1fr_320px]">
-            <Card className="rounded-lg p-5 md:p-6">
-              <form action={createOrderAction} className="grid gap-5">
-                <div className="rounded-lg border border-yuta-line bg-yuta-mist p-4">
-                  <div className="flex flex-wrap items-end gap-3">
-                    <div className="grid min-w-56 flex-1 gap-2">
-                      <Label htmlFor="staffUserId">Employe</Label>
-                      <Select
-                        name="staffUserId"
-                        defaultValue={selectedStaffUser?.id}
-                        required
-                      >
-                        <SelectTrigger
-                          id="staffUserId"
-                          className="h-11 bg-white"
-                        >
-                          <SelectValue placeholder="Choisir employe" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {activeStaffUsers.map((staffUser) => (
-                            <SelectItem key={staffUser.id} value={staffUser.id}>
-                              {staffUser.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+            <Separator />
+            <div>
+              {orderRows.map((order, index) => (
+                <div key={order.id}>
+                  <div className="grid gap-4 px-5 py-4 md:grid-cols-[1.2fr_1fr_0.8fr_0.8fr_0.8fr] md:items-center">
+                    <div>
+                      <p className="text-lg font-black md:text-base">
+                        {order.tableLabel}
+                      </p>
+                      <p className="mt-1 text-sm text-yuta-ink/55">
+                        {order.items.length} article(s)
+                      </p>
                     </div>
-                    <Button formAction={selectStaffAction} variant="secondary">
-                      Changer
-                    </Button>
+                    <div>
+                      <p className="font-semibold">{order.orderNumber}</p>
+                      <p className="mt-1 text-sm text-yuta-ink/55">
+                        {formatTime(order.createdAt)}
+                      </p>
+                    </div>
+                    <div>
+                      <Badge variant={statusBadgeVariant(order.status)}>
+                        {statusLabel(order.status)}
+                      </Badge>
+                    </div>
+                    <p className="font-black">
+                      {formatEuros(order.totalCents)}
+                    </p>
+                    <div className="flex gap-2 md:justify-end">
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href={`/orders/${order.id}`}>
+                          <ExternalLink className="h-4 w-4" />
+                          Ouvrir
+                        </Link>
+                      </Button>
+                      {order.status !== 'paid' &&
+                        order.status !== 'cancelled' && (
+                          <Button asChild variant="accent" size="sm">
+                            <Link href={`/orders/${order.id}/payment`}>
+                              <CreditCard className="h-4 w-4" />
+                              Payer
+                            </Link>
+                          </Button>
+                        )}
+                    </div>
                   </div>
-                  <p className="mt-2 text-sm font-semibold text-yuta-ink/55">
-                    Session: {selectedStaffUser?.name ?? 'Aucun employe actif'}
-                  </p>
+                  {index < orderRows.length - 1 && <Separator />}
                 </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="tableLabel">Table / Repere</Label>
-                  <Input
-                    id="tableLabel"
-                    name="tableLabel"
-                    placeholder="Terrasse 5"
-                    autoComplete="off"
-                    required
-                    className="h-12 text-base"
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="orderType">Type</Label>
-                  <Select name="orderType" defaultValue="dine_in" required>
-                    <SelectTrigger id="orderType" className="h-12 text-base">
-                      <SelectValue placeholder="Choisir un type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dine_in">Sur place</SelectItem>
-                      <SelectItem value="takeaway">A emporter</SelectItem>
-                      <SelectItem value="delivery">Livraison</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  className="h-12 justify-center"
-                  disabled={!selectedStaffUser}
-                >
-                  Creer la commande
-                </Button>
-              </form>
-            </Card>
-
-            <aside className="grid content-start gap-4 rounded-lg border border-yuta-line bg-white p-5 shadow-card">
-              <div>
-                <p className="text-xs font-black uppercase tracking-normal text-yuta-ink/45">
-                  Apercu
-                </p>
-                <h2 className="text-base font-black">Service</h2>
-              </div>
-              <div className="grid grid-cols-3 gap-2 xl:grid-cols-1">
-                <Metric label="Ouvertes" value="0" />
-                <Metric label="Cuisine" value="0" />
-                <Metric label="Payees" value="0" />
-              </div>
-              <div className="rounded-lg border border-yuta-line bg-yuta-paper p-3 text-sm font-semibold leading-6 text-yuta-ink/65">
-                Prochaine etape: ajouter les articles depuis l ecran commande.
-              </div>
-            </aside>
-          </section>
-        </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </main>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-yuta-line bg-yuta-paper p-3">
-      <p className="text-xs font-semibold text-yuta-ink/55">{label}</p>
-      <p className="mt-1 text-2xl font-black">{value}</p>
-    </div>
-  );
+function parseView(value: string | undefined): OrderView {
+  if (value === 'paid_today' || value === 'all_today') {
+    return value;
+  }
+
+  return 'open';
 }
 
-function Principle({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: typeof Timer;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="grid grid-cols-[36px_1fr] gap-3">
-      <div className="grid h-9 w-9 place-items-center rounded-lg border border-yuta-line bg-white text-yuta-ink shadow-card">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div>
-        <p className="font-black">{title}</p>
-        <p className="text-sm font-semibold leading-5 text-yuta-ink/60">
-          {description}
-        </p>
-      </div>
-    </div>
-  );
+function startOfToday(): Date {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    draft: 'Brouillon',
+    sent: 'Envoyée',
+    preparing: 'Préparation',
+    ready: 'Prête',
+    served: 'Servie',
+    paid: 'Payée',
+    cancelled: 'Annulée',
+  };
+
+  return labels[status] ?? status;
+}
+
+function statusBadgeVariant(
+  status: string,
+): 'active' | 'inactive' | 'neutral' | 'destructive' | 'outline' {
+  if (status === 'paid' || status === 'ready') {
+    return 'active';
+  }
+
+  if (status === 'cancelled') {
+    return 'destructive';
+  }
+
+  if (status === 'draft') {
+    return 'outline';
+  }
+
+  return 'neutral';
+}
+
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function formatEuros(cents: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(cents / 100);
 }

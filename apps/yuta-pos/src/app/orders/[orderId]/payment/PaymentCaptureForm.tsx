@@ -1,7 +1,7 @@
 'use client';
 
-import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@yuta/ui';
-import { Banknote } from 'lucide-react';
+import { Button, Input, Label } from '@yuta/ui';
+import { Banknote, CircleEllipsis, CreditCard, Ticket } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type PaymentMethod = 'cash' | 'card' | 'ticket_resto' | 'other';
@@ -15,6 +15,17 @@ type PaymentCaptureFormProps = {
   submitSize?: 'default' | 'lg';
 };
 
+const paymentMethods: Array<{
+  value: PaymentMethod;
+  label: string;
+  icon: typeof CreditCard;
+}> = [
+  { value: 'cash', label: 'Espèces', icon: Banknote },
+  { value: 'card', label: 'Carte', icon: CreditCard },
+  { value: 'ticket_resto', label: 'Ticket resto', icon: Ticket },
+  { value: 'other', label: 'Autre', icon: CircleEllipsis },
+];
+
 export function PaymentCaptureForm({
   action,
   orderId,
@@ -27,16 +38,31 @@ export function PaymentCaptureForm({
   const [method, setMethod] = useState<PaymentMethod>('card');
   const [amountValue, setAmountValue] = useState(defaultAmount);
   const [tenderedValue, setTenderedValue] = useState('');
-  const amountCents = useMemo(() => parseEuroAmountToCents(amountValue), [amountValue]);
-  const tenderedCents = useMemo(() => parseEuroAmountToCents(tenderedValue), [tenderedValue]);
+  const amountCents = useMemo(
+    () => parseEuroAmountToCents(amountValue),
+    [amountValue],
+  );
+  const tenderedCents = useMemo(
+    () => parseEuroAmountToCents(tenderedValue),
+    [tenderedValue],
+  );
   const isCash = method === 'cash';
-  const hasInvalidAmount = amountValue.trim() === '' || amountCents === null || amountCents <= 0;
-  const hasOverCollection = amountCents !== null && amountCents > remainingCents;
-  const hasInsufficientCash = isCash && tenderedValue !== '' && amountCents !== null && tenderedCents !== null && tenderedCents < amountCents;
-  const changeCents = isCash && amountCents !== null && tenderedCents !== null
-    ? Math.max(0, tenderedCents - amountCents)
-    : 0;
-  const submitLabel = amountCents !== null && amountCents > 0 ? amountCents : remainingCents;
+  const hasInvalidAmount =
+    amountValue.trim() === '' || amountCents === null || amountCents <= 0;
+  const hasOverCollection =
+    amountCents !== null && amountCents > remainingCents;
+  const hasInsufficientCash =
+    isCash &&
+    tenderedValue !== '' &&
+    amountCents !== null &&
+    tenderedCents !== null &&
+    tenderedCents < amountCents;
+  const changeCents =
+    isCash && amountCents !== null && tenderedCents !== null
+      ? Math.max(0, tenderedCents - amountCents)
+      : 0;
+  const submitLabel =
+    amountCents !== null && amountCents > 0 ? amountCents : remainingCents;
 
   return (
     <form action={action} className="mt-5 grid gap-4">
@@ -44,24 +70,33 @@ export function PaymentCaptureForm({
       {checkId && <input type="hidden" name="checkId" value={checkId} />}
 
       <div className="grid gap-2">
-        <Label htmlFor={checkId ? `method-${checkId}` : 'method'}>Moyen de paiement</Label>
-        <Select name="method" value={method} onValueChange={(value) => setMethod(value as PaymentMethod)} required>
-          <SelectTrigger id={checkId ? `method-${checkId}` : 'method'}>
-            <SelectValue placeholder="Choisir" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="card">Carte</SelectItem>
-            <SelectItem value="cash">Especes</SelectItem>
-            <SelectItem value="ticket_resto">Ticket resto</SelectItem>
-            <SelectItem value="other">Autre</SelectItem>
-          </SelectContent>
-        </Select>
+        <Label>Moyen de paiement</Label>
+        <input type="hidden" name="method" value={method} />
+        <div className="grid grid-cols-2 gap-2">
+          {paymentMethods.map(({ value, label, icon: Icon }) => (
+            <Button
+              key={value}
+              type="button"
+              variant={method === value ? 'primary' : 'secondary'}
+              className="h-16 flex-col rounded-lg"
+              disabled={disabled}
+              onClick={() => setMethod(value)}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="grid gap-2">
         <div className="flex items-center justify-between gap-3">
-          <Label htmlFor={checkId ? `amount-${checkId}` : 'amountCents'}>Montant a encaisser</Label>
-          <span className="text-xs font-semibold text-yuta-ink/50">max {formatEuros(remainingCents)}</span>
+          <Label htmlFor={checkId ? `amount-${checkId}` : 'amountCents'}>
+            Montant à encaisser
+          </Label>
+          <span className="text-xs font-semibold text-yuta-ink/50">
+            max {formatEuros(remainingCents)}
+          </span>
         </div>
         <Input
           id={checkId ? `amount-${checkId}` : 'amountCents'}
@@ -74,11 +109,12 @@ export function PaymentCaptureForm({
           required
         />
         <p className="text-xs font-semibold text-yuta-ink/55">
-          C'est le montant qui sera enregistre comme paiement. Il ne peut pas depasser le reste a payer.
+          C'est le montant qui sera enregistré comme paiement. Il ne peut pas
+          dépasser le reste à payer.
         </p>
         {hasOverCollection && (
           <p className="rounded-lg border border-yuta-line bg-yuta-mist px-3 py-2 text-sm font-semibold text-yuta-ink">
-            Le montant a encaisser depasse le reste a payer.
+            Le montant à encaisser dépasse le reste à payer.
           </p>
         )}
         {hasInvalidAmount && (
@@ -90,7 +126,9 @@ export function PaymentCaptureForm({
 
       {isCash ? (
         <div className="grid gap-2 rounded-xl border border-yuta-line bg-yuta-mist p-3">
-          <Label htmlFor={checkId ? `tendered-${checkId}` : 'tenderedCents'}>Montant recu du client</Label>
+          <Label htmlFor={checkId ? `tendered-${checkId}` : 'tenderedCents'}>
+            Montant reçu du client
+          </Label>
           <Input
             id={checkId ? `tendered-${checkId}` : 'tenderedCents'}
             name="tenderedCents"
@@ -102,18 +140,20 @@ export function PaymentCaptureForm({
             onChange={(event) => setTenderedValue(event.target.value)}
           />
           <div className="flex items-center justify-between gap-3 text-sm font-semibold">
-            <span className="text-yuta-ink/60">Monnaie a rendre</span>
-            <span className="text-base font-black">{formatEuros(changeCents)}</span>
+            <span className="text-yuta-ink/60">Monnaie à rendre</span>
+            <span className="text-base font-black">
+              {formatEuros(changeCents)}
+            </span>
           </div>
           {hasInsufficientCash && (
             <p className="text-sm font-semibold text-yuta-ink">
-              Le montant recu doit couvrir le montant a encaisser.
+              Le montant reçu doit couvrir le montant à encaisser.
             </p>
           )}
         </div>
       ) : (
         <div className="rounded-xl border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink/65">
-          Pour ce moyen de paiement, seul le montant a encaisser est enregistre.
+          Pour ce moyen de paiement, seul le montant à encaisser est enregistré.
         </div>
       )}
 
@@ -122,7 +162,13 @@ export function PaymentCaptureForm({
         variant="accent"
         size={submitSize}
         className="w-full"
-        disabled={disabled || remainingCents === 0 || hasInvalidAmount || hasOverCollection || hasInsufficientCash}
+        disabled={
+          disabled ||
+          remainingCents === 0 ||
+          hasInvalidAmount ||
+          hasOverCollection ||
+          hasInsufficientCash
+        }
       >
         <Banknote className="h-4 w-4" />
         Encaisser {formatEuros(submitLabel)}

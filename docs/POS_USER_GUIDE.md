@@ -7,8 +7,9 @@ The app UI is in French. This documentation is in English to match the repositor
 ## Local URLs
 
 ```txt
-POS:   http://localhost:3003
-Admin: http://localhost:3001
+POS orders:    http://localhost:3003
+New POS order: http://localhost:3003/pos
+Admin:         http://localhost:3001
 ```
 
 Useful admin pages:
@@ -55,7 +56,7 @@ The QA checklist lives in:
 docs/POS_QA_CHECKLIST.md
 ```
 
-## POS Home
+## POS Home / Orders
 
 Open:
 
@@ -63,12 +64,22 @@ Open:
 http://localhost:3003
 ```
 
-The POS home lets staff:
+The POS home is the command list for the current service. It lets staff:
 
 ```txt
-Create a new order
+Open active and recent orders
+Start a new order from Nouvelle commande
 Open the kitchen screen
-Open the order history
+```
+
+The legacy order-list route `http://localhost:3003/orders` still opens the same command list.
+
+## New Order
+
+Open:
+
+```txt
+http://localhost:3003/pos
 ```
 
 To create an order:
@@ -174,8 +185,10 @@ Dessert
 Kitchen staff can also switch between:
 
 ```txt
-A preparer   active sent/preparing items
-Historique   ready items; paid orders can still be reopened for kitchen corrections
+Tous             sent, preparing, and ready items
+A preparer       sent items
+En preparation   preparing items
+Pret             ready items; paid orders can still be reopened for kitchen corrections
 ```
 
 Items appear grouped by order/table.
@@ -207,8 +220,10 @@ Cancelled items are removed from the active kitchen queue. If restored after bei
 Open:
 
 ```txt
-http://localhost:3003/orders
+http://localhost:3003
 ```
+
+The legacy route `http://localhost:3003/orders` remains available for compatibility.
 
 Views:
 

@@ -1,7 +1,7 @@
 import { createComboService } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
-import { Badge, Button, Card, Input, Label, Separator } from '@yuta/ui';
+import { Badge, Button, Card, Input, Label } from '@yuta/ui';
 import { eq } from 'drizzle-orm';
 import { ArrowLeft, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -19,7 +19,10 @@ type SplitItemsPageProps = {
 
 const clientCountOptions = [2, 3, 4, 5, 6, 8, 10, 12];
 
-export default async function SplitItemsPage({ params, searchParams }: SplitItemsPageProps) {
+export default async function SplitItemsPage({
+  params,
+  searchParams,
+}: SplitItemsPageProps) {
   const { orderId } = await params;
   const { clients, error } = await searchParams;
   const comboService = createComboService(db);
@@ -40,9 +43,13 @@ export default async function SplitItemsPage({ params, searchParams }: SplitItem
 
   const activeItems = order.items.filter((item) => item.status !== 'cancelled');
   const activeChecks = order.checks.filter((check) => check.status !== 'void');
-  const itemSplitChecks = activeChecks.filter((check) => check.splitMode === 'items');
+  const itemSplitChecks = activeChecks.filter(
+    (check) => check.splitMode === 'items',
+  );
   const requestedClientCount = parseClientCount(clients);
-  const clientCount = requestedClientCount ?? (itemSplitChecks.length > 0 ? itemSplitChecks.length : 2);
+  const clientCount =
+    requestedClientCount ??
+    (itemSplitChecks.length > 0 ? itemSplitChecks.length : 2);
   const splitClients = Array.from({ length: clientCount }, (_, index) => ({
     key: `client${index + 1}`,
     label: `Client ${index + 1}`,
@@ -50,73 +57,112 @@ export default async function SplitItemsPage({ params, searchParams }: SplitItem
   const gridTemplateColumns = `minmax(180px, 1fr) repeat(${splitClients.length}, 82px)`;
 
   return (
-    <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-yuta-line pb-5">
-          <div>
-            <Link href={`/orders/${order.id}/payment`} className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-yuta-ink/60 hover:text-yuta-ink">
-              <ArrowLeft className="h-4 w-4" />
-              Retour paiement
-            </Link>
-            <h1 className="text-2xl font-black tracking-tight md:text-3xl">Separer par articles</h1>
-            <p className="mt-1 text-sm text-yuta-ink/55">{order.tableLabel}</p>
+    <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-6 md:py-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+        <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-yuta-ink px-4 py-3 text-white shadow-card">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="shrink-0 text-white hover:bg-white/10"
+            >
+              <Link
+                href={`/orders/${order.id}/payment`}
+                aria-label="Retour paiement"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-xl font-black tracking-normal md:text-2xl">
+                Séparer par articles
+              </h1>
+              <p className="mt-0.5 text-xs font-semibold text-white/60">
+                {order.tableLabel}
+              </p>
+            </div>
           </div>
-          <Badge variant="neutral">{activeItems.length} article(s)</Badge>
+          <Badge variant="active">{activeItems.length} article(s)</Badge>
         </header>
 
-        <Card>
+        <Card className="rounded-lg p-0">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-yuta-accent">
+            <div className="ml-5 mt-5 grid h-10 w-10 place-items-center rounded-lg bg-yuta-accent">
               <Users className="h-5 w-5" />
             </div>
-            <div>
+            <div className="mt-5">
               <h2 className="font-bold">Clients</h2>
-              <p className="text-sm text-yuta-ink/55">{splitClients.length} client(s)</p>
+              <p className="text-sm text-yuta-ink/55">
+                {splitClients.length} client(s)
+              </p>
             </div>
           </div>
 
           {error && (
-            <div className="mt-5 rounded-xl border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
+            <div className="mx-5 mt-5 rounded-lg border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
               {errorMessage(error)}
             </div>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-yuta-ink/55">Nombre de clients</span>
+          <div className="mt-5 flex flex-wrap items-center gap-2 px-5">
+            <span className="text-sm font-semibold text-yuta-ink/55">
+              Nombre de clients
+            </span>
             {clientCountOptions.map((option) => (
               <Button
                 key={option}
                 asChild
-                variant={option === splitClients.length ? 'primary' : 'secondary'}
+                variant={
+                  option === splitClients.length ? 'primary' : 'secondary'
+                }
                 size="sm"
+                className="rounded-lg"
               >
-                <Link href={`/orders/${order.id}/payment/items?clients=${option}`}>{option}</Link>
+                <Link
+                  href={`/orders/${order.id}/payment/items?clients=${option}`}
+                >
+                  {option}
+                </Link>
               </Button>
             ))}
           </div>
 
-          <form action={createChecksByItemsAction} className="mt-5 grid gap-4">
+          <form
+            action={createChecksByItemsAction}
+            className="mt-5 grid gap-4 px-5 pb-5"
+          >
             <input type="hidden" name="orderId" value={order.id} />
-            <input type="hidden" name="clientCount" value={splitClients.length} />
-            <div className="overflow-x-auto pb-2">
+            <input
+              type="hidden"
+              name="clientCount"
+              value={splitClients.length}
+            />
+            <div className="overflow-x-auto rounded-lg border border-yuta-line bg-white pb-2">
               <div className="min-w-max">
-                <div className="grid gap-3 px-1 text-xs font-bold uppercase text-yuta-ink/45" style={{ gridTemplateColumns }}>
+                <div
+                  className="grid gap-3 bg-yuta-mist px-3 py-3 text-xs font-bold uppercase text-yuta-ink/45"
+                  style={{ gridTemplateColumns }}
+                >
                   <span>Article</span>
                   {splitClients.map((client) => (
                     <span key={client.key}>{client.label}</span>
                   ))}
                 </div>
-                <Separator className="my-3" />
-                <div className="grid gap-3">
+                <div className="grid gap-2 p-3">
                   {activeItems.map((item) => (
                     <div
                       key={item.id}
-                      className="grid items-center gap-3 rounded-xl border border-yuta-line bg-yuta-paper p-3"
+                      className="grid items-center gap-3 rounded-lg border border-yuta-line bg-yuta-paper p-3"
                       style={{ gridTemplateColumns }}
                     >
                       <div>
-                        <p className="font-bold">{item.quantity} x {item.itemNameSnapshot}</p>
-                        <p className="text-sm text-yuta-ink/55">{formatEuros(item.unitPriceCentsSnapshot)} / unite</p>
+                        <p className="font-bold">
+                          {item.quantity} x {item.itemNameSnapshot}
+                        </p>
+                        <p className="text-sm text-yuta-ink/55">
+                          {formatEuros(item.unitPriceCentsSnapshot)} / unité
+                        </p>
                       </div>
                       {splitClients.map((client) => (
                         <QuantityInput
@@ -131,8 +177,13 @@ export default async function SplitItemsPage({ params, searchParams }: SplitItem
                 </div>
               </div>
             </div>
-            <Button type="submit" variant="accent" size="lg" disabled={activeItems.length === 0 || order.status === 'paid'}>
-              Creer les tickets
+            <Button
+              type="submit"
+              variant="accent"
+              size="lg"
+              disabled={activeItems.length === 0 || order.status === 'paid'}
+            >
+              Créer les tickets
             </Button>
           </form>
         </Card>
@@ -141,11 +192,30 @@ export default async function SplitItemsPage({ params, searchParams }: SplitItem
   );
 }
 
-function QuantityInput({ label, name, max }: { label: string; name: string; max: number }) {
+function QuantityInput({
+  label,
+  name,
+  max,
+}: {
+  label: string;
+  name: string;
+  max: number;
+}) {
   return (
     <div className="grid gap-1">
-      <Label htmlFor={name} className="sr-only">{label}</Label>
-      <Input id={name} name={name} type="number" min={0} max={max} defaultValue={0} inputMode="numeric" />
+      <Label htmlFor={name} className="sr-only">
+        {label}
+      </Label>
+      <Input
+        id={name}
+        name={name}
+        type="number"
+        min={0}
+        max={max}
+        defaultValue={0}
+        inputMode="numeric"
+        className="h-11 rounded-lg text-center text-base font-black"
+      />
     </div>
   );
 }
@@ -162,11 +232,14 @@ function parseClientCount(value: string | undefined): number | null {
 
 function errorMessage(error: string): string {
   const messages: Record<string, string> = {
-    empty: 'Selectionnez au moins un article pour creer les tickets.',
-    quantity: 'La quantite repartie depasse la quantite disponible pour au moins un article.',
+    empty: 'Sélectionnez au moins un article pour créer les tickets.',
+    quantity:
+      'La quantite repartie depasse la quantite disponible pour au moins un article.',
   };
 
-  return messages[error] ?? 'Impossible de creer les tickets avec cette selection.';
+  return (
+    messages[error] ?? 'Impossible de créer les tickets avec cette sélection.'
+  );
 }
 
 function formatEuros(cents: number): string {

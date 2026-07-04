@@ -83,6 +83,14 @@ Daily revenue
 
 The POS is used during service, often on a tablet. Favor speed, clarity, and large touch targets.
 
+Route convention:
+
+```txt
+/       Command list / service home
+/pos    New order entry
+/orders Legacy alias for the command list
+```
+
 Do:
 
 ```txt
