@@ -171,6 +171,13 @@ Bar
 Dessert
 ```
 
+Kitchen staff can also switch between:
+
+```txt
+A preparer   active sent/preparing items
+Historique   ready items; paid orders can still be reopened for kitchen corrections
+```
+
 Items appear grouped by order/table.
 
 Kitchen item statuses:
@@ -184,9 +191,14 @@ Pret         -> ready
 Use:
 
 ```txt
-Preparer
-Pret
+Preparer    sent -> preparing
+Pret        sent/preparing -> ready
+Retour      preparing -> sent, for a mistaken Preparer tap
+Reouvrir    ready -> preparing, for a mistaken Pret tap
+Envoye      ready -> sent, when the item should return fully to the queue
 ```
+
+Paid orders can still move through the kitchen workflow. Cancelled orders are read-only on the kitchen screen.
 
 Cancelled items are removed from the active kitchen queue. If restored after being sent, they return to the queue as `sent`.
 
@@ -237,6 +249,10 @@ Payment amount fields use euro values, not cents:
 ```
 
 Do not enter `3100` for 31 EUR.
+
+`Montant a encaisser` is the amount recorded as paid. It cannot exceed the remaining amount.
+
+For `Especes`, `Montant recu du client` can be higher than `Montant a encaisser`; the POS shows the change to return. It can be left empty when the customer gives exactly the amount being collected.
 
 Supported methods:
 

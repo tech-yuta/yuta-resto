@@ -102,6 +102,51 @@ describe('YuTa core services', () => {
     expect(detail.items.every((item) => item.status === 'sent' && item.sentAt !== null)).toBe(true);
   });
 
+  it('allows kitchen staff to reopen an item after a mistaken status change', async () => {
+    const orderService = createOrderService(db);
+    const order = await createTestOrder(context.user.id);
+    const item = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    await orderService.sendOrderToKitchen(order.id);
+    await orderService.markOrderItemPreparing(item.id);
+    const readyItem = await orderService.markOrderItemReady(item.id);
+
+    expect(readyItem.status).toBe('ready');
+    expect(readyItem.readyAt).toBeInstanceOf(Date);
+
+    const reopenedItem = await orderService.markOrderItemPreparing(item.id);
+
+    expect(reopenedItem.status).toBe('preparing');
+    expect(reopenedItem.readyAt).toBeNull();
+
+    const sentItem = await orderService.markOrderItemSent(item.id);
+
+    expect(sentItem.status).toBe('sent');
+    expect(sentItem.readyAt).toBeNull();
+  });
+
+  it('allows kitchen status updates after the order has been paid', async () => {
+    const orderService = createOrderService(db);
+    const paymentService = createPaymentService(db);
+    const order = await createTestOrder(context.user.id);
+    const item = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    await orderService.sendOrderToKitchen(order.id);
+    await paymentService.payFullOrder({ orderId: order.id, method: 'card', amountCents: 1300 });
+
+    const readyItem = await orderService.markOrderItemReady(item.id);
+    const paidOrder = await orderService.getOrderDetail(order.id);
+
+    expect(readyItem.status).toBe('ready');
+    expect(paidOrder.status).toBe('paid');
+  });
+
   it('creates and updates a kitchen ticket print job', async () => {
     const orderService = createOrderService(db);
     const printService = createPrintService(db);

@@ -1,11 +1,12 @@
 import { createComboService } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
-import { Badge, Button, Card, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Separator } from '@yuta/ui';
+import { Badge, Button, Card, Input, Label, Separator } from '@yuta/ui';
 import { eq } from 'drizzle-orm';
-import { ArrowLeft, Banknote, CreditCard, ListChecks, Split, Tags } from 'lucide-react';
+import { ArrowLeft, CreditCard, ListChecks, Split, Tags } from 'lucide-react';
 import Link from 'next/link';
 import { cancelOrderSplitAction, payCheckAction, payFullOrderAction, splitOrderEquallyAction } from '../../../actions';
+import { PaymentCaptureForm } from './PaymentCaptureForm';
 
 type PaymentPageProps = {
   params: Promise<{
@@ -219,41 +220,13 @@ export default async function PaymentPage({ params, searchParams }: PaymentPageP
                 </div>
               </div>
 
-              <form action={payFullOrderAction} className="mt-5 grid gap-4">
-                <input type="hidden" name="orderId" value={order.id} />
-
-                <PaymentMethodSelect id="method" />
-
-                <div className="grid gap-2">
-                  <Label htmlFor="amountCents">Montant a encaisser</Label>
-                  <Input
-                    id="amountCents"
-                    name="amountCents"
-                    type="text"
-                    inputMode="decimal"
-                    pattern="^\d+([,.]\d{0,2})?$"
-                    defaultValue={formatEurosInput(remainingCents)}
-                    required
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="tenderedCents">Montant recu</Label>
-                  <Input
-                    id="tenderedCents"
-                    name="tenderedCents"
-                    type="text"
-                    inputMode="decimal"
-                    pattern="^\d+([,.]\d{0,2})?$"
-                    placeholder={formatEurosInput(remainingCents)}
-                  />
-                </div>
-
-                <Button type="submit" variant="accent" size="lg" disabled={remainingCents === 0 || splitChecks.length > 0}>
-                  <Banknote className="h-4 w-4" />
-                  Encaisser {formatEuros(remainingCents)}
-                </Button>
-              </form>
+              <PaymentCaptureForm
+                action={payFullOrderAction}
+                orderId={order.id}
+                remainingCents={remainingCents}
+                disabled={splitChecks.length > 0}
+                submitSize="lg"
+              />
               {splitChecks.length > 0 && (
                 <div className="mt-4 rounded-xl border border-yuta-line bg-yuta-mist p-3">
                   <p className="text-sm font-semibold text-yuta-ink/70">
@@ -444,49 +417,16 @@ function CheckPaymentList({
             </div>
 
             {check.status !== 'paid' && (
-              <form action={payCheckAction} className="mt-3 grid gap-3">
-                <input type="hidden" name="orderId" value={orderId} />
-                <input type="hidden" name="checkId" value={check.id} />
-                <PaymentMethodSelect id={`method-${check.id}`} />
-                <div className="grid gap-2">
-                  <Label htmlFor={`amount-${check.id}`}>Montant</Label>
-                  <Input
-                    id={`amount-${check.id}`}
-                    name="amountCents"
-                    type="text"
-                    inputMode="decimal"
-                    pattern="^\d+([,.]\d{0,2})?$"
-                    defaultValue={formatEurosInput(remainingCents)}
-                    required
-                  />
-                </div>
-                <Button type="submit" variant="accent" className="w-full" disabled={remainingCents === 0}>
-                  Encaisser {formatEuros(remainingCents)}
-                </Button>
-              </form>
+              <PaymentCaptureForm
+                action={payCheckAction}
+                orderId={orderId}
+                checkId={check.id}
+                remainingCents={remainingCents}
+              />
             )}
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function PaymentMethodSelect({ id }: { id: string }) {
-  return (
-    <div className="grid gap-2">
-      <Label htmlFor={id}>Moyen de paiement</Label>
-      <Select name="method" defaultValue="card" required>
-        <SelectTrigger id={id}>
-          <SelectValue placeholder="Choisir" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="card">Carte</SelectItem>
-          <SelectItem value="cash">Especes</SelectItem>
-          <SelectItem value="ticket_resto">Ticket resto</SelectItem>
-          <SelectItem value="other">Autre</SelectItem>
-        </SelectContent>
-      </Select>
     </div>
   );
 }
@@ -502,6 +442,7 @@ function AmountRow({ label, value }: { label: string; value: number }) {
 
 function paymentErrorMessage(error: string): string {
   const messages: Record<string, string> = {
+    invalid_amount: 'Saisir un montant valide, par exemple 31 ou 31,00.',
     invalid_input: 'Le montant donne doit couvrir le montant encaisse.',
     invalid_status: 'Cette commande ou ce ticket ne peut pas etre encaisse.',
     invalid_split: 'La repartition des tickets est invalide.',
@@ -552,12 +493,5 @@ function formatEuros(cents: number): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
-  }).format(cents / 100);
-}
-
-function formatEurosInput(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
   }).format(cents / 100);
 }

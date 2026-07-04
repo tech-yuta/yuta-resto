@@ -1,18 +1,39 @@
 import { db } from '@yuta/db/client';
 import { orderItems, orders } from '@yuta/db/schema';
 import { Badge, Button, Card, Separator } from '@yuta/ui';
-import { and, asc, eq, inArray } from 'drizzle-orm';
-import { ArrowLeft, ChefHat, Clock, Flame, Martini, Soup } from 'lucide-react';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import {
+  ArrowLeft,
+  ChefHat,
+  Check,
+  Clock,
+  Flame,
+  History,
+  ListChecks,
+  Martini,
+  Menu,
+  RotateCcw,
+  Soup,
+  Wifi,
+} from 'lucide-react';
 import Link from 'next/link';
-import { markOrderItemPreparingAction, markOrderItemReadyAction } from '../actions';
+import {
+  markOrderItemPreparingAction,
+  markOrderItemReadyAction,
+  markOrderItemSentAction,
+} from '../actions';
 
 type KitchenPageProps = {
   searchParams: Promise<{
     station?: string;
+    status?: string;
   }>;
 };
 
 type Station = 'kitchen' | 'bar' | 'dessert';
+type KitchenStatusFilter = 'all' | 'sent' | 'preparing' | 'ready';
+type OrderItemStatus = typeof orderItems.$inferSelect.status;
+type OrderStatus = typeof orders.$inferSelect.status;
 
 const stations: Array<{ value: Station; label: string; icon: typeof Soup }> = [
   { value: 'kitchen', label: 'Cuisine', icon: Soup },
@@ -20,106 +41,192 @@ const stations: Array<{ value: Station; label: string; icon: typeof Soup }> = [
   { value: 'dessert', label: 'Desserts', icon: ChefHat },
 ];
 
+const statusFilters: Array<{
+  value: KitchenStatusFilter;
+  label: string;
+  icon: typeof ListChecks;
+}> = [
+  { value: 'all', label: 'Tous', icon: ListChecks },
+  { value: 'sent', label: 'A preparer', icon: Flame },
+  { value: 'preparing', label: 'En preparation', icon: History },
+  { value: 'ready', label: 'Pret', icon: Check },
+];
+
 export default async function KitchenPage({ searchParams }: KitchenPageProps) {
-  const { station } = await searchParams;
+  const { station, status } = await searchParams;
   const selectedStation = parseStation(station);
-  const items = await db.query.orderItems.findMany({
-    where: and(
-      inArray(orderItems.status, ['sent', 'preparing']),
-      eq(orderItems.kitchenStationSnapshot, selectedStation),
-    ),
-    with: {
-      order: true,
-    },
-    orderBy: [asc(orderItems.sentAt), asc(orderItems.createdAt)],
-  });
+  const selectedStatus = parseStatusFilter(status);
+  const visibleStatuses = statusesForFilter(selectedStatus);
+  const [items, stationItems] = await Promise.all([
+    db.query.orderItems.findMany({
+      where: and(
+        inArray(orderItems.status, visibleStatuses),
+        eq(orderItems.kitchenStationSnapshot, selectedStation),
+      ),
+      with: {
+        order: true,
+      },
+      orderBy:
+        selectedStatus === 'ready'
+          ? [desc(orderItems.readyAt), desc(orderItems.createdAt)]
+          : [asc(orderItems.sentAt), asc(orderItems.createdAt)],
+    }),
+    db.query.orderItems.findMany({
+      where: and(
+        inArray(orderItems.status, ['sent', 'preparing', 'ready']),
+        eq(orderItems.kitchenStationSnapshot, selectedStation),
+      ),
+    }),
+  ]);
   const groups = groupItemsByOrder(items);
+  const counts = countItemsByStatus(stationItems);
 
   return (
-    <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-yuta-line pb-5">
-          <div>
-            <Link href="/" className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-yuta-ink/60 hover:text-yuta-ink">
-              <ArrowLeft className="h-4 w-4" />
-              Retour POS
-            </Link>
-            <h1 className="text-2xl font-black tracking-tight md:text-3xl">Cuisine</h1>
-            <p className="mt-1 text-sm text-yuta-ink/55">Articles envoyes et en preparation</p>
+    <main className="min-h-screen bg-yuta-paper text-yuta-ink">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-5 md:px-6 md:py-6">
+        <header className="overflow-hidden rounded-lg border border-yuta-line bg-white shadow-card">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-yuta-ink px-4 py-3 text-white">
+            <div className="flex min-w-0 items-center gap-3">
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-white hover:bg-white/10"
+              >
+                <Link href="/" aria-label="Retour POS">
+                  <ArrowLeft className="h-5 w-5" />
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-xl font-black tracking-normal md:text-2xl">
+                  Cuisine
+                </h1>
+                <p className="mt-0.5 text-xs font-semibold text-white/60">
+                  {stationLabel(selectedStation)} -{' '}
+                  {statusFilterLabel(selectedStatus)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="active">{items.length} article(s)</Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/10"
+                aria-label="Menu cuisine"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-          <Badge variant="neutral">{items.length} article(s)</Badge>
+
+          <div className="grid gap-3 p-4">
+            <nav className="flex gap-2 overflow-x-auto pb-1">
+              {stations.map(({ value, label, icon: Icon }) => (
+                <Button
+                  key={value}
+                  asChild
+                  variant={value === selectedStation ? 'primary' : 'secondary'}
+                  size="sm"
+                  className="shrink-0 rounded-lg"
+                >
+                  <Link href={kitchenUrl(value, selectedStatus)}>
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Link>
+                </Button>
+              ))}
+            </nav>
+
+            <nav className="flex gap-2 overflow-x-auto pb-1">
+              {statusFilters.map(({ value, label, icon: Icon }) => (
+                <Button
+                  key={value}
+                  asChild
+                  variant={value === selectedStatus ? 'primary' : 'secondary'}
+                  size="sm"
+                  className="shrink-0 rounded-lg"
+                >
+                  <Link href={kitchenUrl(selectedStation, value)}>
+                    <Icon className="h-4 w-4" />
+                    {label}
+                    <span className="rounded-full bg-yuta-mist px-1.5 py-0.5 text-[10px] font-black text-yuta-ink">
+                      {countForFilter(value, counts, stationItems.length)}
+                    </span>
+                  </Link>
+                </Button>
+              ))}
+            </nav>
+          </div>
         </header>
 
-        <nav className="flex gap-2 overflow-x-auto pb-1">
-          {stations.map(({ value, label, icon: Icon }) => (
-            <Button key={value} asChild variant={value === selectedStation ? 'primary' : 'secondary'} className="shrink-0">
-              <Link href={`/kitchen?station=${value}`}>
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            </Button>
-          ))}
-        </nav>
-
         {groups.length === 0 ? (
-          <Card className="grid min-h-80 place-items-center text-center">
+          <Card className="grid min-h-80 place-items-center rounded-lg text-center">
             <div>
               <ChefHat className="mx-auto h-10 w-10 text-yuta-ink/35" />
-              <h2 className="mt-4 text-lg font-bold">Aucun article</h2>
-              <p className="mt-1 text-sm text-yuta-ink/55">Rien a preparer pour ce poste.</p>
+              <h2 className="mt-4 text-lg font-black">Aucun article</h2>
+              <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
+                Rien a afficher pour ce poste et ce statut.
+              </p>
             </div>
           </Card>
         ) : (
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-4">
             {groups.map((group) => (
-              <Card key={group.order.id} className="p-0">
-                <div className="flex items-start justify-between gap-3 p-5">
+              <Card
+                key={group.order.id}
+                className="overflow-hidden rounded-lg p-0"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div>
-                    <h2 className="text-xl font-black">{group.order.tableLabel}</h2>
-                    <p className="mt-1 text-xs font-semibold text-yuta-ink/45">{group.order.orderNumber}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-xl font-black">
+                        {group.order.tableLabel}
+                      </h2>
+                      <Badge variant="outline">
+                        {orderTypeLabel(group.order.orderType)}
+                      </Badge>
+                      {renderOrderStatusBadge(group.order.status)}
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-yuta-ink/45">
+                      {group.order.orderNumber}
+                    </p>
                   </div>
-                  <Badge variant="outline">{group.items.length}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="neutral">
+                      {group.items.length} article(s)
+                    </Badge>
+                    <span className="inline-flex items-center gap-1 text-xs font-black text-yuta-ink/45">
+                      <Clock className="h-3.5 w-3.5" />
+                      {groupTimeLabel(group.items)}
+                    </span>
+                  </div>
                 </div>
                 <Separator />
-                <div className="grid gap-3 p-5">
+                <div className="grid gap-2 p-3">
                   {group.items.map((item) => (
-                    <article key={item.id} className="rounded-xl border border-yuta-line bg-yuta-paper p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-lg font-black">{item.quantity} x {item.itemNameSnapshot}</p>
-                            <Badge variant={item.status === 'preparing' ? 'active' : 'neutral'}>
-                              {item.status === 'preparing' ? 'Preparation' : 'Envoye'}
-                            </Badge>
-                          </div>
-                          {item.note && <p className="mt-2 text-sm text-yuta-ink/65">{item.note}</p>}
-                          <p className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-yuta-ink/45">
-                            <Clock className="h-3.5 w-3.5" />
-                            {elapsedLabel(item.sentAt ?? item.createdAt)}
+                    <article
+                      key={item.id}
+                      className="grid gap-3 rounded-lg border border-yuta-line bg-yuta-paper p-3 md:grid-cols-[1fr_auto] md:items-center"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="grid h-8 min-w-8 place-items-center rounded-lg bg-white px-2 text-sm font-black">
+                            {item.quantity}
+                          </span>
+                          <p className="text-base font-black">
+                            {item.itemNameSnapshot}
                           </p>
+                          {renderStatusBadge(item.status)}
                         </div>
+                        {item.note && (
+                          <p className="mt-2 text-sm font-semibold text-yuta-ink/65">
+                            Note: {item.note}
+                          </p>
+                        )}
                       </div>
 
-                      <div className="mt-4 grid grid-cols-2 gap-2">
-                        <form action={markOrderItemPreparingAction}>
-                          <input type="hidden" name="orderItemId" value={item.id} />
-                          <Button
-                            type="submit"
-                            variant="secondary"
-                            className="w-full"
-                            disabled={item.status === 'preparing'}
-                          >
-                            <Flame className="h-4 w-4" />
-                            Preparer
-                          </Button>
-                        </form>
-                        <form action={markOrderItemReadyAction}>
-                          <input type="hidden" name="orderItemId" value={item.id} />
-                          <Button type="submit" variant="accent" className="w-full">
-                            Pret
-                          </Button>
-                        </form>
-                      </div>
+                      {renderKitchenActions(item, group.order.status)}
                     </article>
                   ))}
                 </div>
@@ -127,6 +234,14 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
             ))}
           </section>
         )}
+
+        <footer className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yuta-line bg-white px-4 py-3 text-xs font-bold text-yuta-ink/55 shadow-card">
+          <span>Derniere mise a jour : {formatTime(new Date())}</span>
+          <span className="inline-flex items-center gap-1 text-yuta-ink">
+            <Wifi className="h-3.5 w-3.5 text-green-600" />
+            Connecte
+          </span>
+        </footer>
       </div>
     </main>
   );
@@ -140,8 +255,41 @@ function parseStation(value: string | undefined): Station {
   return 'kitchen';
 }
 
-function groupItemsByOrder<T extends { order: typeof orders.$inferSelect }>(items: T[]) {
-  const groups = new Map<string, { order: typeof orders.$inferSelect; items: T[] }>();
+function parseStatusFilter(value: string | undefined): KitchenStatusFilter {
+  if (value === 'sent' || value === 'preparing' || value === 'ready') {
+    return value;
+  }
+
+  return 'all';
+}
+
+function statusesForFilter(filter: KitchenStatusFilter): OrderItemStatus[] {
+  if (filter === 'sent') {
+    return ['sent'];
+  }
+
+  if (filter === 'preparing') {
+    return ['preparing'];
+  }
+
+  if (filter === 'ready') {
+    return ['ready'];
+  }
+
+  return ['sent', 'preparing', 'ready'];
+}
+
+function kitchenUrl(station: Station, status: KitchenStatusFilter): string {
+  return `/kitchen?station=${station}&status=${status}`;
+}
+
+function groupItemsByOrder<T extends { order: typeof orders.$inferSelect }>(
+  items: T[],
+) {
+  const groups = new Map<
+    string,
+    { order: typeof orders.$inferSelect; items: T[] }
+  >();
 
   for (const item of items) {
     const group = groups.get(item.order.id);
@@ -155,12 +303,171 @@ function groupItemsByOrder<T extends { order: typeof orders.$inferSelect }>(item
   return Array.from(groups.values());
 }
 
+function countItemsByStatus(items: Array<typeof orderItems.$inferSelect>) {
+  return {
+    sent: items.filter((item) => item.status === 'sent').length,
+    preparing: items.filter((item) => item.status === 'preparing').length,
+    ready: items.filter((item) => item.status === 'ready').length,
+  };
+}
+
+function countForFilter(
+  filter: KitchenStatusFilter,
+  counts: ReturnType<typeof countItemsByStatus>,
+  total: number,
+): number {
+  if (filter === 'all') {
+    return total;
+  }
+
+  return counts[filter];
+}
+
+function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
+  if (status === 'preparing') {
+    return <Badge variant="neutral">En preparation</Badge>;
+  }
+
+  if (status === 'ready') {
+    return <Badge variant="active">Pret</Badge>;
+  }
+
+  return <Badge variant="outline">A preparer</Badge>;
+}
+
+function renderOrderStatusBadge(status: OrderStatus) {
+  if (status === 'paid') {
+    return <Badge variant="active">Payee</Badge>;
+  }
+
+  if (status === 'cancelled') {
+    return <Badge variant="destructive">Annulee</Badge>;
+  }
+
+  return null;
+}
+
+function renderKitchenActions(
+  item: typeof orderItems.$inferSelect,
+  orderStatus: OrderStatus,
+) {
+  if (orderStatus === 'cancelled') {
+    return (
+      <div className="rounded-lg border border-yuta-line bg-yuta-mist px-3 py-2 text-sm font-semibold text-yuta-ink/60">
+        Commande annulee
+      </div>
+    );
+  }
+
+  if (item.status === 'ready') {
+    return (
+      <div className="grid grid-cols-2 gap-2 md:w-64">
+        <form action={markOrderItemPreparingAction}>
+          <input type="hidden" name="orderItemId" value={item.id} />
+          <Button
+            type="submit"
+            variant="secondary"
+            className="w-full rounded-lg"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reouvrir
+          </Button>
+        </form>
+        <form action={markOrderItemSentAction}>
+          <input type="hidden" name="orderItemId" value={item.id} />
+          <Button type="submit" variant="ghost" className="w-full rounded-lg">
+            Envoye
+          </Button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-2 md:w-64">
+      <form
+        action={
+          item.status === 'preparing'
+            ? markOrderItemSentAction
+            : markOrderItemPreparingAction
+        }
+      >
+        <input type="hidden" name="orderItemId" value={item.id} />
+        <Button type="submit" variant="secondary" className="w-full rounded-lg">
+          {item.status === 'preparing' ? (
+            <RotateCcw className="h-4 w-4" />
+          ) : (
+            <Flame className="h-4 w-4" />
+          )}
+          {item.status === 'preparing' ? 'Retour' : 'Preparer'}
+        </Button>
+      </form>
+      <form action={markOrderItemReadyAction}>
+        <input type="hidden" name="orderItemId" value={item.id} />
+        <Button type="submit" variant="accent" className="w-full rounded-lg">
+          Pret
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+function groupTimeLabel(items: Array<typeof orderItems.$inferSelect>): string {
+  const firstDate = items
+    .map((item) => item.sentAt ?? item.readyAt ?? item.createdAt)
+    .toSorted((left, right) => left.getTime() - right.getTime())[0];
+
+  return firstDate ? elapsedLabel(firstDate) : '';
+}
+
 function elapsedLabel(date: Date): string {
-  const minutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
+  const minutes = Math.max(
+    0,
+    Math.floor((Date.now() - date.getTime()) / 60000),
+  );
 
   if (minutes < 1) {
     return "a l'instant";
   }
 
   return `${minutes} min`;
+}
+
+function stationLabel(station: Station): string {
+  const labels: Record<Station, string> = {
+    kitchen: 'Cuisine',
+    bar: 'Bar',
+    dessert: 'Desserts',
+  };
+
+  return labels[station];
+}
+
+function statusFilterLabel(status: KitchenStatusFilter): string {
+  const labels: Record<KitchenStatusFilter, string> = {
+    all: 'Tous',
+    sent: 'A preparer',
+    preparing: 'En preparation',
+    ready: 'Pret',
+  };
+
+  return labels[status];
+}
+
+function orderTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    dine_in: 'Sur place',
+    takeaway: 'A emporter',
+    delivery: 'Livraison',
+  };
+
+  return labels[type] ?? type;
+}
+
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(date);
 }

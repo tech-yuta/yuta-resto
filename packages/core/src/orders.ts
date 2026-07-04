@@ -227,7 +227,11 @@ export function createOrderService(db: DbClient) {
   }
 
   async function markOrderItemPreparing(orderItemId: string): Promise<OrderItem> {
-    return markOrderItemStatus(orderItemId, 'preparing', ['sent']);
+    return markOrderItemStatus(orderItemId, 'preparing', ['sent', 'ready']);
+  }
+
+  async function markOrderItemSent(orderItemId: string): Promise<OrderItem> {
+    return markOrderItemStatus(orderItemId, 'sent', ['preparing', 'ready']);
   }
 
   async function markOrderItemReady(orderItemId: string): Promise<OrderItem> {
@@ -272,6 +276,11 @@ export function createOrderService(db: DbClient) {
   ): Promise<OrderItem> {
     const values = orderItemIdSchema.parse({ orderItemId });
     const item = await getRequiredOrderItem(values.orderItemId);
+    const order = await getRequiredOrder(item.orderId);
+
+    if (order.status === 'cancelled') {
+      throw new OrderServiceError('Cancelled orders cannot change kitchen status.', 'invalid_status');
+    }
 
     if (!allowedCurrentStatuses.includes(item.status)) {
       throw new OrderServiceError(
@@ -286,6 +295,8 @@ export function createOrderService(db: DbClient) {
         ? { readyAt: now }
         : status === 'served'
           ? { servedAt: now }
+          : status === 'sent' || status === 'preparing'
+            ? { readyAt: null, servedAt: null }
           : {};
 
     const [updatedItem] = await db
@@ -379,6 +390,7 @@ export function createOrderService(db: DbClient) {
     cancelOrderItem,
     restoreOrderItem,
     sendOrderToKitchen,
+    markOrderItemSent,
     markOrderItemPreparing,
     markOrderItemReady,
     markOrderItemServed,

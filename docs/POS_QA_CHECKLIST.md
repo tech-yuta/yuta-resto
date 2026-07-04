@@ -94,6 +94,12 @@ N/A       not applicable for this run
 | Kitchen station filter `Dessert` | Only dessert station items are shown |  |  |
 | Mark item `Preparer` | Item becomes `Preparation` |  |  |
 | Mark item `Pret` | Item becomes `Pret` |  |  |
+| Open kitchen `Historique` | Ready items are visible by station |  |  |
+| Tap `Reouvrir` on a ready item | Item returns to `Preparation` and active kitchen queue |  |  |
+| Tap `Retour` on a preparing item | Item returns to `Envoye` |  |  |
+| Paid order in kitchen `A preparer` | Item can still be marked `Preparer` or `Pret` |  |  |
+| Paid order in kitchen `Historique` | Ready item can still be reopened for kitchen correction |  |  |
+| Cancelled order in kitchen | Item is read-only and does not show rollback buttons |  |  |
 | Order status refreshes from item statuses | Order status reflects sent/preparing/ready state |  |  |
 
 ## Full Payment
@@ -101,6 +107,10 @@ N/A       not applicable for this run
 | Case | Expected Result | Result | Notes |
 |---|---|---:|---|
 | Open payment page | Payment page shows total, paid, remaining |  |  |
+| Submit payment with empty amount | Payment page shows a validation message, no server error overlay |  |  |
+| Submit payment with empty tendered amount | Payment uses the amount being collected as the tendered amount |  |  |
+| Select `Especes` and enter tendered amount above collected amount | Payment UI shows change to return |  |  |
+| Enter collected amount above remaining amount | Submit is blocked and payment UI shows a validation message |  |  |
 | Pay partial amount | Payment saves; order remains open |  |  |
 | Partial payment receipt | No `customer_receipt` job is created before the order is fully paid |  |  |
 | Pay remaining amount | Order becomes `Payee` |  |  |

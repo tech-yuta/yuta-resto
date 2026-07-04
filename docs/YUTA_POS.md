@@ -49,6 +49,8 @@ Envoyer cuisine
 Paiement
 Preparer
 Pret
+Retour
+Reouvrir
 ```
 
 Code, comments, types, commit messages, and documentation stay in English.

@@ -1,6 +1,6 @@
 'use server';
 
-import { createOrderService, createPaymentService, createPrintService, PaymentServiceError } from '@yuta/core';
+import { createOrderService, createPaymentService, createPrintService, OrderServiceError, PaymentServiceError } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { checks, orderItems, orders, users } from '@yuta/db/schema';
 import { and, eq, ne } from 'drizzle-orm';
@@ -216,9 +216,16 @@ export async function markOrderItemPreparingAction(formData: FormData): Promise<
   });
   const orderService = createOrderService(db);
 
-  await orderService.markOrderItemPreparing(values.orderItemId);
+  await runKitchenStatusAction(() => orderService.markOrderItemPreparing(values.orderItemId));
+}
 
-  revalidatePath('/kitchen');
+export async function markOrderItemSentAction(formData: FormData): Promise<void> {
+  const values = orderItemIdFormSchema.parse({
+    orderItemId: formData.get('orderItemId'),
+  });
+  const orderService = createOrderService(db);
+
+  await runKitchenStatusAction(() => orderService.markOrderItemSent(values.orderItemId));
 }
 
 export async function markOrderItemReadyAction(formData: FormData): Promise<void> {
@@ -227,19 +234,12 @@ export async function markOrderItemReadyAction(formData: FormData): Promise<void
   });
   const orderService = createOrderService(db);
 
-  await orderService.markOrderItemReady(values.orderItemId);
-
-  revalidatePath('/kitchen');
+  await runKitchenStatusAction(() => orderService.markOrderItemReady(values.orderItemId));
 }
 
 export async function payFullOrderAction(formData: FormData): Promise<void> {
-  const rawTenderedCents = formData.get('tenderedCents');
-  const values = payFullOrderFormSchema.parse({
-    orderId: formData.get('orderId'),
-    method: formData.get('method'),
-    amountCents: formData.get('amountCents'),
-    tenderedCents: rawTenderedCents === '' ? undefined : rawTenderedCents,
-  });
+  const orderId = readOrderIdOrThrow(formData);
+  const values = parsePaymentFormOrRedirect(payFullOrderFormSchema, formData, orderId);
   const paymentService = createPaymentService(db);
   const printService = createPrintService(db);
 
@@ -311,14 +311,8 @@ export async function cancelOrderSplitAction(formData: FormData): Promise<void> 
 }
 
 export async function payCheckAction(formData: FormData): Promise<void> {
-  const rawTenderedCents = formData.get('tenderedCents');
-  const values = payCheckFormSchema.parse({
-    orderId: formData.get('orderId'),
-    checkId: formData.get('checkId'),
-    method: formData.get('method'),
-    amountCents: formData.get('amountCents'),
-    tenderedCents: rawTenderedCents === '' ? undefined : rawTenderedCents,
-  });
+  const orderId = readOrderIdOrThrow(formData);
+  const values = parsePaymentFormOrRedirect(payCheckFormSchema, formData, orderId);
   const paymentService = createPaymentService(db);
   const printService = createPrintService(db);
 
@@ -481,6 +475,49 @@ function isSelectableStaffUser(user: typeof users.$inferSelect | undefined): use
   return Boolean(
     user?.isActive && staffSelectableRoles.includes(user.role as (typeof staffSelectableRoles)[number]),
   );
+}
+
+function readOrderIdOrThrow(formData: FormData): string {
+  return orderIdFormSchema.parse({
+    orderId: formData.get('orderId'),
+  }).orderId;
+}
+
+function parsePaymentFormOrRedirect<T extends typeof payFullOrderFormSchema | typeof payCheckFormSchema>(
+  schema: T,
+  formData: FormData,
+  orderId: string,
+): z.infer<T> {
+  const rawAmountCents = formData.get('amountCents');
+  const rawTenderedCents = formData.get('tenderedCents');
+  const parsedValues = schema.safeParse({
+    orderId,
+    checkId: formData.get('checkId'),
+    method: formData.get('method'),
+    amountCents: rawAmountCents,
+    tenderedCents: rawTenderedCents === null || rawTenderedCents === '' ? rawAmountCents : rawTenderedCents,
+  });
+
+  if (!parsedValues.success) {
+    redirect(`/orders/${orderId}/payment?error=invalid_amount`);
+  }
+
+  return parsedValues.data as z.infer<T>;
+}
+
+async function runKitchenStatusAction(operation: () => Promise<unknown>): Promise<void> {
+  try {
+    await operation();
+  } catch (error) {
+    if (error instanceof OrderServiceError && error.code === 'invalid_status') {
+      revalidatePath('/kitchen');
+      return;
+    }
+
+    throw error;
+  }
+
+  revalidatePath('/kitchen');
 }
 
 function parseEuroAmountToCents(value: unknown): number {
