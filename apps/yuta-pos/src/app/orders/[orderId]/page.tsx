@@ -1,17 +1,10 @@
 import { createOrderService } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { menuCategories, menuItems } from '@yuta/db/schema';
-import {
-  Badge,
-  Button,
-  Card,
-  Input,
-  SegmentedNav,
-  Separator,
-  cn,
-} from '@yuta/ui';
+import { Badge, Button, Card, Input, Separator, cn } from '@yuta/ui';
 import { and, asc, eq } from 'drizzle-orm';
 import {
+  ArrowLeft,
   ChefHat,
   CreditCard,
   Minus,
@@ -22,7 +15,6 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { PosHeader } from '../../components/PosHeader';
 import {
   addOrderItemAction,
   cancelOrderItemAction,
@@ -41,6 +33,11 @@ type OrderPageProps = {
   }>;
 };
 
+type CategoryTab = {
+  id: string;
+  name: string;
+};
+
 export default async function OrderPage({
   params,
   searchParams,
@@ -55,17 +52,29 @@ export default async function OrderPage({
       orderBy: [asc(menuCategories.sortOrder), asc(menuCategories.name)],
     }),
   ]);
-  const selectedCategoryId = category ?? categories[0]?.id;
+  const selectedCategoryId = category ?? 'all';
+  const categoryTabs: CategoryTab[] = [
+    { id: 'all', name: 'Toutes' },
+    ...categories.map((categoryItem) => ({
+      id: categoryItem.id,
+      name: categoryItem.name,
+    })),
+  ];
   const items =
-    selectedCategoryId !== undefined
+    selectedCategoryId === 'all'
       ? await db.query.menuItems.findMany({
-          where: and(
-            eq(menuItems.categoryId, selectedCategoryId),
-            eq(menuItems.isAvailable, true),
-          ),
+          where: eq(menuItems.isAvailable, true),
           orderBy: [asc(menuItems.sortOrder), asc(menuItems.name)],
         })
-      : [];
+      : selectedCategoryId !== undefined
+        ? await db.query.menuItems.findMany({
+            where: and(
+              eq(menuItems.categoryId, selectedCategoryId),
+              eq(menuItems.isAvailable, true),
+            ),
+            orderBy: [asc(menuItems.sortOrder), asc(menuItems.name)],
+          })
+        : [];
   const searchQuery = q?.trim() ?? '';
   const visibleItems =
     searchQuery.length > 0
@@ -88,72 +97,96 @@ export default async function OrderPage({
   return (
     <main className="min-h-screen bg-yuta-paper text-yuta-ink">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 md:px-6 md:py-6">
-        <PosHeader
-          title={
-            <span className="inline-flex flex-wrap items-center gap-2">
-              {order.tableLabel}
-              <Badge variant="info">{orderTypeLabel(order.orderType)}</Badge>
-            </span>
-          }
-          description={order.orderNumber}
-          actions={
-            <>
-              <Button asChild variant="secondary" size="touch">
-                <Link href="/">Retour</Link>
+        <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-yuta-ink px-4 py-3 text-white shadow-card">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="shrink-0 text-white hover:bg-white/10"
+            >
+              <Link href="/" aria-label="Retour commandes">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="truncate text-xl font-black tracking-normal md:text-2xl">
+                  {order.tableLabel}
+                </h1>
+                <Badge variant="info" size="sm">
+                  {orderTypeLabel(order.orderType)}
+                </Badge>
+              </div>
+              <p className="mt-0.5 text-xs font-semibold text-white/60">
+                {order.orderNumber}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <form action={sendOrderToKitchenAction}>
+              <input type="hidden" name="orderId" value={order.id} />
+              <Button
+                variant="primary"
+                className="border border-white/10"
+                disabled={
+                  pendingItemCount === 0 ||
+                  order.status === 'paid' ||
+                  order.status === 'cancelled'
+                }
+              >
+                <ChefHat className="h-4 w-4" />
+                Envoyer en cuisine
               </Button>
-              <form action={sendOrderToKitchenAction}>
-                <input type="hidden" name="orderId" value={order.id} />
-                <Button
-                  variant="kitchen"
-                  disabled={
-                    pendingItemCount === 0 ||
-                    order.status === 'paid' ||
-                    order.status === 'cancelled'
-                  }
-                >
-                  <ChefHat className="h-4 w-4" />
-                  Envoyer en cuisine
-                </Button>
-              </form>
-              <Button asChild variant="secondary" size="touch">
-                <Link href={`/orders/${order.id}/payment`}>
-                  <CreditCard className="h-4 w-4" />
-                  Paiement
-                </Link>
-              </Button>
-              <Button variant="ghost" size="icon" aria-label="Plus d actions">
-                <MoreVertical className="h-5 w-5" />
-              </Button>
-            </>
-          }
-        />
+            </form>
+            <Button
+              asChild
+              variant="secondary"
+              className="border-white/15 bg-yuta-ink text-white hover:bg-white/10"
+            >
+              <Link href={`/orders/${order.id}/payment`}>
+                <CreditCard className="h-4 w-4" />
+                Paiement
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10"
+              aria-label="Plus d actions"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </div>
+        </header>
 
         <section className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_360px]">
-          <Card padding="none" className="lg:sticky lg:top-6 lg:self-start">
-            <div className="border-b border-yuta-line p-4">
-              <h2 className="text-sm font-black uppercase tracking-normal text-yuta-ink/55">
-                Categories
+          <Card
+            padding="none"
+            className="overflow-hidden lg:sticky lg:top-6 lg:self-start"
+          >
+            <div className="px-4 pb-2 pt-4">
+              <h2 className="text-sm font-black text-yuta-ink/60">
+                Catégories
               </h2>
             </div>
-            <SegmentedNav className="p-3 lg:grid lg:gap-1 lg:overflow-visible">
-              {categories.map((categoryItem) => (
-                <Button
+            <nav className="grid gap-1 px-3 pb-4 pt-2">
+              {categoryTabs.map((categoryItem) => (
+                <Link
                   key={categoryItem.id}
-                  asChild
-                  variant={
-                    categoryItem.id === selectedCategoryId ? 'primary' : 'ghost'
-                  }
-                  size="sm"
-                  className="shrink-0 justify-start rounded-lg lg:w-full"
+                  href={categoryHref(order.id, categoryItem.id, searchQuery)}
+                  className={cn(
+                    'rounded-lg px-3 py-2 text-sm font-black transition-colors',
+                    categoryItem.id === selectedCategoryId
+                      ? 'bg-yuta-success text-white'
+                      : 'text-yuta-ink hover:bg-yuta-mist',
+                  )}
                 >
-                  <Link
-                    href={`/orders/${order.id}?category=${categoryItem.id}`}
-                  >
-                    {categoryItem.name}
-                  </Link>
-                </Button>
+                  {categoryItem.name}
+                </Link>
               ))}
-            </SegmentedNav>
+            </nav>
           </Card>
 
           <Card padding="none" className="min-h-[620px]">
@@ -183,7 +216,6 @@ export default async function OrderPage({
                   name="q"
                   defaultValue={searchQuery}
                   placeholder="Rechercher un article..."
-                  inputSize="touch"
                   className="pl-9"
                 />
               </form>
@@ -208,26 +240,26 @@ export default async function OrderPage({
                     <Button
                       type="submit"
                       variant="secondary"
-                      className="h-36 w-full flex-col items-stretch justify-between rounded-lg p-3 text-left"
+                      className="h-44 w-full flex-col justify-start rounded-lg p-2 text-center"
                       disabled={
                         order.status === 'paid' || order.status === 'cancelled'
                       }
                     >
-                      <span className="flex items-start justify-between gap-2">
-                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-yuta-mist text-lg font-black">
-                          {item.name.slice(0, 1).toLocaleUpperCase('fr-FR')}
+                      <span className="relative block w-full">
+                        <MenuItemArtwork name={item.name} />
+                        <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-yuta-accent text-yuta-ink shadow-card">
+                          <Plus className="h-3.5 w-3.5" />
                         </span>
-                        <Plus className="h-4 w-4 shrink-0 text-yuta-ink/45" />
                       </span>
-                      <span>
-                        <span className="line-clamp-2 text-sm font-black leading-tight">
+                      <span className="mt-2 grid gap-1">
+                        <span className="line-clamp-2 min-h-8 text-sm font-black leading-tight">
                           {item.name}
                         </span>
-                        <span className="mt-1 block text-xs font-semibold text-yuta-ink/50">
+                        <span className="text-[11px] font-semibold text-yuta-ink/45">
                           {stationLabel(item.kitchenStation)}
                         </span>
                       </span>
-                      <span className="text-sm font-black">
+                      <span className="mt-auto text-sm font-black">
                         {formatEuros(item.priceCents)}
                       </span>
                     </Button>
@@ -238,7 +270,7 @@ export default async function OrderPage({
           </Card>
 
           <Card padding="none" className="lg:sticky lg:top-6 lg:self-start">
-            <div className="p-4">
+            <div className="px-4 py-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-black">Commande actuelle</h2>
@@ -252,7 +284,7 @@ export default async function OrderPage({
               </div>
             </div>
             <Separator />
-            <div className="grid max-h-[52vh] gap-3 overflow-y-auto p-4">
+            <div className="grid max-h-[52vh] overflow-y-auto p-4">
               {order.items.length === 0 ? (
                 <p className="rounded-lg border border-yuta-line bg-yuta-paper p-3 text-sm font-semibold text-yuta-ink/55">
                   Aucun article pour le moment.
@@ -262,16 +294,17 @@ export default async function OrderPage({
                   <div
                     key={item.id}
                     className={cn(
-                      'grid gap-3 rounded-lg border border-yuta-line bg-yuta-paper p-3',
+                      'grid gap-3 border-b border-yuta-line py-3 first:pt-0 last:border-b-0 last:pb-0',
                       item.status === 'cancelled' && 'opacity-60',
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-black">
-                            {item.quantity} {item.itemNameSnapshot}
-                          </p>
+                          <span className="min-w-5 text-sm font-black">
+                            {item.quantity}
+                          </span>
+                          <p className="font-black">{item.itemNameSnapshot}</p>
                           <Badge
                             variant={
                               item.status === 'pending'
@@ -285,8 +318,8 @@ export default async function OrderPage({
                           </Badge>
                         </div>
                         {item.note && (
-                          <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
-                            {item.note}
+                          <p className="mt-1 pl-7 text-xs font-semibold text-yuta-ink/55">
+                            Note: {item.note}
                           </p>
                         )}
                       </div>
@@ -414,7 +447,7 @@ export default async function OrderPage({
               )}
             </div>
             <Separator />
-            <div className="grid gap-2 p-4">
+            <div className="grid gap-2 px-4 py-3">
               <AmountRow label="Sous-total" value={order.subtotalCents} />
               <AmountRow label="Remise" value={-order.discountCents} />
               <div className="flex items-center justify-between border-t border-yuta-line pt-3">
@@ -456,6 +489,66 @@ function AmountRow({ label, value }: { label: string; value: number }) {
       </span>
     </div>
   );
+}
+
+function categoryHref(
+  orderId: string,
+  categoryId: string,
+  searchQuery: string,
+): string {
+  const params = new URLSearchParams();
+
+  if (categoryId !== 'all') {
+    params.set('category', categoryId);
+  }
+
+  if (searchQuery.length > 0) {
+    params.set('q', searchQuery);
+  }
+
+  const queryString = params.toString();
+
+  return queryString.length > 0
+    ? `/orders/${orderId}?${queryString}`
+    : `/orders/${orderId}`;
+}
+
+function MenuItemArtwork({ name }: { name: string }) {
+  return (
+    <span
+      className={cn(
+        'mx-auto grid h-20 w-20 place-items-center rounded-full border border-yuta-line text-lg font-black shadow-card',
+        menuItemArtworkClass(name),
+      )}
+    >
+      {menuItemInitials(name)}
+    </span>
+  );
+}
+
+function menuItemArtworkClass(name: string): string {
+  const classes = [
+    'bg-yuta-mist text-yuta-ink',
+    'bg-yuta-accent text-yuta-ink',
+    'bg-yuta-info text-yuta-ink',
+    'bg-yuta-warning text-yuta-ink',
+    'bg-yuta-paper text-yuta-ink',
+  ];
+  const index = Array.from(name).reduce(
+    (total, char) => total + char.charCodeAt(0),
+    0,
+  );
+
+  return classes[index % classes.length] ?? classes[0];
+}
+
+function menuItemInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.slice(0, 1).toLocaleUpperCase('fr-FR'))
+    .join('');
 }
 
 function statusLabel(status: string): string {

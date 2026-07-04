@@ -182,14 +182,20 @@ Bar
 Dessert
 ```
 
-Kitchen staff can also switch between:
+The kitchen screen is a production queue, not a full order-history screen.
+By default it opens `A preparer` and only loads the selected station/status
+queue.
+
+Kitchen staff can switch between:
 
 ```txt
-Tous             sent, preparing, and ready items
 A preparer       sent items
 En preparation   preparing items
 Pret             ready items; paid orders can still be reopened for kitchen corrections
 ```
+
+The `Tous` view is intentionally not available in the MVP kitchen queue. Use
+the POS home/orders list for full command lookup.
 
 Items appear grouped by order/table.
 

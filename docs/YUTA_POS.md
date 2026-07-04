@@ -98,6 +98,7 @@ Use a fast item grid
 Keep the current order visible
 Make Send to kitchen and Payment easy to reach
 Show kitchen items grouped by table label/order
+Keep the kitchen screen as a station/status work queue, not a full command list
 Keep payment totals clear
 ```
 

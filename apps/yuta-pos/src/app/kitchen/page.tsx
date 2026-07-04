@@ -8,7 +8,6 @@ import {
   Clock,
   Flame,
   History,
-  ListChecks,
   Martini,
   Plus,
   RotateCcw,
@@ -31,9 +30,10 @@ type KitchenPageProps = {
 };
 
 type Station = 'kitchen' | 'bar' | 'dessert';
-type KitchenStatusFilter = 'all' | 'sent' | 'preparing' | 'ready';
-type OrderItemStatus = typeof orderItems.$inferSelect.status;
+type KitchenStatusFilter = 'sent' | 'preparing' | 'ready';
 type OrderStatus = typeof orders.$inferSelect.status;
+
+const kitchenQueueLimit = 100;
 
 const stations: Array<{ value: Station; label: string; icon: typeof Soup }> = [
   { value: 'kitchen', label: 'Cuisine', icon: Soup },
@@ -44,9 +44,8 @@ const stations: Array<{ value: Station; label: string; icon: typeof Soup }> = [
 const statusFilters: Array<{
   value: KitchenStatusFilter;
   label: string;
-  icon: typeof ListChecks;
+  icon: typeof Flame;
 }> = [
-  { value: 'all', label: 'Tous', icon: ListChecks },
   { value: 'sent', label: 'À préparer', icon: Flame },
   { value: 'preparing', label: 'En préparation', icon: History },
   { value: 'ready', label: 'Prêt', icon: Check },
@@ -56,11 +55,10 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
   const { station, status } = await searchParams;
   const selectedStation = parseStation(station);
   const selectedStatus = parseStatusFilter(status);
-  const visibleStatuses = statusesForFilter(selectedStatus);
   const [items, stationItems] = await Promise.all([
     db.query.orderItems.findMany({
       where: and(
-        inArray(orderItems.status, visibleStatuses),
+        eq(orderItems.status, selectedStatus),
         eq(orderItems.kitchenStationSnapshot, selectedStation),
       ),
       with: {
@@ -70,6 +68,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
         selectedStatus === 'ready'
           ? [desc(orderItems.readyAt), desc(orderItems.createdAt)]
           : [asc(orderItems.sentAt), asc(orderItems.createdAt)],
+      limit: kitchenQueueLimit,
     }),
     db.query.orderItems.findMany({
       where: and(
@@ -137,7 +136,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                     <Icon className="h-4 w-4" />
                     {label}
                     <span className="rounded-full bg-yuta-mist px-1.5 py-0.5 text-[10px] font-black text-yuta-ink">
-                      {countForFilter(value, counts, stationItems.length)}
+                      {counts[value]}
                     </span>
                   </Link>
                 </Button>
@@ -247,23 +246,7 @@ function parseStatusFilter(value: string | undefined): KitchenStatusFilter {
     return value;
   }
 
-  return 'all';
-}
-
-function statusesForFilter(filter: KitchenStatusFilter): OrderItemStatus[] {
-  if (filter === 'sent') {
-    return ['sent'];
-  }
-
-  if (filter === 'preparing') {
-    return ['preparing'];
-  }
-
-  if (filter === 'ready') {
-    return ['ready'];
-  }
-
-  return ['sent', 'preparing', 'ready'];
+  return 'sent';
 }
 
 function kitchenUrl(station: Station, status: KitchenStatusFilter): string {
@@ -296,18 +279,6 @@ function countItemsByStatus(items: Array<typeof orderItems.$inferSelect>) {
     preparing: items.filter((item) => item.status === 'preparing').length,
     ready: items.filter((item) => item.status === 'ready').length,
   };
-}
-
-function countForFilter(
-  filter: KitchenStatusFilter,
-  counts: ReturnType<typeof countItemsByStatus>,
-  total: number,
-): number {
-  if (filter === 'all') {
-    return total;
-  }
-
-  return counts[filter];
 }
 
 function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
@@ -428,7 +399,6 @@ function stationLabel(station: Station): string {
 
 function statusFilterLabel(status: KitchenStatusFilter): string {
   const labels: Record<KitchenStatusFilter, string> = {
-    all: 'Tous',
     sent: 'À préparer',
     preparing: 'En préparation',
     ready: 'Prêt',
