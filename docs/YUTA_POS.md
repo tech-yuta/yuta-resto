@@ -89,13 +89,13 @@ Route convention:
 /       Command list / service home
 /pos    New order entry
 /orders Legacy alias for the command list
+/orders/<orderId> Command detail
 ```
 
 Do:
 
 ```txt
-Use a fast item grid
-Keep the current order visible
+Keep command details readable on mobile, tablet, and desktop
 Make Send to kitchen and Payment easy to reach
 Show kitchen items grouped by table label/order
 Keep the kitchen screen as a station/status work queue, not a full command list

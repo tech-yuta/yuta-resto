@@ -11,7 +11,7 @@ import {
   payFullOrderAction,
   splitOrderEquallyAction,
 } from '../../../actions';
-import { PosHeader } from '../../../components/PosHeader';
+import { PosPageShell } from '../../../components/PosPageShell';
 import { PaymentCaptureForm } from './PaymentCaptureForm';
 
 type PaymentPageProps = {
@@ -118,284 +118,271 @@ export default async function PaymentPage({
   );
 
   return (
-    <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-6 md:py-6">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <PosHeader
-          title={`Paiement - ${order.tableLabel}`}
-          description={order.orderNumber}
-          actions={
-            <>
-              <Badge
-                variant={order.status === 'paid' ? 'success' : 'warning'}
-                size="lg"
-              >
-                {order.status === 'paid' ? 'Payée' : 'À encaisser'}
-              </Badge>
-              <Button asChild variant="secondary" size="touch">
-                <Link href={`/orders/${order.id}`}>Retour commande</Link>
-              </Button>
-            </>
-          }
-        />
+    <PosPageShell
+      backHref={`/orders/${order.id}`}
+      backLabel="Retour commande"
+      title={`Paiement - ${order.tableLabel}`}
+      description={order.orderNumber}
+      actions={
+        <Badge
+          variant={order.status === 'paid' ? 'success' : 'warning'}
+          size="lg"
+        >
+          {order.status === 'paid' ? 'Payée' : 'À encaisser'}
+        </Badge>
+      }
+    >
+      {error && (
+        <div className="rounded-xl border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
+          {paymentErrorMessage(error)}
+        </div>
+      )}
 
-        {error && (
-          <div className="rounded-xl border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
-            {paymentErrorMessage(error)}
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <Card className="rounded-lg p-0">
+          <div className="p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">Récapitulatif</h2>
+                <p className="mt-1 text-sm text-yuta-ink/55">
+                  Les combos sont calcules au paiement.
+                </p>
+              </div>
+              {order.discountCents > 0 ? (
+                <Badge variant="active" className="gap-1">
+                  <Tags className="h-3.5 w-3.5" />
+                  Combo actif
+                </Badge>
+              ) : (
+                <Badge variant="outline">Aucune remise</Badge>
+              )}
+            </div>
           </div>
-        )}
-
-        <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <Card className="rounded-lg p-0">
-            <div className="p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+          <Separator />
+          <div className="grid gap-3 p-5">
+            {activeOrderItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-3"
+              >
                 <div>
-                  <h2 className="text-lg font-bold">Récapitulatif</h2>
-                  <p className="mt-1 text-sm text-yuta-ink/55">
-                    Les combos sont calcules au paiement.
+                  <p className="font-semibold">
+                    {item.quantity} x {item.itemNameSnapshot}
                   </p>
                 </div>
-                {order.discountCents > 0 ? (
-                  <Badge variant="active" className="gap-1">
-                    <Tags className="h-3.5 w-3.5" />
-                    Combo actif
-                  </Badge>
-                ) : (
-                  <Badge variant="outline">Aucune remise</Badge>
+                <p className="font-bold">
+                  {formatEuros(item.unitPriceCentsSnapshot * item.quantity)}
+                </p>
+              </div>
+            ))}
+            {cancelledOrderItems.length > 0 && (
+              <div className="mt-2 grid gap-2 rounded-xl border border-yuta-line bg-yuta-paper p-3">
+                <p className="text-xs font-black uppercase text-yuta-ink/45">
+                  Articles annulés
+                </p>
+                {cancelledOrderItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-3 text-yuta-ink/55"
+                  >
+                    <div>
+                      <p className="font-semibold line-through">
+                        {item.quantity} x {item.itemNameSnapshot}
+                      </p>
+                      <p className="mt-0.5 text-xs font-bold">
+                        Annulé - non facturé
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold line-through">
+                        {formatEuros(
+                          item.unitPriceCentsSnapshot * item.quantity,
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-xs font-black">0,00 €</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {order.discounts.length > 0 && (
+            <>
+              <Separator />
+              <div className="grid gap-3 bg-yuta-mist p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="inline-flex items-center gap-2 text-sm font-black text-yuta-ink">
+                    <Tags className="h-4 w-4" />
+                    Remises combos
+                  </h3>
+                  <span className="text-sm font-black text-yuta-ink">
+                    -{formatEuros(order.discountCents)}
+                  </span>
+                </div>
+                {order.discounts.map((discount) => (
+                  <div
+                    key={discount.id}
+                    className="rounded-xl border border-yuta-line bg-white px-3 py-2"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">{discount.nameSnapshot}</p>
+                        <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
+                          {formatDiscountItems(discount.items)}
+                        </p>
+                      </div>
+                      <p className="font-black">
+                        -{formatEuros(discount.discountCents)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          <Separator />
+          <div className="grid gap-2 p-5">
+            <AmountRow
+              label="Sous-total articles"
+              value={order.subtotalCents}
+            />
+            <AmountRow label="Remises combos" value={-order.discountCents} />
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-yuta-line bg-yuta-paper px-3 py-2">
+              <span className="font-black">Total après combos</span>
+              <span className="text-lg font-black">
+                {formatEuros(order.totalCents)}
+              </span>
+            </div>
+            <AmountRow label="Déjà payé" value={paidCents} />
+            <div className="mt-2 flex items-center justify-between border-t border-yuta-line pt-4">
+              <span className="text-lg font-black">Reste a payer</span>
+              <span className="text-2xl font-black">
+                {formatEuros(remainingCents)}
+              </span>
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid gap-5">
+          <ActionPanel
+            title="Payer tout"
+            description="Encaissement complet"
+            icon={<CreditCard className="h-5 w-5" />}
+          >
+            <PaymentCaptureForm
+              action={payFullOrderAction}
+              orderId={order.id}
+              remainingCents={remainingCents}
+              disabled={splitChecks.length > 0}
+              submitSize="lg"
+            />
+            {splitChecks.length > 0 && (
+              <div className="mt-4 rounded-xl border border-yuta-line bg-yuta-mist p-3">
+                <p className="text-sm font-semibold text-yuta-ink/70">
+                  Paiement complet bloque car un partage est actif.
+                </p>
+                <form action={cancelOrderSplitAction} className="mt-3">
+                  <input type="hidden" name="orderId" value={order.id} />
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    className="w-full"
+                    disabled={hasPaidSplitCheck}
+                  >
+                    Annuler le partage
+                  </Button>
+                </form>
+                {hasPaidSplitCheck && (
+                  <p className="mt-2 text-xs font-semibold text-yuta-ink/55">
+                    Impossible après encaissement d’un ticket.
+                  </p>
                 )}
               </div>
-            </div>
-            <Separator />
-            <div className="grid gap-3 p-5">
-              {activeOrderItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <div>
-                    <p className="font-semibold">
-                      {item.quantity} x {item.itemNameSnapshot}
-                    </p>
-                  </div>
-                  <p className="font-bold">
-                    {formatEuros(item.unitPriceCentsSnapshot * item.quantity)}
-                  </p>
-                </div>
-              ))}
-              {cancelledOrderItems.length > 0 && (
-                <div className="mt-2 grid gap-2 rounded-xl border border-yuta-line bg-yuta-paper p-3">
-                  <p className="text-xs font-black uppercase text-yuta-ink/45">
-                    Articles annulés
-                  </p>
-                  {cancelledOrderItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-start justify-between gap-3 text-yuta-ink/55"
-                    >
-                      <div>
-                        <p className="font-semibold line-through">
-                          {item.quantity} x {item.itemNameSnapshot}
-                        </p>
-                        <p className="mt-0.5 text-xs font-bold">
-                          Annulé - non facturé
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold line-through">
-                          {formatEuros(
-                            item.unitPriceCentsSnapshot * item.quantity,
-                          )}
-                        </p>
-                        <p className="mt-0.5 text-xs font-black">0,00 €</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
+          </ActionPanel>
 
-            {order.discounts.length > 0 && (
+          <ActionPanel
+            title="Partager en parts égales"
+            description="Diviser le total optimisé"
+            icon={<Split className="h-5 w-5" />}
+          >
+            <form action={splitOrderEquallyAction} className="mt-5 grid gap-3">
+              <input type="hidden" name="orderId" value={order.id} />
+              <p className="text-sm font-semibold text-yuta-ink/55">
+                Nombre de parts
+              </p>
+              <div className="grid grid-cols-5 gap-2">
+                {equalPartOptions.map((parts) => (
+                  <Button
+                    key={parts}
+                    type="submit"
+                    name="parts"
+                    value={parts}
+                    variant="secondary"
+                    className="h-11 rounded-lg"
+                    disabled={order.status === 'paid'}
+                  >
+                    {parts}
+                  </Button>
+                ))}
+              </div>
+              <div className="rounded-lg border border-yuta-line bg-yuta-paper p-3">
+                <p className="text-xs font-black uppercase text-yuta-ink/45">
+                  Montant par part
+                </p>
+                <p className="mt-1 text-2xl font-black">
+                  {formatEuros(Math.ceil(order.totalCents / 2))}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
+                  Aperçu pour 2 parts. Choisir un bouton pour créer les tickets.
+                </p>
+              </div>
+            </form>
+
+            {equalChecks.length > 0 && (
               <>
-                <Separator />
-                <div className="grid gap-3 bg-yuta-mist p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="inline-flex items-center gap-2 text-sm font-black text-yuta-ink">
-                      <Tags className="h-4 w-4" />
-                      Remises combos
-                    </h3>
-                    <span className="text-sm font-black text-yuta-ink">
-                      -{formatEuros(order.discountCents)}
-                    </span>
-                  </div>
-                  {order.discounts.map((discount) => (
-                    <div
-                      key={discount.id}
-                      className="rounded-xl border border-yuta-line bg-white px-3 py-2"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold">
-                            {discount.nameSnapshot}
-                          </p>
-                          <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
-                            {formatDiscountItems(discount.items)}
-                          </p>
-                        </div>
-                        <p className="font-black">
-                          -{formatEuros(discount.discountCents)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <Separator className="my-5" />
+                <CheckPaymentList
+                  checks={equalChecks}
+                  payments={order.payments}
+                  orderId={order.id}
+                />
               </>
             )}
+          </ActionPanel>
 
-            <Separator />
-            <div className="grid gap-2 p-5">
-              <AmountRow
-                label="Sous-total articles"
-                value={order.subtotalCents}
-              />
-              <AmountRow label="Remises combos" value={-order.discountCents} />
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-yuta-line bg-yuta-paper px-3 py-2">
-                <span className="font-black">Total après combos</span>
-                <span className="text-lg font-black">
-                  {formatEuros(order.totalCents)}
-                </span>
-              </div>
-              <AmountRow label="Déjà payé" value={paidCents} />
-              <div className="mt-2 flex items-center justify-between border-t border-yuta-line pt-4">
-                <span className="text-lg font-black">Reste a payer</span>
-                <span className="text-2xl font-black">
-                  {formatEuros(remainingCents)}
-                </span>
-              </div>
-            </div>
-          </Card>
-
-          <div className="grid gap-5">
-            <ActionPanel
-              title="Payer tout"
-              description="Encaissement complet"
-              icon={<CreditCard className="h-5 w-5" />}
+          <ActionPanel
+            title="Séparer par articles"
+            description="Créer des tickets par client"
+            icon={<ListChecks className="h-5 w-5" />}
+          >
+            <Button
+              asChild
+              variant="secondary"
+              className="mt-5 w-full"
+              disabled={order.status === 'paid'}
             >
-              <PaymentCaptureForm
-                action={payFullOrderAction}
-                orderId={order.id}
-                remainingCents={remainingCents}
-                disabled={splitChecks.length > 0}
-                submitSize="lg"
-              />
-              {splitChecks.length > 0 && (
-                <div className="mt-4 rounded-xl border border-yuta-line bg-yuta-mist p-3">
-                  <p className="text-sm font-semibold text-yuta-ink/70">
-                    Paiement complet bloque car un partage est actif.
-                  </p>
-                  <form action={cancelOrderSplitAction} className="mt-3">
-                    <input type="hidden" name="orderId" value={order.id} />
-                    <Button
-                      type="submit"
-                      variant="secondary"
-                      className="w-full"
-                      disabled={hasPaidSplitCheck}
-                    >
-                      Annuler le partage
-                    </Button>
-                  </form>
-                  {hasPaidSplitCheck && (
-                    <p className="mt-2 text-xs font-semibold text-yuta-ink/55">
-                      Impossible après encaissement d’un ticket.
-                    </p>
-                  )}
-                </div>
-              )}
-            </ActionPanel>
+              <Link href={`/orders/${order.id}/payment/items`}>
+                Choisir les articles
+              </Link>
+            </Button>
 
-            <ActionPanel
-              title="Partager en parts égales"
-              description="Diviser le total optimisé"
-              icon={<Split className="h-5 w-5" />}
-            >
-              <form
-                action={splitOrderEquallyAction}
-                className="mt-5 grid gap-3"
-              >
-                <input type="hidden" name="orderId" value={order.id} />
-                <p className="text-sm font-semibold text-yuta-ink/55">
-                  Nombre de parts
-                </p>
-                <div className="grid grid-cols-5 gap-2">
-                  {equalPartOptions.map((parts) => (
-                    <Button
-                      key={parts}
-                      type="submit"
-                      name="parts"
-                      value={parts}
-                      variant="secondary"
-                      className="h-11 rounded-lg"
-                      disabled={order.status === 'paid'}
-                    >
-                      {parts}
-                    </Button>
-                  ))}
-                </div>
-                <div className="rounded-lg border border-yuta-line bg-yuta-paper p-3">
-                  <p className="text-xs font-black uppercase text-yuta-ink/45">
-                    Montant par part
-                  </p>
-                  <p className="mt-1 text-2xl font-black">
-                    {formatEuros(Math.ceil(order.totalCents / 2))}
-                  </p>
-                  <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
-                    Aperçu pour 2 parts. Choisir un bouton pour créer les
-                    tickets.
-                  </p>
-                </div>
-              </form>
-
-              {equalChecks.length > 0 && (
-                <>
-                  <Separator className="my-5" />
-                  <CheckPaymentList
-                    checks={equalChecks}
-                    payments={order.payments}
-                    orderId={order.id}
-                  />
-                </>
-              )}
-            </ActionPanel>
-
-            <ActionPanel
-              title="Séparer par articles"
-              description="Créer des tickets par client"
-              icon={<ListChecks className="h-5 w-5" />}
-            >
-              <Button
-                asChild
-                variant="secondary"
-                className="mt-5 w-full"
-                disabled={order.status === 'paid'}
-              >
-                <Link href={`/orders/${order.id}/payment/items`}>
-                  Choisir les articles
-                </Link>
-              </Button>
-
-              {itemChecks.length > 0 && (
-                <>
-                  <Separator className="my-5" />
-                  <CheckPaymentList
-                    checks={itemChecks}
-                    payments={order.payments}
-                    orderId={order.id}
-                  />
-                </>
-              )}
-            </ActionPanel>
-          </div>
-        </section>
-      </div>
-    </main>
+            {itemChecks.length > 0 && (
+              <>
+                <Separator className="my-5" />
+                <CheckPaymentList
+                  checks={itemChecks}
+                  payments={order.payments}
+                  orderId={order.id}
+                />
+              </>
+            )}
+          </ActionPanel>
+        </div>
+      </section>
+    </PosPageShell>
   );
 }
 

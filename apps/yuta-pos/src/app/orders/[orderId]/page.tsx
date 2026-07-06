@@ -1,481 +1,364 @@
 import { createOrderService } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { menuCategories, menuItems } from '@yuta/db/schema';
-import { Badge, Button, Card, Input, Separator, cn } from '@yuta/ui';
-import { and, asc, eq } from 'drizzle-orm';
+import { Badge, Button, Card, Separator, cn } from '@yuta/ui';
 import {
-  ArrowLeft,
-  ChefHat,
+  Clock,
   CreditCard,
-  Minus,
-  MoreVertical,
-  Plus,
-  RotateCcw,
-  Search,
-  X,
+  Printer,
+  Send,
+  ShieldCheck,
+  StickyNote,
+  Table2,
+  Trash2,
+  User,
 } from 'lucide-react';
 import Link from 'next/link';
-import {
-  addOrderItemAction,
-  cancelOrderItemAction,
-  restoreOrderItemAction,
-  sendOrderToKitchenAction,
-  updateOrderItemQuantityAction,
-} from '../../actions';
+import type { ReactNode } from 'react';
+import { sendOrderToKitchenAction } from '../../actions';
+import { PosPageShell } from '../../components/PosPageShell';
 
 type OrderPageProps = {
   params: Promise<{
     orderId: string;
   }>;
-  searchParams: Promise<{
-    category?: string;
-    q?: string;
-  }>;
 };
 
-type CategoryTab = {
-  id: string;
-  name: string;
-};
+type OrderDetail = Awaited<
+  ReturnType<ReturnType<typeof createOrderService>['getOrderDetail']>
+>;
 
-export default async function OrderPage({
-  params,
-  searchParams,
-}: OrderPageProps) {
+export default async function OrderPage({ params }: OrderPageProps) {
   const { orderId } = await params;
-  const { category, q } = await searchParams;
   const orderService = createOrderService(db);
-  const [order, categories] = await Promise.all([
-    orderService.getOrderDetail(orderId),
-    db.query.menuCategories.findMany({
-      where: eq(menuCategories.isActive, true),
-      orderBy: [asc(menuCategories.sortOrder), asc(menuCategories.name)],
-    }),
-  ]);
-  const selectedCategoryId = category ?? 'all';
-  const categoryTabs: CategoryTab[] = [
-    { id: 'all', name: 'Toutes' },
-    ...categories.map((categoryItem) => ({
-      id: categoryItem.id,
-      name: categoryItem.name,
-    })),
-  ];
-  const items =
-    selectedCategoryId === 'all'
-      ? await db.query.menuItems.findMany({
-          where: eq(menuItems.isAvailable, true),
-          orderBy: [asc(menuItems.sortOrder), asc(menuItems.name)],
-        })
-      : selectedCategoryId !== undefined
-        ? await db.query.menuItems.findMany({
-            where: and(
-              eq(menuItems.categoryId, selectedCategoryId),
-              eq(menuItems.isAvailable, true),
-            ),
-            orderBy: [asc(menuItems.sortOrder), asc(menuItems.name)],
-          })
-        : [];
-  const searchQuery = q?.trim() ?? '';
-  const visibleItems =
-    searchQuery.length > 0
-      ? items.filter((item) => {
-          const normalizedQuery = searchQuery.toLocaleLowerCase('fr-FR');
-          return (
-            item.name.toLocaleLowerCase('fr-FR').includes(normalizedQuery) ||
-            (item.description
-              ?.toLocaleLowerCase('fr-FR')
-              .includes(normalizedQuery) ??
-              false)
-          );
-        })
-      : items;
+  const order = await orderService.getOrderDetail(orderId);
   const activeItems = order.items.filter((item) => item.status !== 'cancelled');
   const pendingItemCount = order.items.filter(
     (item) => item.status === 'pending',
   ).length;
+  const canSendToKitchen =
+    pendingItemCount > 0 &&
+    order.status !== 'paid' &&
+    order.status !== 'cancelled';
+  const canPay = order.status !== 'paid' && order.status !== 'cancelled';
 
   return (
-    <main className="min-h-screen bg-yuta-paper text-yuta-ink">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 md:px-6 md:py-6">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-yuta-ink px-4 py-3 text-white shadow-card">
-          <div className="flex min-w-0 items-center gap-3">
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="shrink-0 text-white hover:bg-white/10"
-            >
-              <Link href="/" aria-label="Retour commandes">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-xl font-black tracking-normal md:text-2xl">
-                  {order.tableLabel}
-                </h1>
-                <Badge variant="info" size="sm">
-                  {orderTypeLabel(order.orderType)}
-                </Badge>
-              </div>
-              <p className="mt-0.5 text-xs font-semibold text-white/60">
-                {order.orderNumber}
-              </p>
-            </div>
-          </div>
+    <PosPageShell
+      title={order.tableLabel}
+      description={order.orderNumber}
+      actions={
+        <>
+          <SendOrderButton
+            orderId={order.id}
+            disabled={!canSendToKitchen}
+            className="border-white/15 bg-yuta-ink text-white hover:bg-white/10"
+            fullWidth={false}
+          />
+          <PaymentButton
+            orderId={order.id}
+            disabled={!canPay}
+            className="border border-white/10"
+            fullWidth={false}
+          />
+        </>
+      }
+      contentClassName="px-4 py-4 md:px-6 md:py-5"
+      maxWidthClassName="max-w-7xl"
+    >
+      <div className="grid gap-4">
+        <OrderSummaryHeader
+          order={order}
+          canPay={canPay}
+          canSendToKitchen={canSendToKitchen}
+        />
 
-          <div className="flex flex-wrap items-center gap-2">
-            <form action={sendOrderToKitchenAction}>
-              <input type="hidden" name="orderId" value={order.id} />
-              <Button
-                variant="primary"
-                className="border border-white/10"
-                disabled={
-                  pendingItemCount === 0 ||
-                  order.status === 'paid' ||
-                  order.status === 'cancelled'
-                }
-              >
-                <ChefHat className="h-4 w-4" />
-                Envoyer en cuisine
-              </Button>
-            </form>
-            <Button
-              asChild
-              variant="secondary"
-              className="border-white/15 bg-yuta-ink text-white hover:bg-white/10"
-            >
-              <Link href={`/orders/${order.id}/payment`}>
-                <CreditCard className="h-4 w-4" />
-                Paiement
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10"
-              aria-label="Plus d actions"
-            >
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </div>
-        </header>
-
-        <section className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)_360px]">
-          <Card
-            padding="none"
-            className="overflow-hidden lg:sticky lg:top-6 lg:self-start"
-          >
-            <div className="px-4 pb-2 pt-4">
-              <h2 className="text-sm font-black text-yuta-ink/60">
-                Catégories
-              </h2>
-            </div>
-            <nav className="grid gap-1 px-3 pb-4 pt-2">
-              {categoryTabs.map((categoryItem) => (
-                <Link
-                  key={categoryItem.id}
-                  href={categoryHref(order.id, categoryItem.id, searchQuery)}
-                  className={cn(
-                    'rounded-lg px-3 py-2 text-sm font-black transition-colors',
-                    categoryItem.id === selectedCategoryId
-                      ? 'bg-yuta-success text-white'
-                      : 'text-yuta-ink hover:bg-yuta-mist',
-                  )}
-                >
-                  {categoryItem.name}
-                </Link>
-              ))}
-            </nav>
-          </Card>
-
-          <Card padding="none" className="min-h-[620px]">
-            <div className="grid gap-4 border-b border-yuta-line p-4 md:grid-cols-[1fr_260px] md:items-center">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-black">Articles</h2>
-                  <Badge variant={statusBadgeVariant(order.status)}>
-                    {statusLabel(order.status)}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
-                  {pendingItemCount} article(s) à envoyer en cuisine
-                </p>
-              </div>
-
-              <form action={`/orders/${order.id}`} className="relative">
-                {selectedCategoryId && (
-                  <input
-                    type="hidden"
-                    name="category"
-                    value={selectedCategoryId}
-                  />
-                )}
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-yuta-ink/40" />
-                <Input
-                  name="q"
-                  defaultValue={searchQuery}
-                  placeholder="Rechercher un article..."
-                  className="pl-9"
-                />
-              </form>
-            </div>
-
-            {visibleItems.length === 0 ? (
-              <div className="grid min-h-96 place-items-center p-6 text-center">
-                <div>
-                  <Search className="mx-auto h-9 w-9 text-yuta-ink/30" />
-                  <h3 className="mt-3 font-black">Aucun article</h3>
-                  <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
-                    Essayez une autre categorie ou une autre recherche.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-3 xl:grid-cols-4">
-                {visibleItems.map((item) => (
-                  <form key={item.id} action={addOrderItemAction}>
-                    <input type="hidden" name="orderId" value={order.id} />
-                    <input type="hidden" name="menuItemId" value={item.id} />
-                    <Button
-                      type="submit"
-                      variant="secondary"
-                      className="h-44 w-full flex-col justify-start rounded-lg p-2 text-center"
-                      disabled={
-                        order.status === 'paid' || order.status === 'cancelled'
-                      }
-                    >
-                      <span className="relative block w-full">
-                        <MenuItemArtwork name={item.name} />
-                        <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-yuta-accent text-yuta-ink shadow-card">
-                          <Plus className="h-3.5 w-3.5" />
-                        </span>
-                      </span>
-                      <span className="mt-2 grid gap-1">
-                        <span className="line-clamp-2 min-h-8 text-sm font-black leading-tight">
-                          {item.name}
-                        </span>
-                        <span className="text-[11px] font-semibold text-yuta-ink/45">
-                          {stationLabel(item.kitchenStation)}
-                        </span>
-                      </span>
-                      <span className="mt-auto text-sm font-black">
-                        {formatEuros(item.priceCents)}
-                      </span>
-                    </Button>
-                  </form>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <Card padding="none" className="lg:sticky lg:top-6 lg:self-start">
-            <div className="px-4 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-black">Commande actuelle</h2>
-                  <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
-                    {activeItems.length} article(s)
-                  </p>
-                </div>
-                <Badge variant={statusBadgeVariant(order.status)}>
-                  {statusLabel(order.status)}
-                </Badge>
-              </div>
-            </div>
-            <Separator />
-            <div className="grid max-h-[52vh] overflow-y-auto p-4">
-              {order.items.length === 0 ? (
-                <p className="rounded-lg border border-yuta-line bg-yuta-paper p-3 text-sm font-semibold text-yuta-ink/55">
-                  Aucun article pour le moment.
-                </p>
-              ) : (
-                order.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      'grid gap-3 border-b border-yuta-line py-3 first:pt-0 last:border-b-0 last:pb-0',
-                      item.status === 'cancelled' && 'opacity-60',
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="min-w-5 text-sm font-black">
-                            {item.quantity}
-                          </span>
-                          <p className="font-black">{item.itemNameSnapshot}</p>
-                          <Badge
-                            variant={
-                              item.status === 'pending'
-                                ? 'outline'
-                                : item.status === 'cancelled'
-                                  ? 'destructive'
-                                  : 'neutral'
-                            }
-                          >
-                            {itemStatusLabel(item.status)}
-                          </Badge>
-                        </div>
-                        {item.note && (
-                          <p className="mt-1 pl-7 text-xs font-semibold text-yuta-ink/55">
-                            Note: {item.note}
-                          </p>
-                        )}
-                      </div>
-                      <p className="shrink-0 font-black">
-                        {formatEuros(
-                          item.unitPriceCentsSnapshot * item.quantity,
-                        )}
-                      </p>
-                    </div>
-
-                    {order.status !== 'paid' &&
-                      order.status !== 'cancelled' &&
-                      item.status === 'cancelled' && (
-                        <div className="flex justify-end">
-                          <form action={restoreOrderItemAction}>
-                            <input
-                              type="hidden"
-                              name="orderId"
-                              value={order.id}
-                            />
-                            <input
-                              type="hidden"
-                              name="orderItemId"
-                              value={item.id}
-                            />
-                            <Button type="submit" variant="secondary" size="sm">
-                              <RotateCcw className="h-4 w-4" />
-                              Restaurer
-                            </Button>
-                          </form>
-                        </div>
-                      )}
-
-                    {order.status !== 'paid' &&
-                      order.status !== 'cancelled' &&
-                      item.status !== 'cancelled' && (
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <form action={updateOrderItemQuantityAction}>
-                              <input
-                                type="hidden"
-                                name="orderId"
-                                value={order.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="orderItemId"
-                                value={item.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="quantity"
-                                value={Math.max(1, item.quantity - 1)}
-                              />
-                              <Button
-                                type="submit"
-                                variant="secondary"
-                                size="icon"
-                                className="rounded-lg"
-                                disabled={
-                                  item.status !== 'pending' ||
-                                  item.quantity <= 1
-                                }
-                                aria-label="Reduire la quantite"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                            </form>
-                            <span className="grid h-9 min-w-9 place-items-center rounded-lg border border-yuta-line bg-white px-3 text-sm font-black">
-                              {item.quantity}
-                            </span>
-                            <form action={updateOrderItemQuantityAction}>
-                              <input
-                                type="hidden"
-                                name="orderId"
-                                value={order.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="orderItemId"
-                                value={item.id}
-                              />
-                              <input
-                                type="hidden"
-                                name="quantity"
-                                value={item.quantity + 1}
-                              />
-                              <Button
-                                type="submit"
-                                variant="secondary"
-                                size="icon"
-                                className="rounded-lg"
-                                disabled={item.status !== 'pending'}
-                                aria-label="Augmenter la quantite"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </form>
-                          </div>
-                          <form action={cancelOrderItemAction}>
-                            <input
-                              type="hidden"
-                              name="orderId"
-                              value={order.id}
-                            />
-                            <input
-                              type="hidden"
-                              name="orderItemId"
-                              value={item.id}
-                            />
-                            <Button
-                              type="submit"
-                              variant="ghost"
-                              size="sm"
-                              className="rounded-lg"
-                            >
-                              <X className="h-4 w-4" />
-                              Annuler
-                            </Button>
-                          </form>
-                        </div>
-                      )}
-                  </div>
-                ))
-              )}
-            </div>
-            <Separator />
-            <div className="grid gap-2 px-4 py-3">
-              <AmountRow label="Sous-total" value={order.subtotalCents} />
-              <AmountRow label="Remise" value={-order.discountCents} />
-              <div className="flex items-center justify-between border-t border-yuta-line pt-3">
-                <span className="font-black">Total</span>
-                <span className="text-xl font-black">
-                  {formatEuros(order.totalCents)}
-                </span>
-              </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <Button variant="secondary" className="rounded-lg" disabled>
-                  Ajouter une note
-                </Button>
-                <Button asChild variant="secondary" className="rounded-lg">
-                  <Link href={`/orders/${order.id}/payment`}>Voir details</Link>
-                </Button>
-              </div>
-              <Button
-                variant="destructive"
-                className="mt-1 rounded-lg"
-                disabled
-              >
-                Annuler commande
-              </Button>
-            </div>
-          </Card>
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)_minmax(260px,0.8fr)_minmax(300px,0.9fr)]">
+          <ArticlesPanel order={order} items={activeItems} />
+          <TotalsPanel order={order} />
+          <HistoryPanel order={order} />
+          <InfoPanel order={order} />
         </section>
+
+        <Button
+          variant="destructive"
+          className="min-h-12 justify-center border border-yuta-danger bg-white text-yuta-danger hover:bg-yuta-mist"
+          disabled
+        >
+          <Trash2 className="h-4 w-4" />
+          Annuler la commande
+        </Button>
       </div>
-    </main>
+    </PosPageShell>
+  );
+}
+
+function OrderSummaryHeader({
+  order,
+  canPay,
+  canSendToKitchen,
+}: {
+  order: OrderDetail;
+  canPay: boolean;
+  canSendToKitchen: boolean;
+}) {
+  return (
+    <section className="grid gap-3 bg-white md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-2xl font-black">{order.tableLabel}</h2>
+          <StatusBadge status={order.status} />
+        </div>
+        <p className="mt-2 text-sm font-semibold text-yuta-ink/55">
+          {order.orderNumber}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-sm font-semibold text-yuta-ink/55">
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-4 w-4" />
+            {formatTime(order.createdAt)}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <User className="h-4 w-4" />
+            {activeItemCount(order)} article(s)
+          </span>
+          <span className="hidden items-center gap-1 md:inline-flex">
+            <Table2 className="h-4 w-4" />
+            {orderTypeLabel(order.orderType)}
+          </span>
+          <span className="hidden items-center gap-1 md:inline-flex">
+            <User className="h-4 w-4" />
+            Creee par Utilisateur
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 md:hidden">
+        <SendOrderButton orderId={order.id} disabled={!canSendToKitchen} />
+        <PaymentButton orderId={order.id} disabled={!canPay} />
+      </div>
+    </section>
+  );
+}
+
+function SendOrderButton({
+  orderId,
+  disabled,
+  className,
+  fullWidth = true,
+}: {
+  orderId: string;
+  disabled: boolean;
+  className?: string;
+  fullWidth?: boolean;
+}) {
+  return (
+    <form action={sendOrderToKitchenAction}>
+      <input type="hidden" name="orderId" value={orderId} />
+      <Button
+        type="submit"
+        variant="secondary"
+        disabled={disabled}
+        className={cn(fullWidth && 'w-full', className)}
+      >
+        <Send className="h-4 w-4" />
+        Envoyer
+      </Button>
+    </form>
+  );
+}
+
+function PaymentButton({
+  orderId,
+  disabled,
+  className,
+  fullWidth = true,
+}: {
+  orderId: string;
+  disabled: boolean;
+  className?: string;
+  fullWidth?: boolean;
+}) {
+  if (disabled) {
+    return (
+      <Button
+        variant="primary"
+        disabled
+        className={cn(fullWidth && 'w-full', className)}
+      >
+        <CreditCard className="h-4 w-4" />
+        Payer
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      asChild
+      variant="primary"
+      className={cn(fullWidth && 'w-full', className)}
+    >
+      <Link href={`/orders/${orderId}/payment`}>
+        <CreditCard className="h-4 w-4" />
+        Payer
+      </Link>
+    </Button>
+  );
+}
+
+function ArticlesPanel({
+  order,
+  items,
+}: {
+  order: OrderDetail;
+  items: OrderDetail['items'];
+}) {
+  return (
+    <Card padding="none" className="rounded-lg shadow-none">
+      <div className="p-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-black">Articles</h3>
+          <Badge variant="neutral" size="sm">
+            {items.length}
+          </Badge>
+        </div>
+      </div>
+      <Separator />
+      <div className="grid gap-3 p-4">
+        {items.length === 0 ? (
+          <p className="rounded-lg bg-yuta-paper p-3 text-sm font-semibold text-yuta-ink/55">
+            Aucun article pour le moment.
+          </p>
+        ) : (
+          items.map((item) => (
+            <div
+              key={item.id}
+              className={cn(
+                'grid grid-cols-[24px_minmax(0,1fr)_auto] gap-3 text-sm',
+                item.status === 'cancelled' && 'opacity-60',
+              )}
+            >
+              <span className="font-black">{item.quantity}</span>
+              <div className="min-w-0">
+                <p className="truncate font-black">{item.itemNameSnapshot}</p>
+                {item.note && (
+                  <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
+                    Note: {item.note}
+                  </p>
+                )}
+              </div>
+              <span className="font-black">
+                {formatEuros(item.unitPriceCentsSnapshot * item.quantity)}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function TotalsPanel({ order }: { order: OrderDetail }) {
+  return (
+    <Card padding="none" className="rounded-lg shadow-none">
+      <div className="grid gap-3 p-4">
+        <AmountRow label="Sous-total" value={order.subtotalCents} />
+        <AmountRow label="Remise" value={-order.discountCents} />
+        <Separator />
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <span className="text-lg font-black">Total</span>
+          <span className="text-xl font-black text-yuta-success">
+            {formatEuros(order.totalCents)}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function HistoryPanel({ order }: { order: OrderDetail }) {
+  const events = buildHistoryEvents(order);
+
+  return (
+    <Card padding="none" className="rounded-lg shadow-none">
+      <div className="p-4">
+        <h3 className="text-base font-black">Historique</h3>
+      </div>
+      <Separator />
+      <div className="grid gap-3 p-4">
+        {events.map((event, index) => (
+          <div
+            key={`${event.label}-${index}`}
+            className="grid grid-cols-[12px_48px_minmax(0,1fr)] gap-3 text-sm"
+          >
+            <span
+              className={cn(
+                'mt-1.5 h-2 w-2 rounded-full',
+                event.done ? 'bg-yuta-success' : 'bg-yuta-line',
+              )}
+            />
+            <span className="font-semibold text-yuta-ink/55">{event.time}</span>
+            <span
+              className={cn(
+                'font-semibold',
+                event.done && event.highlight && 'text-yuta-success',
+                !event.done && 'text-yuta-ink/55',
+              )}
+            >
+              {event.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function InfoPanel({ order }: { order: OrderDetail }) {
+  return (
+    <Card padding="none" className="rounded-lg shadow-none">
+      <div className="p-4">
+        <h3 className="text-base font-black">Informations</h3>
+      </div>
+      <Separator />
+      <div className="grid gap-4 p-4">
+        <InfoRow
+          icon={<ShieldCheck className="h-4 w-4 text-yuta-success" />}
+          label="Type de commande"
+          value={orderTypeLabel(order.orderType)}
+        />
+        <InfoRow
+          icon={<Table2 className="h-4 w-4 text-yuta-success" />}
+          label="Repere / Table"
+          value={order.tableLabel}
+        />
+        <InfoRow
+          icon={<Printer className="h-4 w-4 text-yuta-ink/55" />}
+          label="Imprimante cuisine"
+          value="Cuisine"
+        />
+        <InfoRow
+          icon={<StickyNote className="h-4 w-4 text-yuta-ink/55" />}
+          label="Observations"
+          value={order.note?.trim() || '-'}
+        />
+      </div>
+    </Card>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 text-sm">
+      {icon}
+      <span className="font-semibold text-yuta-ink/55">{label}</span>
+      <span className="font-black">{value}</span>
+    </div>
   );
 }
 
@@ -491,112 +374,65 @@ function AmountRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function categoryHref(
-  orderId: string,
-  categoryId: string,
-  searchQuery: string,
-): string {
-  const params = new URLSearchParams();
-
-  if (categoryId !== 'all') {
-    params.set('category', categoryId);
-  }
-
-  if (searchQuery.length > 0) {
-    params.set('q', searchQuery);
-  }
-
-  const queryString = params.toString();
-
-  return queryString.length > 0
-    ? `/orders/${orderId}?${queryString}`
-    : `/orders/${orderId}`;
-}
-
-function MenuItemArtwork({ name }: { name: string }) {
+function StatusBadge({ status }: { status: string }) {
   return (
-    <span
-      className={cn(
-        'mx-auto grid h-20 w-20 place-items-center rounded-full border border-yuta-line text-lg font-black shadow-card',
-        menuItemArtworkClass(name),
-      )}
-    >
-      {menuItemInitials(name)}
-    </span>
+    <Badge variant={statusBadgeVariant(status)}>{statusLabel(status)}</Badge>
   );
 }
 
-function menuItemArtworkClass(name: string): string {
-  const classes = [
-    'bg-yuta-mist text-yuta-ink',
-    'bg-yuta-accent text-yuta-ink',
-    'bg-yuta-info text-yuta-ink',
-    'bg-yuta-warning text-yuta-ink',
-    'bg-yuta-paper text-yuta-ink',
+function buildHistoryEvents(order: OrderDetail) {
+  return [
+    {
+      done: true,
+      highlight: false,
+      label: 'Commande creee',
+      time: formatTime(order.createdAt),
+    },
+    {
+      done: Boolean(order.sentAt),
+      highlight: true,
+      label: 'Commande envoyee en cuisine',
+      time: order.sentAt ? formatTime(order.sentAt) : '-',
+    },
+    {
+      done: order.items.some((item) =>
+        ['preparing', 'ready', 'served'].includes(item.status),
+      ),
+      highlight: false,
+      label:
+        order.status === 'ready' || order.status === 'served'
+          ? 'Preparation terminee'
+          : 'En attente de preparation',
+      time: firstItemTime(order, ['preparing', 'ready', 'served']),
+    },
   ];
-  const index = Array.from(name).reduce(
-    (total, char) => total + char.charCodeAt(0),
-    0,
-  );
-
-  return classes[index % classes.length] ?? classes[0];
 }
 
-function menuItemInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.slice(0, 1).toLocaleUpperCase('fr-FR'))
-    .join('');
+function firstItemTime(order: OrderDetail, statuses: string[]): string {
+  const dates = order.items
+    .filter((item) => statuses.includes(item.status))
+    .map((item) => item.readyAt ?? item.sentAt ?? item.createdAt)
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  return dates[0] ? formatTime(dates[0]) : '-';
+}
+
+function activeItemCount(order: OrderDetail): number {
+  return order.items.filter((item) => item.status !== 'cancelled').length;
 }
 
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
-    draft: 'Brouillon',
-    sent: 'Envoyée',
-    preparing: 'Préparation',
-    ready: 'Prête',
+    draft: 'Non envoyee',
+    sent: 'Envoyee',
+    preparing: 'En preparation',
+    ready: 'Prete',
     served: 'Servie',
-    paid: 'Payée',
-    cancelled: 'Annulée',
+    paid: 'Payee',
+    cancelled: 'Annulee',
   };
 
   return labels[status] ?? status;
-}
-
-function itemStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    pending: 'À envoyer',
-    sent: 'Cuisine',
-    preparing: 'Préparation',
-    ready: 'Prêt',
-    served: 'Servi',
-    cancelled: 'Annulé',
-  };
-
-  return labels[status] ?? status;
-}
-
-function orderTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    dine_in: 'Sur place',
-    takeaway: 'À emporter',
-    delivery: 'Livraison',
-  };
-
-  return labels[type] ?? type;
-}
-
-function stationLabel(station: string): string {
-  const labels: Record<string, string> = {
-    kitchen: 'Cuisine',
-    bar: 'Bar',
-    dessert: 'Dessert',
-    none: 'Sans poste',
-  };
-
-  return labels[station] ?? station;
 }
 
 function statusBadgeVariant(
@@ -607,21 +443,47 @@ function statusBadgeVariant(
   | 'neutral'
   | 'destructive'
   | 'outline'
+  | 'info'
   | 'warning'
   | 'success' {
-  if (status === 'paid' || status === 'ready') {
+  if (status === 'sent' || status === 'ready') {
     return 'success';
+  }
+
+  if (status === 'preparing') {
+    return 'info';
+  }
+
+  if (status === 'draft') {
+    return 'warning';
+  }
+
+  if (status === 'paid') {
+    return 'neutral';
   }
 
   if (status === 'cancelled') {
     return 'destructive';
   }
 
-  if (status === 'draft') {
-    return 'outline';
-  }
+  return 'outline';
+}
 
-  return status === 'preparing' || status === 'sent' ? 'warning' : 'neutral';
+function orderTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    dine_in: 'Sur place',
+    takeaway: 'A emporter',
+    delivery: 'Livraison',
+  };
+
+  return labels[type] ?? type;
+}
+
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
 }
 
 function formatEuros(cents: number): string {

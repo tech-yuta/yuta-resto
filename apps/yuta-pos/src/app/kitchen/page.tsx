@@ -20,7 +20,7 @@ import {
   markOrderItemReadyAction,
   markOrderItemSentAction,
 } from '../actions';
-import { PosHeader } from '../components/PosHeader';
+import { PosPageShell } from '../components/PosPageShell';
 
 type KitchenPageProps = {
   searchParams: Promise<{
@@ -46,9 +46,9 @@ const statusFilters: Array<{
   label: string;
   icon: typeof Flame;
 }> = [
-  { value: 'sent', label: 'À préparer', icon: Flame },
-  { value: 'preparing', label: 'En préparation', icon: History },
-  { value: 'ready', label: 'Prêt', icon: Check },
+  { value: 'sent', label: 'A preparer', icon: Flame },
+  { value: 'preparing', label: 'En preparation', icon: History },
+  { value: 'ready', label: 'Pret', icon: Check },
 ];
 
 export default async function KitchenPage({ searchParams }: KitchenPageProps) {
@@ -81,72 +81,73 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
   const counts = countItemsByStatus(stationItems);
 
   return (
-    <main className="min-h-screen bg-yuta-paper px-4 py-5 text-yuta-ink md:px-8 md:py-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <PosHeader
-          title="Cuisine"
-          description="Suivi des préparations du service"
-          actions={
-            <>
-              <Badge variant="outline" size="lg" className="hidden md:flex">
-                {items.length} article(s)
-              </Badge>
-              <Button asChild variant="primary" size="touch">
-                <Link href="/pos">
-                  <Plus className="h-4 w-4" />
-                  Nouvelle commande
+    <PosPageShell
+      title="Cuisine"
+      description="Suivi des preparations du service"
+      actions={
+        <>
+          <Badge
+            variant="outline"
+            size="lg"
+            className="hidden border-white/25 text-white md:flex"
+          >
+            {items.length} article(s)
+          </Badge>
+          <Button asChild variant="primary" size="touch">
+            <Link href="/pos">
+              <Plus className="h-4 w-4" />
+              Nouvelle commande
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" size="touch">
+            <Link href="/">Commandes</Link>
+          </Button>
+        </>
+      }
+      subHeader={
+        <div className="grid gap-3 px-4 py-4">
+          <SegmentedNav>
+            {stations.map(({ value, label, icon: Icon }) => (
+              <Button
+                key={value}
+                asChild
+                variant={value === selectedStation ? 'primary' : 'secondary'}
+                size="sm"
+                className="shrink-0 rounded-lg"
+              >
+                <Link href={kitchenUrl(value, selectedStatus)}>
+                  <Icon className="h-4 w-4" />
+                  {label}
                 </Link>
               </Button>
-              <Button asChild variant="secondary" size="touch">
-                <Link href="/">Commandes</Link>
+            ))}
+          </SegmentedNav>
+
+          <SegmentedNav>
+            {statusFilters.map(({ value, label, icon: Icon }) => (
+              <Button
+                key={value}
+                asChild
+                variant={value === selectedStatus ? 'primary' : 'secondary'}
+                size="sm"
+                className="shrink-0 rounded-lg"
+              >
+                <Link href={kitchenUrl(selectedStation, value)}>
+                  <Icon className="h-4 w-4" />
+                  {label}
+                  <span className="rounded-full bg-yuta-mist px-1.5 py-0.5 text-[10px] font-black text-yuta-ink">
+                    {counts[value]}
+                  </span>
+                </Link>
               </Button>
-            </>
-          }
-        />
-
-        <Card padding="none">
-          <div className="grid gap-3 p-4">
-            <SegmentedNav>
-              {stations.map(({ value, label, icon: Icon }) => (
-                <Button
-                  key={value}
-                  asChild
-                  variant={value === selectedStation ? 'primary' : 'secondary'}
-                  size="sm"
-                  className="shrink-0 rounded-lg"
-                >
-                  <Link href={kitchenUrl(value, selectedStatus)}>
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </Link>
-                </Button>
-              ))}
-            </SegmentedNav>
-
-            <SegmentedNav>
-              {statusFilters.map(({ value, label, icon: Icon }) => (
-                <Button
-                  key={value}
-                  asChild
-                  variant={value === selectedStatus ? 'primary' : 'secondary'}
-                  size="sm"
-                  className="shrink-0 rounded-lg"
-                >
-                  <Link href={kitchenUrl(selectedStation, value)}>
-                    <Icon className="h-4 w-4" />
-                    {label}
-                    <span className="rounded-full bg-yuta-mist px-1.5 py-0.5 text-[10px] font-black text-yuta-ink">
-                      {counts[value]}
-                    </span>
-                  </Link>
-                </Button>
-              ))}
-            </SegmentedNav>
-          </div>
-        </Card>
-
+            ))}
+          </SegmentedNav>
+        </div>
+      }
+    >
+      <div className="grid gap-4">
         {groups.length === 0 ? (
-          <Card className="grid min-h-80 place-items-center text-center">
+          <Card className="grid min-h-80 place-items-center text-center shadow-none">
             <div>
               <ChefHat className="mx-auto h-10 w-10 text-yuta-ink/35" />
               <h2 className="mt-4 text-lg font-black">Aucun article</h2>
@@ -161,7 +162,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
               <Card
                 key={group.order.id}
                 padding="none"
-                className="overflow-hidden"
+                className="overflow-hidden shadow-none"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div>
@@ -221,15 +222,15 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
           </section>
         )}
 
-        <footer className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yuta-line bg-white px-4 py-3 text-xs font-bold text-yuta-ink/55 shadow-card">
-          <span>Dernière mise à jour : {formatTime(new Date())}</span>
+        <footer className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yuta-line bg-white px-4 py-3 text-xs font-bold text-yuta-ink/55">
+          <span>Derniere mise a jour : {formatTime(new Date())}</span>
           <span className="inline-flex items-center gap-1 text-yuta-ink">
-            <Wifi className="h-3.5 w-3.5 text-green-600" />
-            Connecté
+            <Wifi className="h-3.5 w-3.5 text-yuta-success" />
+            Connecte
           </span>
         </footer>
       </div>
-    </main>
+    </PosPageShell>
   );
 }
 
@@ -283,23 +284,23 @@ function countItemsByStatus(items: Array<typeof orderItems.$inferSelect>) {
 
 function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
   if (status === 'preparing') {
-    return <Badge variant="warning">En préparation</Badge>;
+    return <Badge variant="warning">En preparation</Badge>;
   }
 
   if (status === 'ready') {
-    return <Badge variant="success">Prêt</Badge>;
+    return <Badge variant="success">Pret</Badge>;
   }
 
-  return <Badge variant="outline">À préparer</Badge>;
+  return <Badge variant="outline">A preparer</Badge>;
 }
 
 function renderOrderStatusBadge(status: OrderStatus) {
   if (status === 'paid') {
-    return <Badge variant="success">Payée</Badge>;
+    return <Badge variant="success">Payee</Badge>;
   }
 
   if (status === 'cancelled') {
-    return <Badge variant="destructive">Annulée</Badge>;
+    return <Badge variant="destructive">Annulee</Badge>;
   }
 
   return null;
@@ -312,7 +313,7 @@ function renderKitchenActions(
   if (orderStatus === 'cancelled') {
     return (
       <div className="rounded-lg border border-yuta-line bg-yuta-mist px-3 py-2 text-sm font-semibold text-yuta-ink/60">
-        Commande annulée
+        Commande annulee
       </div>
     );
   }
@@ -324,7 +325,7 @@ function renderKitchenActions(
           <input type="hidden" name="orderItemId" value={item.id} />
           <Button type="submit" variant="secondary" className="w-full">
             <RotateCcw className="h-4 w-4" />
-            Réouvrir
+            Reouvrir
           </Button>
         </form>
         <form action={markOrderItemSentAction}>
@@ -353,13 +354,13 @@ function renderKitchenActions(
           ) : (
             <Flame className="h-4 w-4" />
           )}
-          {item.status === 'preparing' ? 'Retour' : 'Préparer'}
+          {item.status === 'preparing' ? 'Retour' : 'Preparer'}
         </Button>
       </form>
       <form action={markOrderItemReadyAction}>
         <input type="hidden" name="orderItemId" value={item.id} />
         <Button type="submit" variant="success" className="w-full">
-          Prêt
+          Pret
         </Button>
       </form>
     </div>
@@ -387,30 +388,10 @@ function elapsedLabel(date: Date): string {
   return `${minutes} min`;
 }
 
-function stationLabel(station: Station): string {
-  const labels: Record<Station, string> = {
-    kitchen: 'Cuisine',
-    bar: 'Bar',
-    dessert: 'Desserts',
-  };
-
-  return labels[station];
-}
-
-function statusFilterLabel(status: KitchenStatusFilter): string {
-  const labels: Record<KitchenStatusFilter, string> = {
-    sent: 'À préparer',
-    preparing: 'En préparation',
-    ready: 'Prêt',
-  };
-
-  return labels[status];
-}
-
 function orderTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     dine_in: 'Sur place',
-    takeaway: 'À emporter',
+    takeaway: 'A emporter',
     delivery: 'Livraison',
   };
 

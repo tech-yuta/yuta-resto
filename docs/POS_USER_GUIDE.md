@@ -84,69 +84,40 @@ http://localhost:3003/pos
 
 To create an order:
 
-1. Choose the current employee in `Employe`.
-2. Use `Changer` to save the employee as the default POS session user when needed.
-3. Enter a table or reference in `Table / Repere`.
-4. Choose the order type:
+1. Enter a table or reference in `Table / Repere`.
+2. Choose the order type:
    - `Sur place`
    - `A emporter`
    - `Livraison`
-5. Submit the form.
-6. The app opens the order screen.
+3. Add an optional note when needed.
+4. Submit the form.
+5. The app opens the order detail screen.
 
-The selected employee is stored in a local cookie. It is not a login system; it only identifies the staff member for internal order and payment tracking.
+The POS uses the saved/default staff session user for internal order and payment tracking. It is not a login system.
 
-## Order Screen
+## Order Detail
 
-The order screen is:
+The order detail screen is:
 
 ```txt
 http://localhost:3003/orders/<orderId>
 ```
 
-Use it during service to add menu items and manage the current order.
+Use it during service to review and act on the current command.
 
-### Add Items
-
-1. Select a category tab.
-2. Tap an item card.
-3. The item appears in `Commande en cours`.
-
-Item name, price, and kitchen station are snapshotted when the item is added. Later menu changes do not rewrite old orders.
-
-### Change Quantity
-
-For items still marked `A envoyer`:
+The detail page shows:
 
 ```txt
-- decreases quantity
-+ increases quantity
+Order reference and status
+Active articles
+Subtotal, discount, and total
+Order timeline
+Order information such as type, table/reference, kitchen printer, and notes
 ```
-
-Only pending items can be quantity-edited. Once an item has been sent to the kitchen, quantity editing is disabled.
-
-### Cancel An Item
-
-Use `Annuler` on an item row.
-
-The item becomes `Annule` and is excluded from the order total. The row remains visible for history.
-
-### Restore A Cancelled Item
-
-Use `Restaurer` on an `Annule` item.
-
-Restore behavior:
-
-```txt
-Cancelled before kitchen send -> returns to A envoyer / pending
-Cancelled after kitchen send  -> returns to Cuisine / sent
-```
-
-Paid orders and cancelled orders cannot restore items.
 
 ### Send To Kitchen
 
-Use `Envoyer cuisine`.
+Use `Envoyer`.
 
 This does three things:
 

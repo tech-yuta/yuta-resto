@@ -1,6 +1,12 @@
 'use server';
 
-import { createOrderService, createPaymentService, createPrintService, OrderServiceError, PaymentServiceError } from '@yuta/core';
+import {
+  createOrderService,
+  createPaymentService,
+  createPrintService,
+  OrderServiceError,
+  PaymentServiceError,
+} from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { checks, orderItems, orders, users } from '@yuta/db/schema';
 import { and, eq, ne } from 'drizzle-orm';
@@ -16,6 +22,7 @@ const createOrderFormSchema = z.object({
   tableLabel: z.string().trim().min(1).max(255),
   orderType: z.enum(['dine_in', 'takeaway', 'delivery']),
   staffUserId: z.string().uuid().optional(),
+  note: z.string().trim().max(2000).optional(),
 });
 
 const selectStaffFormSchema = z.object({
@@ -41,7 +48,8 @@ const moneyCentsSchema = z.preprocess(
 );
 
 const optionalMoneyCentsSchema = z.preprocess(
-  (value) => (value === null || value === '' ? undefined : parseEuroAmountToCents(value)),
+  (value) =>
+    value === null || value === '' ? undefined : parseEuroAmountToCents(value),
   z.coerce.number().int().positive().optional(),
 );
 
@@ -112,6 +120,7 @@ export async function createOrderAction(formData: FormData): Promise<void> {
     tableLabel: formData.get('tableLabel'),
     orderType: formData.get('orderType'),
     staffUserId: formData.get('staffUserId') || undefined,
+    note: formData.get('note') || undefined,
   });
   const staffUser = values.staffUserId
     ? await getSelectableStaffUserById(values.staffUserId)
@@ -121,6 +130,7 @@ export async function createOrderAction(formData: FormData): Promise<void> {
     tableLabel: values.tableLabel,
     orderType: values.orderType,
     createdBy: staffUser.id,
+    note: values.note,
   });
 
   redirect(`/orders/${order.id}`);
@@ -142,14 +152,19 @@ export async function addOrderItemAction(formData: FormData): Promise<void> {
   revalidatePath(`/orders/${values.orderId}`);
 }
 
-export async function sendOrderToKitchenAction(formData: FormData): Promise<void> {
+export async function sendOrderToKitchenAction(
+  formData: FormData,
+): Promise<void> {
   const values = orderIdFormSchema.parse({
     orderId: formData.get('orderId'),
   });
   const orderService = createOrderService(db);
   const printService = createPrintService(db);
   const pendingItems = await db.query.orderItems.findMany({
-    where: and(eq(orderItems.orderId, values.orderId), eq(orderItems.status, 'pending')),
+    where: and(
+      eq(orderItems.orderId, values.orderId),
+      eq(orderItems.status, 'pending'),
+    ),
   });
 
   await orderService.sendOrderToKitchen(values.orderId);
@@ -163,7 +178,9 @@ export async function sendOrderToKitchenAction(formData: FormData): Promise<void
   revalidatePath('/pos/prints');
 }
 
-export async function updateOrderItemQuantityAction(formData: FormData): Promise<void> {
+export async function updateOrderItemQuantityAction(
+  formData: FormData,
+): Promise<void> {
   const values = updateOrderItemQuantityFormSchema.parse({
     orderId: formData.get('orderId'),
     orderItemId: formData.get('orderItemId'),
@@ -195,7 +212,9 @@ export async function cancelOrderItemAction(formData: FormData): Promise<void> {
   revalidatePath('/kitchen');
 }
 
-export async function restoreOrderItemAction(formData: FormData): Promise<void> {
+export async function restoreOrderItemAction(
+  formData: FormData,
+): Promise<void> {
   const values = restoreOrderItemFormSchema.parse({
     orderId: formData.get('orderId'),
     orderItemId: formData.get('orderItemId'),
@@ -210,36 +229,52 @@ export async function restoreOrderItemAction(formData: FormData): Promise<void> 
   revalidatePath('/kitchen');
 }
 
-export async function markOrderItemPreparingAction(formData: FormData): Promise<void> {
+export async function markOrderItemPreparingAction(
+  formData: FormData,
+): Promise<void> {
   const values = orderItemIdFormSchema.parse({
     orderItemId: formData.get('orderItemId'),
   });
   const orderService = createOrderService(db);
 
-  await runKitchenStatusAction(() => orderService.markOrderItemPreparing(values.orderItemId));
+  await runKitchenStatusAction(() =>
+    orderService.markOrderItemPreparing(values.orderItemId),
+  );
 }
 
-export async function markOrderItemSentAction(formData: FormData): Promise<void> {
+export async function markOrderItemSentAction(
+  formData: FormData,
+): Promise<void> {
   const values = orderItemIdFormSchema.parse({
     orderItemId: formData.get('orderItemId'),
   });
   const orderService = createOrderService(db);
 
-  await runKitchenStatusAction(() => orderService.markOrderItemSent(values.orderItemId));
+  await runKitchenStatusAction(() =>
+    orderService.markOrderItemSent(values.orderItemId),
+  );
 }
 
-export async function markOrderItemReadyAction(formData: FormData): Promise<void> {
+export async function markOrderItemReadyAction(
+  formData: FormData,
+): Promise<void> {
   const values = orderItemIdFormSchema.parse({
     orderItemId: formData.get('orderItemId'),
   });
   const orderService = createOrderService(db);
 
-  await runKitchenStatusAction(() => orderService.markOrderItemReady(values.orderItemId));
+  await runKitchenStatusAction(() =>
+    orderService.markOrderItemReady(values.orderItemId),
+  );
 }
 
 export async function payFullOrderAction(formData: FormData): Promise<void> {
   const orderId = readOrderIdOrThrow(formData);
-  const values = parsePaymentFormOrRedirect(payFullOrderFormSchema, formData, orderId);
+  const values = parsePaymentFormOrRedirect(
+    payFullOrderFormSchema,
+    formData,
+    orderId,
+  );
   const paymentService = createPaymentService(db);
   const printService = createPrintService(db);
 
@@ -263,7 +298,9 @@ export async function payFullOrderAction(formData: FormData): Promise<void> {
   });
 
   if (order?.status === 'paid') {
-    await printService.createCustomerReceiptPrintJob({ orderId: values.orderId });
+    await printService.createCustomerReceiptPrintJob({
+      orderId: values.orderId,
+    });
   }
 
   revalidatePath(`/orders/${values.orderId}`);
@@ -272,7 +309,9 @@ export async function payFullOrderAction(formData: FormData): Promise<void> {
   redirect(`/orders/${values.orderId}`);
 }
 
-export async function splitOrderEquallyAction(formData: FormData): Promise<void> {
+export async function splitOrderEquallyAction(
+  formData: FormData,
+): Promise<void> {
   const values = splitOrderEquallyFormSchema.parse({
     orderId: formData.get('orderId'),
     parts: formData.get('parts'),
@@ -289,7 +328,9 @@ export async function splitOrderEquallyAction(formData: FormData): Promise<void>
   redirect(`/orders/${values.orderId}/payment`);
 }
 
-export async function cancelOrderSplitAction(formData: FormData): Promise<void> {
+export async function cancelOrderSplitAction(
+  formData: FormData,
+): Promise<void> {
   const values = orderIdFormSchema.parse({
     orderId: formData.get('orderId'),
   });
@@ -312,7 +353,11 @@ export async function cancelOrderSplitAction(formData: FormData): Promise<void> 
 
 export async function payCheckAction(formData: FormData): Promise<void> {
   const orderId = readOrderIdOrThrow(formData);
-  const values = parsePaymentFormOrRedirect(payCheckFormSchema, formData, orderId);
+  const values = parsePaymentFormOrRedirect(
+    payCheckFormSchema,
+    formData,
+    orderId,
+  );
   const paymentService = createPaymentService(db);
   const printService = createPrintService(db);
 
@@ -348,11 +393,16 @@ export async function payCheckAction(formData: FormData): Promise<void> {
   redirect(`/orders/${values.orderId}/payment`);
 }
 
-export async function createChecksByItemsAction(formData: FormData): Promise<void> {
+export async function createChecksByItemsAction(
+  formData: FormData,
+): Promise<void> {
   const values = createChecksByItemsFormSchema.parse({
     orderId: formData.get('orderId'),
   });
-  const itemsByClient = new Map<number, Array<{ orderItemId: string; quantity: number }>>();
+  const itemsByClient = new Map<
+    number,
+    Array<{ orderItemId: string; quantity: number }>
+  >();
   const requestedClientCount = Number(formData.get('clientCount'));
 
   for (const [key, value] of formData.entries()) {
@@ -363,7 +413,12 @@ export async function createChecksByItemsAction(formData: FormData): Promise<voi
 
     const clientIndex = Number(match[1]);
     const quantity = Number(value);
-    if (!Number.isInteger(clientIndex) || clientIndex < 1 || !Number.isInteger(quantity) || quantity <= 0) {
+    if (
+      !Number.isInteger(clientIndex) ||
+      clientIndex < 1 ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
       continue;
     }
 
@@ -392,9 +447,14 @@ export async function createChecksByItemsAction(formData: FormData): Promise<voi
   }
 
   const activeItems = await db.query.orderItems.findMany({
-    where: and(eq(orderItems.orderId, values.orderId), ne(orderItems.status, 'cancelled')),
+    where: and(
+      eq(orderItems.orderId, values.orderId),
+      ne(orderItems.status, 'cancelled'),
+    ),
   });
-  const activeQuantityByItemId = new Map(activeItems.map((item) => [item.id, item.quantity]));
+  const activeQuantityByItemId = new Map(
+    activeItems.map((item) => [item.id, item.quantity]),
+  );
   const assignedQuantityByItemId = new Map<string, number>();
 
   for (const check of checks) {
@@ -406,10 +466,16 @@ export async function createChecksByItemsAction(formData: FormData): Promise<voi
     }
   }
 
-  for (const [orderItemId, assignedQuantity] of assignedQuantityByItemId.entries()) {
+  for (const [
+    orderItemId,
+    assignedQuantity,
+  ] of assignedQuantityByItemId.entries()) {
     const availableQuantity = activeQuantityByItemId.get(orderItemId);
 
-    if (availableQuantity === undefined || assignedQuantity > availableQuantity) {
+    if (
+      availableQuantity === undefined ||
+      assignedQuantity > availableQuantity
+    ) {
       redirect(`${itemSplitUrl}&error=quantity`);
     }
   }
@@ -437,29 +503,37 @@ async function getSelectedStaffUser(): Promise<typeof users.$inferSelect> {
     if (
       selectedStaffUser &&
       selectedStaffUser.isActive &&
-      staffSelectableRoles.includes(selectedStaffUser.role as (typeof staffSelectableRoles)[number])
+      staffSelectableRoles.includes(
+        selectedStaffUser.role as (typeof staffSelectableRoles)[number],
+      )
     ) {
       return selectedStaffUser;
     }
   }
 
-  const seededStaffUser = await db.query.users.findFirst({ where: eq(users.email, 'staff@yuta.local') });
+  const seededStaffUser = await db.query.users.findFirst({
+    where: eq(users.email, 'staff@yuta.local'),
+  });
   if (isSelectableStaffUser(seededStaffUser)) {
     return seededStaffUser;
   }
 
-  const staffUser = (await db.query.users.findMany({ where: eq(users.role, 'staff') })).find(
-    (user) => user.isActive,
-  );
+  const staffUser = (
+    await db.query.users.findMany({ where: eq(users.role, 'staff') })
+  ).find((user) => user.isActive);
 
   if (!staffUser) {
-    throw new Error('No active staff user found. Run `corepack pnpm --filter @yuta/db db:seed` first.');
+    throw new Error(
+      'No active staff user found. Run `corepack pnpm --filter @yuta/db db:seed` first.',
+    );
   }
 
   return staffUser;
 }
 
-async function getSelectableStaffUserById(staffUserId: string): Promise<typeof users.$inferSelect> {
+async function getSelectableStaffUserById(
+  staffUserId: string,
+): Promise<typeof users.$inferSelect> {
   const staffUser = await db.query.users.findFirst({
     where: eq(users.id, staffUserId),
   });
@@ -471,9 +545,14 @@ async function getSelectableStaffUserById(staffUserId: string): Promise<typeof u
   return staffUser;
 }
 
-function isSelectableStaffUser(user: typeof users.$inferSelect | undefined): user is typeof users.$inferSelect {
+function isSelectableStaffUser(
+  user: typeof users.$inferSelect | undefined,
+): user is typeof users.$inferSelect {
   return Boolean(
-    user?.isActive && staffSelectableRoles.includes(user.role as (typeof staffSelectableRoles)[number]),
+    user?.isActive &&
+    staffSelectableRoles.includes(
+      user.role as (typeof staffSelectableRoles)[number],
+    ),
   );
 }
 
@@ -483,11 +562,9 @@ function readOrderIdOrThrow(formData: FormData): string {
   }).orderId;
 }
 
-function parsePaymentFormOrRedirect<T extends typeof payFullOrderFormSchema | typeof payCheckFormSchema>(
-  schema: T,
-  formData: FormData,
-  orderId: string,
-): z.infer<T> {
+function parsePaymentFormOrRedirect<
+  T extends typeof payFullOrderFormSchema | typeof payCheckFormSchema,
+>(schema: T, formData: FormData, orderId: string): z.infer<T> {
   const rawAmountCents = formData.get('amountCents');
   const rawTenderedCents = formData.get('tenderedCents');
   const parsedValues = schema.safeParse({
@@ -495,7 +572,10 @@ function parsePaymentFormOrRedirect<T extends typeof payFullOrderFormSchema | ty
     checkId: formData.get('checkId'),
     method: formData.get('method'),
     amountCents: rawAmountCents,
-    tenderedCents: rawTenderedCents === null || rawTenderedCents === '' ? rawAmountCents : rawTenderedCents,
+    tenderedCents:
+      rawTenderedCents === null || rawTenderedCents === ''
+        ? rawAmountCents
+        : rawTenderedCents,
   });
 
   if (!parsedValues.success) {
@@ -505,7 +585,9 @@ function parsePaymentFormOrRedirect<T extends typeof payFullOrderFormSchema | ty
   return parsedValues.data as z.infer<T>;
 }
 
-async function runKitchenStatusAction(operation: () => Promise<unknown>): Promise<void> {
+async function runKitchenStatusAction(
+  operation: () => Promise<unknown>,
+): Promise<void> {
   try {
     await operation();
   } catch (error) {
