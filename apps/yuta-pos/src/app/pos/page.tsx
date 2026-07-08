@@ -38,69 +38,71 @@ export default function PosHome() {
           </Button>
         </>
       }
-      contentClassName="grid place-items-start px-4 py-4 sm:px-6 sm:py-6"
+      contentClassName="px-4 py-4 sm:px-6 sm:py-8"
     >
-      <Card
-        padding="none"
-        className="w-full max-w-md overflow-hidden rounded-lg shadow-none"
-      >
-        <div className="border-b border-yuta-line px-4 py-4">
-          <h2 className="text-xl font-black">Nouvelle commande</h2>
-        </div>
-
-        <form action={createOrderAction} className="grid gap-5 p-4">
-          <div className="grid gap-2">
-            <Label htmlFor="tableLabel">Table / Repere</Label>
-            <Input
-              id="tableLabel"
-              name="tableLabel"
-              placeholder="Terrasse 5"
-              autoComplete="off"
-              required
-            />
+      <section className="mx-auto grid w-full max-w-2xl content-start">
+        <Card padding="none" className="overflow-hidden rounded-lg shadow-none">
+          <div className="border-b border-yuta-line px-5 py-4 sm:px-6">
+            <h2 className="text-xl font-black">Nouvelle commande</h2>
           </div>
 
-          <fieldset className="grid gap-2">
-            <legend className="text-sm font-semibold">Type de commande</legend>
-            <div className="grid grid-cols-3 gap-2">
-              {orderTypes.map((orderType, index) => (
-                <label key={orderType.value} className="cursor-pointer">
-                  <input
-                    type="radio"
-                    name="orderType"
-                    value={orderType.value}
-                    defaultChecked={index === 0}
-                    className="peer sr-only"
-                    required
-                  />
-                  <span className="flex min-h-11 items-center justify-center rounded-lg border border-yuta-line bg-white px-3 text-sm font-black transition-colors peer-checked:border-yuta-success peer-checked:bg-yuta-success peer-checked:text-white">
-                    {orderType.label}
-                  </span>
-                </label>
-              ))}
+          <form action={createOrderAction} className="grid gap-5 p-5 sm:p-6">
+            <div className="grid gap-2">
+              <Label htmlFor="tableLabel">Table / Repere</Label>
+              <Input
+                id="tableLabel"
+                name="tableLabel"
+                placeholder="Terrasse 5"
+                autoComplete="off"
+                required
+                inputSize="touch"
+              />
             </div>
-          </fieldset>
 
-          <div className="grid gap-2">
-            <Label htmlFor="note">Note (optionnel)</Label>
-            <Textarea
-              id="note"
-              name="note"
-              placeholder="Ex: Allergie, demande speciale..."
-              className="min-h-28"
-            />
-          </div>
+            <fieldset className="grid gap-2">
+              <legend className="text-sm font-semibold">
+                Type de commande
+              </legend>
+              <div className="grid grid-cols-3 gap-2">
+                {orderTypes.map((orderType, index) => (
+                  <label key={orderType.value} className="cursor-pointer">
+                    <input
+                      type="radio"
+                      name="orderType"
+                      value={orderType.value}
+                      defaultChecked={index === 0}
+                      className="peer sr-only"
+                      required
+                    />
+                    <span className="flex min-h-12 items-center justify-center rounded-lg border border-yuta-line bg-white px-3 text-sm font-black transition-colors peer-checked:border-yuta-success peer-checked:bg-yuta-success peer-checked:text-white">
+                      {orderType.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            className="justify-center bg-yuta-ink text-white hover:bg-yuta-ink/90"
-          >
-            Creer la commande
-          </Button>
-        </form>
-      </Card>
+            <div className="grid gap-2">
+              <Label htmlFor="note">Note (optionnel)</Label>
+              <Textarea
+                id="note"
+                name="note"
+                placeholder="Ex: Allergie, demande speciale..."
+                className="min-h-32"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="min-h-14 justify-center bg-yuta-ink text-white hover:bg-yuta-ink/90"
+            >
+              Creer la commande
+            </Button>
+          </form>
+        </Card>
+      </section>
     </PosPageShell>
   );
 }

@@ -1,10 +1,13 @@
 import { createOrderService } from '@yuta/core';
 import { db } from '@yuta/db/client';
+import { payments } from '@yuta/db/schema';
 import { Badge, Button, Card, Separator, cn } from '@yuta/ui';
+import { and, eq } from 'drizzle-orm';
 import {
   Clock,
   CreditCard,
   Printer,
+  Plus,
   Send,
   ShieldCheck,
   StickyNote,
@@ -14,7 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { sendOrderToKitchenAction } from '../../actions';
+import { cancelOrderAction, sendOrderToKitchenAction } from '../../actions';
 import { PosPageShell } from '../../components/PosPageShell';
 
 type OrderPageProps = {
@@ -31,6 +34,9 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const { orderId } = await params;
   const orderService = createOrderService(db);
   const order = await orderService.getOrderDetail(orderId);
+  const paidPayments = await db.query.payments.findMany({
+    where: and(eq(payments.orderId, order.id), eq(payments.status, 'paid')),
+  });
   const activeItems = order.items.filter((item) => item.status !== 'cancelled');
   const pendingItemCount = order.items.filter(
     (item) => item.status === 'pending',
@@ -40,6 +46,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
     order.status !== 'paid' &&
     order.status !== 'cancelled';
   const canPay = order.status !== 'paid' && order.status !== 'cancelled';
+  const canCancel = canPay && paidPayments.length === 0;
 
   return (
     <PosPageShell
@@ -72,20 +79,24 @@ export default async function OrderPage({ params }: OrderPageProps) {
         />
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)_minmax(260px,0.8fr)_minmax(300px,0.9fr)]">
-          <ArticlesPanel order={order} items={activeItems} />
+          <ArticlesPanel order={order} items={activeItems} canEdit={canPay} />
           <TotalsPanel order={order} />
           <HistoryPanel order={order} />
           <InfoPanel order={order} />
         </section>
 
-        <Button
-          variant="destructive"
-          className="min-h-12 justify-center border border-yuta-danger bg-white text-yuta-danger hover:bg-yuta-mist"
-          disabled
-        >
-          <Trash2 className="h-4 w-4" />
-          Annuler la commande
-        </Button>
+        <form action={cancelOrderAction}>
+          <input type="hidden" name="orderId" value={order.id} />
+          <Button
+            type="submit"
+            variant="destructive"
+            className="min-h-12 w-full justify-center border border-yuta-danger bg-white text-yuta-danger hover:bg-yuta-mist"
+            disabled={!canCancel}
+          >
+            <Trash2 className="h-4 w-4" />
+            Annuler la commande
+          </Button>
+        </form>
       </div>
     </PosPageShell>
   );
@@ -206,18 +217,30 @@ function PaymentButton({
 function ArticlesPanel({
   order,
   items,
+  canEdit,
 }: {
   order: OrderDetail;
   items: OrderDetail['items'];
+  canEdit: boolean;
 }) {
   return (
     <Card padding="none" className="rounded-lg shadow-none">
       <div className="p-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-base font-black">Articles</h3>
-          <Badge variant="neutral" size="sm">
-            {items.length}
-          </Badge>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-black">Articles</h3>
+            <Badge variant="neutral" size="sm">
+              {items.length}
+            </Badge>
+          </div>
+          {canEdit && (
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/orders/${order.id}/items`}>
+                <Plus className="h-4 w-4" />
+                Ajouter
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
       <Separator />

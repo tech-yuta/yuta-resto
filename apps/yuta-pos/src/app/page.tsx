@@ -86,7 +86,7 @@ export default async function OrdersHomePage({
       subHeader={
         <div className="grid gap-4 px-4 py-4">
           <div className="flex items-center gap-3">
-            <SegmentedNav className="pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <SegmentedNav className="[scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {views.map((item) => (
                 <Button
                   key={item.value}

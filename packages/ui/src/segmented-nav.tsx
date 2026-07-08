@@ -8,7 +8,7 @@ export function SegmentedNav({
 }: PropsWithChildren<HTMLAttributes<HTMLElement>>) {
   return (
     <nav
-      className={cn('flex gap-2 overflow-x-auto pb-1', className)}
+      className={cn('-mx-1 flex gap-2 overflow-x-auto px-1 py-1', className)}
       {...props}
     >
       {children}

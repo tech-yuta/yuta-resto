@@ -91,7 +91,7 @@ To create an order:
    - `Livraison`
 3. Add an optional note when needed.
 4. Submit the form.
-5. The app opens the order detail screen.
+5. The app opens the item-entry screen so staff can add menu items.
 
 The POS uses the saved/default staff session user for internal order and payment tracking. It is not a login system.
 
@@ -114,6 +114,46 @@ Subtotal, discount, and total
 Order timeline
 Order information such as type, table/reference, kitchen printer, and notes
 ```
+
+Use `Ajouter` in the `Articles` panel to open the item-entry screen again:
+
+```txt
+http://localhost:3003/orders/<orderId>/items
+```
+
+Paid and cancelled orders cannot add more items.
+
+### Cancel Order
+
+Use `Annuler la commande` on the order detail page to cancel an unpaid order.
+
+Cancelling an order:
+
+```txt
+Marks the order as cancelled
+Marks all active articles as cancelled
+Voids unpaid split checks
+Removes the order from the open command list and kitchen work queue
+```
+
+Orders that are already paid, already cancelled, or have a paid payment cannot be cancelled in the MVP. Use a future refund flow for paid orders.
+
+## Add Items
+
+The item-entry screen is:
+
+```txt
+http://localhost:3003/orders/<orderId>/items
+```
+
+Use it during service to add menu items to the current order.
+
+1. Select a category tab.
+2. Search when needed.
+3. Tap an item card.
+4. The item appears in `Commande actuelle`.
+
+Item name, price, and kitchen station are snapshotted when the item is added. Later menu changes do not rewrite old orders.
 
 ### Send To Kitchen
 
@@ -156,6 +196,8 @@ Dessert
 The kitchen screen is a production queue, not a full order-history screen.
 By default it opens `A preparer` and only loads the selected station/status
 queue.
+It only shows kitchen items from orders created today.
+When the kitchen screen is open, it refreshes automatically every 10 seconds while the browser tab is visible. This keeps cancelled orders and status changes reasonably fresh without a permanent realtime connection.
 
 Kitchen staff can switch between:
 
@@ -226,6 +268,22 @@ Split equally
 Split by items
 ```
 
+The payment page first shows three compact choices:
+
+```txt
+Payer tout
+Separer par articles
+Partager en parts egales
+```
+
+Selecting a choice opens the matching payment dialog. This keeps the operator focused on the active payment mode instead of showing all three workflows at once.
+
+`Separer par articles` opens inside the payment dialog. Staff assign item quantities with `-` and `+` controls for each client, then create the client tickets from the same modal without leaving the payment page.
+The modal previews combo discounts per active client ticket, not as one order-level discount.
+After tickets are created, the payment page reopens the same dialog so staff can immediately collect each client check.
+Internally, the redirect uses `paymentDialog=item-split` to reopen that dialog.
+When an item split already exists, reopening the dialog restores the existing client count and item quantities from the saved checks.
+
 Combo discounts are optimized at payment time.
 
 ### Full Payment
@@ -280,17 +338,19 @@ Use equal split when the table wants to divide the total into N parts.
 
 The order is marked paid only when all checks are paid.
 
-Use `Annuler le partage` to return to full-order payment when no split ticket has been paid yet. Once a split ticket is paid, the split cannot be cancelled.
+Use the page-level `Annuler le partage` action to return to full-order payment when no split ticket has been paid yet. Once a split ticket is paid, the split cannot be cancelled.
+
+After equal split tickets are created, the payment page reopens the equal split dialog with `paymentDialog=equal-split`. Reopening the dialog restores the existing number of parts from the saved checks instead of defaulting back to 2.
 
 ### Split By Items
 
-Open:
+Open the `Separer par articles` payment choice:
 
 ```txt
-Choisir les articles
+Payer -> Separer par articles
 ```
 
-Choose the number of clients directly on the split-by-items screen. This is independent from equal split.
+Choose the number of clients directly in the modal. This is independent from equal split.
 
 ```txt
 Default -> 2 clients
@@ -302,7 +362,7 @@ Assign item quantities to each client, then create checks. Each check can be pai
 
 The selected POS employee is stored as `paidBy` for each payment.
 
-Use `Annuler le partage` to return to full-order payment when no split ticket has been paid yet. Once a split ticket is paid, the split cannot be cancelled.
+Use the page-level `Annuler le partage` action to return to full-order payment when no split ticket has been paid yet. Once a split ticket is paid, the split cannot be cancelled.
 
 ## Admin Staff
 

@@ -1,14 +1,10 @@
+import { and, desc, eq, ne, notInArray } from 'drizzle-orm';
 import {
-  and,
-  desc,
-  eq,
-  ne,
-  notInArray,
-} from 'drizzle-orm';
-import {
+  checks,
   menuItems,
   orderItems,
   orders,
+  payments,
   type MenuItem,
   type Order,
   type OrderItem,
@@ -17,8 +13,21 @@ import type { DbClient } from '@yuta/db/client';
 import { z } from 'zod';
 
 type OrderType = 'dine_in' | 'takeaway' | 'delivery';
-type OrderItemStatus = 'pending' | 'sent' | 'preparing' | 'ready' | 'served' | 'cancelled';
-type OrderStatus = 'draft' | 'sent' | 'preparing' | 'ready' | 'served' | 'paid' | 'cancelled';
+type OrderItemStatus =
+  | 'pending'
+  | 'sent'
+  | 'preparing'
+  | 'ready'
+  | 'served'
+  | 'cancelled';
+type OrderStatus =
+  | 'draft'
+  | 'sent'
+  | 'preparing'
+  | 'ready'
+  | 'served'
+  | 'paid'
+  | 'cancelled';
 
 const createOrderSchema = z.object({
   tableLabel: z.string().trim().min(1).max(255),
@@ -44,6 +53,11 @@ const cancelOrderItemSchema = z.object({
   reason: z.string().trim().max(2000).optional(),
 });
 
+const cancelOrderSchema = z.object({
+  orderId: z.string().uuid(),
+  reason: z.string().trim().max(2000).optional(),
+});
+
 const restoreOrderItemSchema = z.object({
   orderItemId: z.string().uuid(),
 });
@@ -58,7 +72,10 @@ const orderIdSchema = z.object({
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type AddOrderItemInput = z.infer<typeof addOrderItemSchema>;
-export type UpdateOrderItemQuantityInput = z.infer<typeof updateOrderItemQuantitySchema>;
+export type UpdateOrderItemQuantityInput = z.infer<
+  typeof updateOrderItemQuantitySchema
+>;
+export type CancelOrderInput = z.infer<typeof cancelOrderSchema>;
 export type CancelOrderItemInput = z.infer<typeof cancelOrderItemSchema>;
 export type RestoreOrderItemInput = z.infer<typeof restoreOrderItemSchema>;
 
@@ -107,7 +124,10 @@ export function createOrderService(db: DbClient) {
 
     const menuItem = await getRequiredMenuItem(values.menuItemId);
     if (!menuItem.isAvailable) {
-      throw new OrderServiceError('Menu item is not available.', 'menu_item_unavailable');
+      throw new OrderServiceError(
+        'Menu item is not available.',
+        'menu_item_unavailable',
+      );
     }
 
     const [createdItem] = await db
@@ -128,12 +148,17 @@ export function createOrderService(db: DbClient) {
     return createdItem;
   }
 
-  async function updateOrderItemQuantity(input: UpdateOrderItemQuantityInput): Promise<OrderItem> {
+  async function updateOrderItemQuantity(
+    input: UpdateOrderItemQuantityInput,
+  ): Promise<OrderItem> {
     const values = updateOrderItemQuantitySchema.parse(input);
     const item = await getRequiredOrderItem(values.orderItemId);
 
     if (item.status !== 'pending') {
-      throw new OrderServiceError('Only pending order items can be edited.', 'invalid_status');
+      throw new OrderServiceError(
+        'Only pending order items can be edited.',
+        'invalid_status',
+      );
     }
 
     const [updatedItem] = await db
@@ -147,7 +172,9 @@ export function createOrderService(db: DbClient) {
     return updatedItem;
   }
 
-  async function cancelOrderItem(input: CancelOrderItemInput): Promise<OrderItem> {
+  async function cancelOrderItem(
+    input: CancelOrderItemInput,
+  ): Promise<OrderItem> {
     const values = cancelOrderItemSchema.parse(input);
     const item = await getRequiredOrderItem(values.orderItemId);
 
@@ -171,7 +198,70 @@ export function createOrderService(db: DbClient) {
     return cancelledItem;
   }
 
-  async function restoreOrderItem(input: RestoreOrderItemInput): Promise<OrderItem> {
+  async function cancelOrder(input: CancelOrderInput): Promise<Order> {
+    const values = cancelOrderSchema.parse(input);
+    const order = await getRequiredOrder(values.orderId);
+
+    if (order.status === 'cancelled') {
+      return order;
+    }
+
+    if (order.status === 'paid') {
+      throw new OrderServiceError(
+        'Paid orders cannot be cancelled.',
+        'invalid_status',
+      );
+    }
+
+    const paidPayments = await db.query.payments.findMany({
+      where: and(eq(payments.orderId, order.id), eq(payments.status, 'paid')),
+    });
+
+    if (paidPayments.length > 0) {
+      throw new OrderServiceError(
+        'Orders with paid payments cannot be cancelled.',
+        'invalid_status',
+      );
+    }
+
+    const now = new Date();
+
+    await db
+      .update(orderItems)
+      .set({
+        status: 'cancelled',
+        cancelledAt: now,
+        cancelledReason: values.reason,
+      })
+      .where(
+        and(
+          eq(orderItems.orderId, order.id),
+          ne(orderItems.status, 'cancelled'),
+        ),
+      );
+
+    await db
+      .update(checks)
+      .set({ status: 'void' })
+      .where(and(eq(checks.orderId, order.id), ne(checks.status, 'paid')));
+
+    const [cancelledOrder] = await db
+      .update(orders)
+      .set({
+        status: 'cancelled',
+        cancelledAt: now,
+        cancelledReason: values.reason,
+        paymentMode: 'single',
+      })
+      .where(eq(orders.id, order.id))
+      .returning();
+
+    return cancelledOrder;
+  }
+
+  async function restoreOrderItem(
+    input: RestoreOrderItemInput,
+  ): Promise<OrderItem> {
     const values = restoreOrderItemSchema.parse(input);
     const item = await getRequiredOrderItem(values.orderItemId);
 
@@ -182,7 +272,8 @@ export function createOrderService(db: DbClient) {
     const order = await getRequiredOrder(item.orderId);
     assertOrderCanChangeItems(order);
 
-    const restoredStatus: Extract<OrderItemStatus, 'pending' | 'sent'> = item.sentAt ? 'sent' : 'pending';
+    const restoredStatus: Extract<OrderItemStatus, 'pending' | 'sent'> =
+      item.sentAt ? 'sent' : 'pending';
     const [restoredItem] = await db
       .update(orderItems)
       .set({ status: restoredStatus })
@@ -200,15 +291,24 @@ export function createOrderService(db: DbClient) {
     const order = await getRequiredOrder(parsedOrderId);
 
     if (order.status === 'paid' || order.status === 'cancelled') {
-      throw new OrderServiceError('Paid or cancelled orders cannot be sent to kitchen.', 'invalid_status');
+      throw new OrderServiceError(
+        'Paid or cancelled orders cannot be sent to kitchen.',
+        'invalid_status',
+      );
     }
 
     const pendingItems = await db.query.orderItems.findMany({
-      where: and(eq(orderItems.orderId, parsedOrderId), eq(orderItems.status, 'pending')),
+      where: and(
+        eq(orderItems.orderId, parsedOrderId),
+        eq(orderItems.status, 'pending'),
+      ),
     });
 
     if (pendingItems.length === 0) {
-      throw new OrderServiceError('Order has no pending items to send.', 'empty_order');
+      throw new OrderServiceError(
+        'Order has no pending items to send.',
+        'empty_order',
+      );
     }
 
     const now = new Date();
@@ -216,7 +316,12 @@ export function createOrderService(db: DbClient) {
     await db
       .update(orderItems)
       .set({ status: 'sent', sentAt: now })
-      .where(and(eq(orderItems.orderId, parsedOrderId), eq(orderItems.status, 'pending')));
+      .where(
+        and(
+          eq(orderItems.orderId, parsedOrderId),
+          eq(orderItems.status, 'pending'),
+        ),
+      );
 
     await db
       .update(orders)
@@ -226,7 +331,9 @@ export function createOrderService(db: DbClient) {
     return getOrderDetail(parsedOrderId);
   }
 
-  async function markOrderItemPreparing(orderItemId: string): Promise<OrderItem> {
+  async function markOrderItemPreparing(
+    orderItemId: string,
+  ): Promise<OrderItem> {
     return markOrderItemStatus(orderItemId, 'preparing', ['sent', 'ready']);
   }
 
@@ -279,7 +386,10 @@ export function createOrderService(db: DbClient) {
     const order = await getRequiredOrder(item.orderId);
 
     if (order.status === 'cancelled') {
-      throw new OrderServiceError('Cancelled orders cannot change kitchen status.', 'invalid_status');
+      throw new OrderServiceError(
+        'Cancelled orders cannot change kitchen status.',
+        'invalid_status',
+      );
     }
 
     if (!allowedCurrentStatuses.includes(item.status)) {
@@ -297,7 +407,7 @@ export function createOrderService(db: DbClient) {
           ? { servedAt: now }
           : status === 'sent' || status === 'preparing'
             ? { readyAt: null, servedAt: null }
-          : {};
+            : {};
 
     const [updatedItem] = await db
       .update(orderItems)
@@ -348,7 +458,10 @@ export function createOrderService(db: DbClient) {
 
   async function recalculateOrderTotals(orderId: string): Promise<void> {
     const activeItems = await db.query.orderItems.findMany({
-      where: and(eq(orderItems.orderId, orderId), ne(orderItems.status, 'cancelled')),
+      where: and(
+        eq(orderItems.orderId, orderId),
+        ne(orderItems.status, 'cancelled'),
+      ),
     });
 
     const subtotalCents = activeItems.reduce(
@@ -375,7 +488,10 @@ export function createOrderService(db: DbClient) {
     }
 
     const activeItems = await db.query.orderItems.findMany({
-      where: and(eq(orderItems.orderId, orderId), ne(orderItems.status, 'cancelled')),
+      where: and(
+        eq(orderItems.orderId, orderId),
+        ne(orderItems.status, 'cancelled'),
+      ),
     });
 
     const status = deriveOrderStatus(activeItems);
@@ -387,6 +503,7 @@ export function createOrderService(db: DbClient) {
     createOrder,
     addOrderItem,
     updateOrderItemQuantity,
+    cancelOrder,
     cancelOrderItem,
     restoreOrderItem,
     sendOrderToKitchen,
@@ -401,7 +518,10 @@ export function createOrderService(db: DbClient) {
 
 function assertOrderCanChangeItems(order: Order): void {
   if (order.status === 'paid' || order.status === 'cancelled') {
-    throw new OrderServiceError('Paid or cancelled orders cannot be changed.', 'invalid_status');
+    throw new OrderServiceError(
+      'Paid or cancelled orders cannot be changed.',
+      'invalid_status',
+    );
   }
 }
 
@@ -414,7 +534,9 @@ function deriveOrderStatus(items: OrderItem[]): OrderStatus {
     return 'served';
   }
 
-  if (items.every((item) => item.status === 'ready' || item.status === 'served')) {
+  if (
+    items.every((item) => item.status === 'ready' || item.status === 'served')
+  ) {
     return 'ready';
   }
 

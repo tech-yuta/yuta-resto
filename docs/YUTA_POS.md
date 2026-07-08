@@ -20,6 +20,7 @@ Split equally
 Mock print jobs
 Kitchen ticket print job for each sent item batch
 Customer receipt print job when an order or check is fully paid
+Order cancellation before payment
 ```
 
 Out of scope:
@@ -99,8 +100,13 @@ Keep command details readable on mobile, tablet, and desktop
 Make Send to kitchen and Payment easy to reach
 Show kitchen items grouped by table label/order
 Keep the kitchen screen as a station/status work queue, not a full command list
+Limit the kitchen screen to orders created today
 Keep payment totals clear
 ```
+
+Order cancellation is allowed only before payment. Cancelling an order marks active articles as cancelled, voids unpaid split checks, and marks the order cancelled. Paid orders or partially paid orders are not cancellable in the MVP because refund handling is out of scope.
+
+The kitchen screen uses lightweight 10-second client polling with `router.refresh()` while the browser tab is visible. This avoids WebSocket/SSE infrastructure for the MVP while still reflecting cancellations and kitchen status changes quickly enough during service.
 
 Do not:
 

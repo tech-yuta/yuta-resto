@@ -1,18 +1,21 @@
 import { createComboService } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { orders } from '@yuta/db/schema';
-import { ActionPanel, Badge, Button, Card, Separator } from '@yuta/ui';
-import { eq } from 'drizzle-orm';
-import { CreditCard, ListChecks, Split, Tags } from 'lucide-react';
-import Link from 'next/link';
+import { comboRuleGroups, comboRules, orders } from '@yuta/db/schema';
+import { Badge, Button, Card, Separator } from '@yuta/ui';
+import { asc, eq } from 'drizzle-orm';
+import { Tags } from 'lucide-react';
 import {
   cancelOrderSplitAction,
+  createChecksByItemsAction,
   payCheckAction,
   payFullOrderAction,
   splitOrderEquallyAction,
 } from '../../../actions';
 import { PosPageShell } from '../../../components/PosPageShell';
+import { EqualSplitDialogContent } from './EqualSplitDialogContent';
+import { ItemSplitDialogContent } from './ItemSplitDialogContent';
 import { PaymentCaptureForm } from './PaymentCaptureForm';
+import { PaymentChoiceDialogs } from './PaymentChoiceDialogs';
 
 type PaymentPageProps = {
   params: Promise<{
@@ -20,17 +23,17 @@ type PaymentPageProps = {
   }>;
   searchParams: Promise<{
     error?: string;
+    itemSplitError?: string;
+    paymentDialog?: string;
   }>;
 };
-
-const equalPartOptions = [2, 3, 4, 5, 6];
 
 export default async function PaymentPage({
   params,
   searchParams,
 }: PaymentPageProps) {
   const { orderId } = await params;
-  const { error } = await searchParams;
+  const { error, itemSplitError, paymentDialog } = await searchParams;
   const comboService = createComboService(db);
   const existingOrder = await db.query.orders.findFirst({
     where: eq(orders.id, orderId),
@@ -96,6 +99,19 @@ export default async function PaymentPage({
     throw new Error('Order not found.');
   }
 
+  const activeComboRules = await db.query.comboRules.findMany({
+    where: eq(comboRules.isActive, true),
+    with: {
+      groups: {
+        with: {
+          items: true,
+        },
+        orderBy: [asc(comboRuleGroups.sortOrder)],
+      },
+    },
+    orderBy: [asc(comboRules.priority), asc(comboRules.name)],
+  });
+
   const paidCents = order.payments
     .filter((payment) => payment.status === 'paid')
     .reduce((total, payment) => total + payment.amountCents, 0);
@@ -116,6 +132,102 @@ export default async function PaymentPage({
   const hasPaidSplitCheck = splitChecks.some(
     (check) => check.status === 'paid',
   );
+  const initialItemSplitState = getInitialItemSplitState(itemChecks);
+
+  const fullPaymentContent = (
+    <>
+      <PaymentCaptureForm
+        action={payFullOrderAction}
+        orderId={order.id}
+        remainingCents={remainingCents}
+        disabled={splitChecks.length > 0}
+        submitSize="lg"
+      />
+
+      {splitChecks.length > 0 && (
+        <div className="mt-4 rounded-lg border border-yuta-line bg-yuta-mist p-3">
+          <p className="text-sm font-semibold text-yuta-ink/70">
+            Paiement complet bloqué car un partage est actif.
+          </p>
+        </div>
+      )}
+    </>
+  );
+
+  const itemSplitContent = (
+    <>
+      <ItemSplitDialogContent
+        action={createChecksByItemsAction}
+        orderId={order.id}
+        items={activeOrderItems.map((item) => ({
+          id: item.id,
+          menuItemId: item.menuItemId,
+          name: item.itemNameSnapshot,
+          quantity: item.quantity,
+          unitPriceCents: item.unitPriceCentsSnapshot,
+          createdAt: item.createdAt.toISOString(),
+        }))}
+        comboRules={activeComboRules.map((rule) => ({
+          id: rule.id,
+          name: rule.name,
+          comboPriceCents: rule.comboPriceCents,
+          priority: rule.priority,
+          maxApplications: rule.maxApplications,
+          isActive: rule.isActive,
+          groups: rule.groups.map((group) => ({
+            id: group.id,
+            name: group.name,
+            minQuantity: group.minQuantity,
+            maxQuantity: group.maxQuantity,
+            sortOrder: group.sortOrder,
+            items: group.items.map((item) => ({
+              id: item.id,
+              menuItemId: item.menuItemId,
+              extraPriceCents: item.extraPriceCents,
+            })),
+          })),
+        }))}
+        initialClientCount={initialItemSplitState.clientCount}
+        initialQuantities={initialItemSplitState.quantities}
+        disabled={order.status === 'paid'}
+        error={itemSplitError}
+      />
+
+      {itemChecks.length > 0 && (
+        <>
+          <Separator className="my-5" />
+          <CheckPaymentList
+            checks={itemChecks}
+            payments={order.payments}
+            orderId={order.id}
+          />
+        </>
+      )}
+    </>
+  );
+
+  const equalSplitContent = (
+    <>
+      <EqualSplitDialogContent
+        action={splitOrderEquallyAction}
+        orderId={order.id}
+        totalCents={order.totalCents}
+        initialParts={equalChecks.length > 0 ? equalChecks.length : undefined}
+        disabled={order.status === 'paid'}
+      />
+
+      {equalChecks.length > 0 && (
+        <>
+          <Separator className="my-5" />
+          <CheckPaymentList
+            checks={equalChecks}
+            payments={order.payments}
+            orderId={order.id}
+          />
+        </>
+      )}
+    </>
+  );
 
   return (
     <PosPageShell
@@ -133,19 +245,19 @@ export default async function PaymentPage({
       }
     >
       {error && (
-        <div className="rounded-xl border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
+        <div className="rounded-lg border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
           {paymentErrorMessage(error)}
         </div>
       )}
 
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <section className="grid gap-5">
         <Card className="rounded-lg p-0">
           <div className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold">Récapitulatif</h2>
                 <p className="mt-1 text-sm text-yuta-ink/55">
-                  Les combos sont calcules au paiement.
+                  Les combos sont calculés au paiement.
                 </p>
               </div>
               {order.discountCents > 0 ? (
@@ -176,7 +288,7 @@ export default async function PaymentPage({
               </div>
             ))}
             {cancelledOrderItems.length > 0 && (
-              <div className="mt-2 grid gap-2 rounded-xl border border-yuta-line bg-yuta-paper p-3">
+              <div className="mt-2 grid gap-2 rounded-lg border border-yuta-line bg-yuta-paper p-3">
                 <p className="text-xs font-black uppercase text-yuta-ink/45">
                   Articles annulés
                 </p>
@@ -223,7 +335,7 @@ export default async function PaymentPage({
                 {order.discounts.map((discount) => (
                   <div
                     key={discount.id}
-                    className="rounded-xl border border-yuta-line bg-white px-3 py-2"
+                    className="rounded-lg border border-yuta-line bg-white px-3 py-2"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -249,7 +361,7 @@ export default async function PaymentPage({
               value={order.subtotalCents}
             />
             <AmountRow label="Remises combos" value={-order.discountCents} />
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-yuta-line bg-yuta-paper px-3 py-2">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-yuta-line bg-yuta-paper px-3 py-2">
               <span className="font-black">Total après combos</span>
               <span className="text-lg font-black">
                 {formatEuros(order.totalCents)}
@@ -257,7 +369,7 @@ export default async function PaymentPage({
             </div>
             <AmountRow label="Déjà payé" value={paidCents} />
             <div className="mt-2 flex items-center justify-between border-t border-yuta-line pt-4">
-              <span className="text-lg font-black">Reste a payer</span>
+              <span className="text-lg font-black">Reste à payer</span>
               <span className="text-2xl font-black">
                 {formatEuros(remainingCents)}
               </span>
@@ -265,122 +377,47 @@ export default async function PaymentPage({
           </div>
         </Card>
 
-        <div className="grid gap-5">
-          <ActionPanel
-            title="Payer tout"
-            description="Encaissement complet"
-            icon={<CreditCard className="h-5 w-5" />}
-          >
-            <PaymentCaptureForm
-              action={payFullOrderAction}
-              orderId={order.id}
-              remainingCents={remainingCents}
-              disabled={splitChecks.length > 0}
-              submitSize="lg"
-            />
-            {splitChecks.length > 0 && (
-              <div className="mt-4 rounded-xl border border-yuta-line bg-yuta-mist p-3">
-                <p className="text-sm font-semibold text-yuta-ink/70">
-                  Paiement complet bloque car un partage est actif.
+        <PaymentChoiceDialogs
+          fullPaymentContent={fullPaymentContent}
+          itemSplitContent={itemSplitContent}
+          equalSplitContent={equalSplitContent}
+          fullPaymentLabel={formatEuros(remainingCents)}
+          itemSplitLabel="Par articles"
+          equalSplitLabel="Parts égales"
+          itemSplitDefaultOpen={
+            Boolean(itemSplitError) || paymentDialog === 'item-split'
+          }
+          equalSplitDefaultOpen={paymentDialog === 'equal-split'}
+        />
+
+        {splitChecks.length > 0 && (
+          <Card className="rounded-lg p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-black">Partage actif</p>
+                <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
+                  Annuler le partage pour revenir au paiement complet.
                 </p>
-                <form action={cancelOrderSplitAction} className="mt-3">
-                  <input type="hidden" name="orderId" value={order.id} />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    className="w-full"
-                    disabled={hasPaidSplitCheck}
-                  >
-                    Annuler le partage
-                  </Button>
-                </form>
                 {hasPaidSplitCheck && (
-                  <p className="mt-2 text-xs font-semibold text-yuta-ink/55">
-                    Impossible après encaissement d’un ticket.
+                  <p className="mt-1 text-xs font-semibold text-yuta-ink/45">
+                    Impossible après encaissement d'un ticket.
                   </p>
                 )}
               </div>
-            )}
-          </ActionPanel>
-
-          <ActionPanel
-            title="Partager en parts égales"
-            description="Diviser le total optimisé"
-            icon={<Split className="h-5 w-5" />}
-          >
-            <form action={splitOrderEquallyAction} className="mt-5 grid gap-3">
-              <input type="hidden" name="orderId" value={order.id} />
-              <p className="text-sm font-semibold text-yuta-ink/55">
-                Nombre de parts
-              </p>
-              <div className="grid grid-cols-5 gap-2">
-                {equalPartOptions.map((parts) => (
-                  <Button
-                    key={parts}
-                    type="submit"
-                    name="parts"
-                    value={parts}
-                    variant="secondary"
-                    className="h-11 rounded-lg"
-                    disabled={order.status === 'paid'}
-                  >
-                    {parts}
-                  </Button>
-                ))}
-              </div>
-              <div className="rounded-lg border border-yuta-line bg-yuta-paper p-3">
-                <p className="text-xs font-black uppercase text-yuta-ink/45">
-                  Montant par part
-                </p>
-                <p className="mt-1 text-2xl font-black">
-                  {formatEuros(Math.ceil(order.totalCents / 2))}
-                </p>
-                <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
-                  Aperçu pour 2 parts. Choisir un bouton pour créer les tickets.
-                </p>
-              </div>
-            </form>
-
-            {equalChecks.length > 0 && (
-              <>
-                <Separator className="my-5" />
-                <CheckPaymentList
-                  checks={equalChecks}
-                  payments={order.payments}
-                  orderId={order.id}
-                />
-              </>
-            )}
-          </ActionPanel>
-
-          <ActionPanel
-            title="Séparer par articles"
-            description="Créer des tickets par client"
-            icon={<ListChecks className="h-5 w-5" />}
-          >
-            <Button
-              asChild
-              variant="secondary"
-              className="mt-5 w-full"
-              disabled={order.status === 'paid'}
-            >
-              <Link href={`/orders/${order.id}/payment/items`}>
-                Choisir les articles
-              </Link>
-            </Button>
-
-            {itemChecks.length > 0 && (
-              <>
-                <Separator className="my-5" />
-                <CheckPaymentList
-                  checks={itemChecks}
-                  payments={order.payments}
-                  orderId={order.id}
-                />
-              </>
-            )}
-          </ActionPanel>
-        </div>
+              <form action={cancelOrderSplitAction}>
+                <input type="hidden" name="orderId" value={order.id} />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  className="w-full sm:w-auto"
+                  disabled={hasPaidSplitCheck}
+                >
+                  Annuler le partage
+                </Button>
+              </form>
+            </div>
+          </Card>
+        )}
       </section>
     </PosPageShell>
   );
@@ -442,15 +479,15 @@ function CheckPaymentList({
         return (
           <div
             key={check.id}
-            className="rounded-xl border border-yuta-line bg-yuta-paper p-3"
+            className="rounded-lg border border-yuta-line bg-yuta-paper p-3"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-bold">{check.checkLabel}</p>
                 <p className="text-sm text-yuta-ink/55">
                   {check.splitMode === 'equal'
-                    ? 'Part egale'
-                    : 'Articles assignes'}
+                    ? 'Part égale'
+                    : 'Articles assignés'}
                 </p>
               </div>
               <Badge variant={check.status === 'paid' ? 'active' : 'outline'}>
@@ -458,7 +495,7 @@ function CheckPaymentList({
               </Badge>
             </div>
 
-            <div className="mt-3 grid gap-2 rounded-xl border border-yuta-line bg-white p-3">
+            <div className="mt-3 grid gap-2 rounded-lg border border-yuta-line bg-white p-3">
               {check.items.length > 0 ? (
                 <div className="grid gap-1.5">
                   {check.items.map((item) => (
@@ -478,7 +515,7 @@ function CheckPaymentList({
               ) : (
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="font-semibold text-yuta-ink/70">
-                    Part egale
+                    Part égale
                   </span>
                   <span className="font-bold">
                     {formatEuros(check.subtotalCents)}
@@ -549,6 +586,60 @@ function CheckPaymentList({
   );
 }
 
+function getInitialItemSplitState(
+  itemChecks: Array<{
+    checkLabel: string;
+    items: Array<{
+      quantity: number;
+      orderItem: {
+        id: string;
+      };
+    }>;
+  }>,
+): {
+  clientCount: number | undefined;
+  quantities: Record<string, number>;
+} {
+  if (itemChecks.length === 0) {
+    return {
+      clientCount: undefined,
+      quantities: {},
+    };
+  }
+
+  const quantities: Record<string, number> = {};
+  let maxClientIndex = itemChecks.length;
+
+  itemChecks.forEach((check, index) => {
+    const clientIndex = parseClientIndex(check.checkLabel) ?? index + 1;
+    maxClientIndex = Math.max(maxClientIndex, clientIndex);
+
+    check.items.forEach((item) => {
+      quantities[`client${clientIndex}:${item.orderItem.id}`] = item.quantity;
+    });
+  });
+
+  return {
+    clientCount: maxClientIndex,
+    quantities,
+  };
+}
+
+function parseClientIndex(label: string): number | null {
+  const match = /^Client\s+(\d+)$/i.exec(label.trim());
+  const parsedIndex = match ? Number(match[1]) : null;
+
+  if (
+    !Number.isInteger(parsedIndex) ||
+    parsedIndex === null ||
+    parsedIndex < 1
+  ) {
+    return null;
+  }
+
+  return parsedIndex;
+}
+
 function AmountRow({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
@@ -565,13 +656,13 @@ function paymentErrorMessage(error: string): string {
   const messages: Record<string, string> = {
     invalid_amount: 'Saisir un montant valide, par exemple 31 ou 31,00.',
     invalid_input: 'Le montant donné doit couvrir le montant encaissé.',
-    invalid_status: 'Cette commande ou ce ticket ne peut pas etre encaisse.',
-    invalid_split: 'La repartition des tickets est invalide.',
+    invalid_status: 'Cette commande ou ce ticket ne peut pas être encaissé.',
+    invalid_split: 'La répartition des tickets est invalide.',
     overpayment: 'Le montant encaissé dépasse le reste à payer.',
     not_found: 'Commande ou ticket introuvable.',
   };
 
-  return messages[error] ?? 'Impossible d enregistrer le paiement.';
+  return messages[error] ?? "Impossible d'enregistrer le paiement.";
 }
 
 function formatDiscountItems(

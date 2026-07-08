@@ -133,7 +133,7 @@ export async function createOrderAction(formData: FormData): Promise<void> {
     note: values.note,
   });
 
-  redirect(`/orders/${order.id}`);
+  redirect(`/orders/${order.id}/items`);
 }
 
 export async function addOrderItemAction(formData: FormData): Promise<void> {
@@ -150,6 +150,7 @@ export async function addOrderItemAction(formData: FormData): Promise<void> {
   });
 
   revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath(`/orders/${values.orderId}/items`);
 }
 
 export async function sendOrderToKitchenAction(
@@ -176,6 +177,24 @@ export async function sendOrderToKitchenAction(
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath('/kitchen');
   revalidatePath('/pos/prints');
+}
+
+export async function cancelOrderAction(formData: FormData): Promise<void> {
+  const values = orderIdFormSchema.parse({
+    orderId: formData.get('orderId'),
+  });
+  const orderService = createOrderService(db);
+
+  await orderService.cancelOrder({
+    orderId: values.orderId,
+    reason: 'POS order cancellation',
+  });
+
+  revalidatePath('/');
+  revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath(`/orders/${values.orderId}/items`);
+  revalidatePath(`/orders/${values.orderId}/payment`);
+  revalidatePath('/kitchen');
 }
 
 export async function updateOrderItemQuantityAction(
@@ -316,6 +335,7 @@ export async function splitOrderEquallyAction(
     orderId: formData.get('orderId'),
     parts: formData.get('parts'),
   });
+  const shouldReturnToPayment = formData.get('returnTo') === 'payment';
   const paymentService = createPaymentService(db);
 
   await paymentService.splitOrderEqually({
@@ -325,7 +345,11 @@ export async function splitOrderEquallyAction(
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
-  redirect(`/orders/${values.orderId}/payment`);
+  redirect(
+    shouldReturnToPayment
+      ? `/orders/${values.orderId}/payment?paymentDialog=equal-split`
+      : `/orders/${values.orderId}/payment`,
+  );
 }
 
 export async function cancelOrderSplitAction(
@@ -440,10 +464,17 @@ export async function createChecksByItemsAction(
   const clientCount = Number.isInteger(requestedClientCount)
     ? requestedClientCount
     : Math.max(2, ...Array.from(itemsByClient.keys()));
-  const itemSplitUrl = `/orders/${values.orderId}/payment/items?clients=${clientCount}`;
+  const shouldReturnToPayment = formData.get('returnTo') === 'payment';
+  const itemSplitUrl = shouldReturnToPayment
+    ? `/orders/${values.orderId}/payment`
+    : `/orders/${values.orderId}/payment/items?clients=${clientCount}`;
 
   if (checks.length === 0) {
-    redirect(`${itemSplitUrl}&error=empty`);
+    redirect(
+      shouldReturnToPayment
+        ? `${itemSplitUrl}?itemSplitError=empty`
+        : `${itemSplitUrl}&error=empty`,
+    );
   }
 
   const activeItems = await db.query.orderItems.findMany({
@@ -476,7 +507,11 @@ export async function createChecksByItemsAction(
       availableQuantity === undefined ||
       assignedQuantity > availableQuantity
     ) {
-      redirect(`${itemSplitUrl}&error=quantity`);
+      redirect(
+        shouldReturnToPayment
+          ? `${itemSplitUrl}?itemSplitError=quantity`
+          : `${itemSplitUrl}&error=quantity`,
+      );
     }
   }
 
@@ -488,7 +523,11 @@ export async function createChecksByItemsAction(
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
-  redirect(`/orders/${values.orderId}/payment`);
+  redirect(
+    shouldReturnToPayment
+      ? `/orders/${values.orderId}/payment?paymentDialog=item-split`
+      : `/orders/${values.orderId}/payment`,
+  );
 }
 
 async function getSelectedStaffUser(): Promise<typeof users.$inferSelect> {

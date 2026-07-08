@@ -1,7 +1,7 @@
 import { db } from '@yuta/db/client';
 import { orderItems, orders } from '@yuta/db/schema';
 import { Badge, Button, Card, SegmentedNav, Separator } from '@yuta/ui';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import {
   ChefHat,
   Check,
@@ -21,6 +21,7 @@ import {
   markOrderItemSentAction,
 } from '../actions';
 import { PosPageShell } from '../components/PosPageShell';
+import { KitchenAutoRefresh } from './KitchenAutoRefresh';
 
 type KitchenPageProps = {
   searchParams: Promise<{
@@ -55,28 +56,47 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
   const { station, status } = await searchParams;
   const selectedStation = parseStation(station);
   const selectedStatus = parseStatusFilter(status);
-  const [items, stationItems] = await Promise.all([
-    db.query.orderItems.findMany({
-      where: and(
-        eq(orderItems.status, selectedStatus),
-        eq(orderItems.kitchenStationSnapshot, selectedStation),
-      ),
-      with: {
-        order: true,
-      },
-      orderBy:
-        selectedStatus === 'ready'
+  const today = startOfToday();
+  const tomorrow = addDays(today, 1);
+  const [itemRows, stationItemRows] = await Promise.all([
+    db
+      .select({
+        item: orderItems,
+        order: orders,
+      })
+      .from(orderItems)
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(
+        and(
+          eq(orderItems.status, selectedStatus),
+          eq(orderItems.kitchenStationSnapshot, selectedStation),
+          gte(orders.createdAt, today),
+          lt(orders.createdAt, tomorrow),
+        ),
+      )
+      .orderBy(
+        ...(selectedStatus === 'ready'
           ? [desc(orderItems.readyAt), desc(orderItems.createdAt)]
-          : [asc(orderItems.sentAt), asc(orderItems.createdAt)],
-      limit: kitchenQueueLimit,
-    }),
-    db.query.orderItems.findMany({
-      where: and(
-        inArray(orderItems.status, ['sent', 'preparing', 'ready']),
-        eq(orderItems.kitchenStationSnapshot, selectedStation),
+          : [asc(orderItems.sentAt), asc(orderItems.createdAt)]),
+      )
+      .limit(kitchenQueueLimit),
+    db
+      .select({
+        item: orderItems,
+      })
+      .from(orderItems)
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(
+        and(
+          inArray(orderItems.status, ['sent', 'preparing', 'ready']),
+          eq(orderItems.kitchenStationSnapshot, selectedStation),
+          gte(orders.createdAt, today),
+          lt(orders.createdAt, tomorrow),
+        ),
       ),
-    }),
   ]);
+  const items = itemRows.map((row) => ({ ...row.item, order: row.order }));
+  const stationItems = stationItemRows.map((row) => row.item);
   const groups = groupItemsByOrder(items);
   const counts = countItemsByStatus(stationItems);
 
@@ -145,6 +165,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
         </div>
       }
     >
+      <KitchenAutoRefresh />
       <div className="grid gap-4">
         {groups.length === 0 ? (
           <Card className="grid min-h-80 place-items-center text-center shadow-none">
@@ -404,4 +425,18 @@ function formatTime(date: Date): string {
     minute: '2-digit',
     second: '2-digit',
   }).format(date);
+}
+
+function startOfToday(): Date {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return today;
+}
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+
+  return result;
 }

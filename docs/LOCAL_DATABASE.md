@@ -60,6 +60,17 @@ Host port: 55433
 
 The host port is `55433` to avoid conflicts with a local PostgreSQL server or other projects using port `5432` or `5433`.
 
+If Windows reserves that port range, Docker may fail with a message like `ports are not available`. Use another free host port and keep app env files in sync:
+
+```powershell
+$env:POSTGRES_PORT='15432'
+docker compose -f docker-compose.db.dev.yml up -d --force-recreate postgres
+```
+
+```env
+DATABASE_URL=postgres://yuta:yuta@localhost:15432/yuta_resto
+```
+
 ## Production Reminder
 
 Do not use `docker-compose.db.dev.yml` in production.
