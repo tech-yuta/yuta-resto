@@ -111,8 +111,8 @@ The detail page shows:
 Order reference and status
 Active articles
 Subtotal, discount, and total
-Order timeline
-Order information such as type, table/reference, kitchen printer, and notes
+Order timeline with created, kitchen, ready, served, paid, and cancelled states
+Order information such as type, table/reference, kitchen printer, and note when present
 ```
 
 Use `Ajouter` in the `Articles` panel to open the item-entry screen again:
@@ -196,8 +196,10 @@ Dessert
 The kitchen screen is a production queue, not a full order-history screen.
 By default it opens `A preparer` and only loads the selected station/status
 queue.
-It only shows kitchen items from orders created today.
+It shows active kitchen work only: items in `sent`, `preparing`, or `ready`.
+It is limited to the current service day, from 05:00 to 05:00 local time. This keeps the queue from showing old unfinished history while allowing late-night orders to stay visible after midnight.
 When the kitchen screen is open, it refreshes automatically every 10 seconds while the browser tab is visible. This keeps cancelled orders and status changes reasonably fresh without a permanent realtime connection.
+Order-level notes are shown on the kitchen screen inside the matching order group, so staff can see food or drink instructions attached during order creation.
 
 Kitchen staff can switch between:
 

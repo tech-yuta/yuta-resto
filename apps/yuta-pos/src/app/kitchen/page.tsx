@@ -12,6 +12,7 @@ import {
   Plus,
   RotateCcw,
   Soup,
+  StickyNote,
   Wifi,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -35,6 +36,7 @@ type KitchenStatusFilter = 'sent' | 'preparing' | 'ready';
 type OrderStatus = typeof orders.$inferSelect.status;
 
 const kitchenQueueLimit = 100;
+const serviceDayStartHour = 5;
 
 const stations: Array<{ value: Station; label: string; icon: typeof Soup }> = [
   { value: 'kitchen', label: 'Cuisine', icon: Soup },
@@ -56,8 +58,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
   const { station, status } = await searchParams;
   const selectedStation = parseStation(station);
   const selectedStatus = parseStatusFilter(status);
-  const today = startOfToday();
-  const tomorrow = addDays(today, 1);
+  const serviceDay = getServiceDayWindow(new Date());
   const [itemRows, stationItemRows] = await Promise.all([
     db
       .select({
@@ -70,8 +71,8 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
         and(
           eq(orderItems.status, selectedStatus),
           eq(orderItems.kitchenStationSnapshot, selectedStation),
-          gte(orders.createdAt, today),
-          lt(orders.createdAt, tomorrow),
+          gte(orders.createdAt, serviceDay.start),
+          lt(orders.createdAt, serviceDay.end),
         ),
       )
       .orderBy(
@@ -90,8 +91,8 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
         and(
           inArray(orderItems.status, ['sent', 'preparing', 'ready']),
           eq(orderItems.kitchenStationSnapshot, selectedStation),
-          gte(orders.createdAt, today),
-          lt(orders.createdAt, tomorrow),
+          gte(orders.createdAt, serviceDay.start),
+          lt(orders.createdAt, serviceDay.end),
         ),
       ),
   ]);
@@ -199,6 +200,14 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                     <p className="mt-1 text-xs font-semibold text-yuta-ink/45">
                       {group.order.orderNumber}
                     </p>
+                    {group.order.note?.trim() && (
+                      <p className="mt-2 inline-flex max-w-full items-start gap-2 rounded-lg bg-yuta-info px-3 py-2 text-sm font-semibold text-yuta-ink">
+                        <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-yuta-success" />
+                        <span className="min-w-0 break-words">
+                          Note commande: {group.order.note.trim()}
+                        </span>
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="neutral">
@@ -427,16 +436,16 @@ function formatTime(date: Date): string {
   }).format(date);
 }
 
-function startOfToday(): Date {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function getServiceDayWindow(now: Date): { start: Date; end: Date } {
+  const start = new Date(now);
+  start.setHours(serviceDayStartHour, 0, 0, 0);
 
-  return today;
-}
+  if (now.getHours() < serviceDayStartHour) {
+    start.setDate(start.getDate() - 1);
+  }
 
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
 
-  return result;
+  return { start, end };
 }

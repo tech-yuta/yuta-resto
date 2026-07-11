@@ -335,6 +335,8 @@ function HistoryPanel({ order }: { order: OrderDetail }) {
 }
 
 function InfoPanel({ order }: { order: OrderDetail }) {
+  const note = order.note?.trim();
+
   return (
     <Card padding="none" className="rounded-lg shadow-none">
       <div className="p-4">
@@ -357,11 +359,13 @@ function InfoPanel({ order }: { order: OrderDetail }) {
           label="Imprimante cuisine"
           value="Cuisine"
         />
-        <InfoRow
-          icon={<StickyNote className="h-4 w-4 text-yuta-ink/55" />}
-          label="Observations"
-          value={order.note?.trim() || '-'}
-        />
+        {note && (
+          <InfoRow
+            icon={<StickyNote className="h-4 w-4 text-yuta-ink/55" />}
+            label="Note"
+            value={note}
+          />
+        )}
       </div>
     </Card>
   );
@@ -377,10 +381,10 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <div className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 text-sm">
+    <div className="grid grid-cols-[20px_minmax(0,1fr)_minmax(0,auto)] items-center gap-3 text-sm">
       {icon}
       <span className="font-semibold text-yuta-ink/55">{label}</span>
-      <span className="font-black">{value}</span>
+      <span className="min-w-0 text-right font-black">{value}</span>
     </div>
   );
 }
@@ -404,37 +408,124 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function buildHistoryEvents(order: OrderDetail) {
+  const sentAt =
+    order.sentAt ??
+    firstItemDate(order, ['sent', 'preparing', 'ready', 'served']);
+  const preparingAt = firstItemDate(order, ['preparing', 'ready', 'served']);
+  const readyAt = firstItemReadyDate(order);
+  const servedAt = firstItemServedDate(order);
+  const hasActiveItems = activeItemCount(order) > 0;
+
   return [
     {
       done: true,
       highlight: false,
-      label: 'Commande creee',
+      label: 'Commande créée',
       time: formatTime(order.createdAt),
     },
     {
-      done: Boolean(order.sentAt),
+      done: Boolean(sentAt),
       highlight: true,
-      label: 'Commande envoyee en cuisine',
-      time: order.sentAt ? formatTime(order.sentAt) : '-',
+      label: 'Commande envoyée en cuisine',
+      time: sentAt ? formatTime(sentAt) : '-',
     },
     {
-      done: order.items.some((item) =>
-        ['preparing', 'ready', 'served'].includes(item.status),
-      ),
-      highlight: false,
-      label:
-        order.status === 'ready' || order.status === 'served'
-          ? 'Preparation terminee'
-          : 'En attente de preparation',
-      time: firstItemTime(order, ['preparing', 'ready', 'served']),
+      done: Boolean(preparingAt),
+      highlight: order.status === 'preparing',
+      label: preparingAt ? 'Préparation en cours' : 'En attente de préparation',
+      time: preparingAt ? formatTime(preparingAt) : '-',
     },
-  ];
+    {
+      done: Boolean(readyAt),
+      highlight: order.status === 'ready',
+      label: 'Prête',
+      time: readyAt ? formatTime(readyAt) : '-',
+    },
+    {
+      done: Boolean(servedAt),
+      highlight: order.status === 'served',
+      label: 'Servie',
+      time: servedAt ? formatTime(servedAt) : '-',
+    },
+    {
+      done: Boolean(order.paidAt),
+      highlight: order.status === 'paid',
+      label: 'Payée',
+      time: order.paidAt ? formatTime(order.paidAt) : '-',
+    },
+    {
+      done: Boolean(order.cancelledAt),
+      highlight: order.status === 'cancelled',
+      label:
+        order.status === 'cancelled' || !hasActiveItems
+          ? 'Annulée'
+          : 'Annulation partielle',
+      time: order.cancelledAt
+        ? formatTime(order.cancelledAt)
+        : firstItemCancelledTime(order),
+    },
+  ].filter((event) => event.done || isNextHistoryEvent(event.label, order));
 }
 
-function firstItemTime(order: OrderDetail, statuses: string[]): string {
+function isNextHistoryEvent(label: string, order: OrderDetail): boolean {
+  if (order.status === 'cancelled' || order.status === 'paid') {
+    return false;
+  }
+
+  if (label === 'Commande envoyée en cuisine') {
+    return order.status === 'draft';
+  }
+
+  if (label === 'En attente de préparation') {
+    return order.status === 'sent';
+  }
+
+  if (label === 'Prête') {
+    return order.status === 'preparing';
+  }
+
+  if (label === 'Servie') {
+    return order.status === 'ready';
+  }
+
+  if (label === 'Payée') {
+    return order.status === 'served';
+  }
+
+  return false;
+}
+
+function firstItemDate(order: OrderDetail, statuses: string[]): Date | null {
   const dates = order.items
     .filter((item) => statuses.includes(item.status))
     .map((item) => item.readyAt ?? item.sentAt ?? item.createdAt)
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  return dates[0] ?? null;
+}
+
+function firstItemReadyDate(order: OrderDetail): Date | null {
+  const dates = order.items
+    .filter((item) => item.readyAt)
+    .map((item) => item.readyAt as Date)
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  return dates[0] ?? null;
+}
+
+function firstItemServedDate(order: OrderDetail): Date | null {
+  const dates = order.items
+    .filter((item) => item.servedAt)
+    .map((item) => item.servedAt as Date)
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  return dates[0] ?? null;
+}
+
+function firstItemCancelledTime(order: OrderDetail): string {
+  const dates = order.items
+    .filter((item) => item.cancelledAt)
+    .map((item) => item.cancelledAt as Date)
     .sort((left, right) => left.getTime() - right.getTime());
 
   return dates[0] ? formatTime(dates[0]) : '-';

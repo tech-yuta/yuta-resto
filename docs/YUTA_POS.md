@@ -100,7 +100,7 @@ Keep command details readable on mobile, tablet, and desktop
 Make Send to kitchen and Payment easy to reach
 Show kitchen items grouped by table label/order
 Keep the kitchen screen as a station/status work queue, not a full command list
-Limit the kitchen screen to orders created today
+Limit the kitchen screen to the current service day, using a 05:00 local cutoff
 Keep payment totals clear
 ```
 
