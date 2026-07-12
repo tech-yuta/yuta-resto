@@ -1,0 +1,129 @@
+{
+  "_note": "Menu LUNA — priceCents = centimes EUR. kitchenStation: kitchen | bar | dessert | none. Combos a prix dynamique (Menu Express, Menu Gourmand, Combo Ete) sont exclus car le schema ne supporte pas surchargeOnBaseCents pour l instant.",
+
+  "categories": [
+    { "name": "Entrees",                 "sortOrder": 10 },
+    { "name": "Bun Vermicelles de riz",  "sortOrder": 20 },
+    { "name": "Gua Bao",                 "sortOrder": 30 },
+    { "name": "Plats en soupe",          "sortOrder": 40 },
+    { "name": "Plat du jour",            "sortOrder": 50 },
+    { "name": "Desserts",                "sortOrder": 60 },
+    { "name": "Boissons",                "sortOrder": 70 },
+    { "name": "Supplements",             "sortOrder": 80 }
+  ],
+
+  "items": [
+    { "category": "Entrees", "name": "Nems porc (3 pcs)",                     "description": "Salade, herbes fraiches, sauce maison",                                               "priceCents": 550,  "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 10 },
+    { "category": "Entrees", "name": "Xiu Mai (4 pcs)",                        "description": "Bouchees vapeur, sauce soja",                                                         "priceCents": 550,  "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 20 },
+    { "category": "Entrees", "name": "Banh Bao pate fruit de dragon (1 pce)",  "description": "Brioche vapeur au porc laque",                                                        "priceCents": 550,  "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 30 },
+    { "category": "Entrees", "name": "Nems vegan (3 pcs)",                     "description": "Salade, herbes fraiches, sauce maison",                                               "priceCents": 550,  "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 40 },
+    { "category": "Entrees", "name": "Assortiment Mix LUNA (11 pcs)",          "description": "Nems porc, xiu mai, rouleaux de printemps, nems vegan",                              "priceCents": 1350, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 50 },
+    { "category": "Entrees", "name": "Rouleaux de printemps",                  "description": "Boeuf / poulet croustillant / tofu",                                                  "priceCents": 550,  "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 60 },
+    { "category": "Entrees", "name": "Poulet croustillant entree",             "description": "Poulet croustillant, sauce",                                                          "priceCents": 550,  "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 70 },
+    { "category": "Entrees", "name": "Panier de frites wedges",                "description": "Servi avec sauce mayo + sriracha",                                                    "priceCents": 450,  "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 80 },
+
+    { "category": "Bun Vermicelles de riz", "name": "Bun Thit Nuong",          "description": "Porc grille + nems porc. Servi avec salade, carottes, herbes, cacahuetes, oignons frits + sauce nuoc-mam",     "priceCents": 1300, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 10 },
+    { "category": "Bun Vermicelles de riz", "name": "Bun Ga",                  "description": "Poulet croustillant + nems porc. Servi avec salade, carottes, herbes, cacahuetes, oignons frits + sauce nuoc-mam", "priceCents": 1300, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 20 },
+    { "category": "Bun Vermicelles de riz", "name": "Bun Chay (vege)",         "description": "Tofu pane + nems vege. Servi avec salade, carottes, herbes, cacahuetes, oignons frits + sauce nuoc-mam",          "priceCents": 1300, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 30 },
+    { "category": "Bun Vermicelles de riz", "name": "Bo Bun",                  "description": "Boeuf saute + nems porc. Servi avec salade, carottes, herbes, cacahuetes, oignons frits + sauce nuoc-mam",        "priceCents": 1450, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 40 },
+    { "category": "Bun Vermicelles de riz", "name": "Bun Tom",                 "description": "Crevettes sautees + nems porc. Servi avec salade, carottes, herbes, cacahuetes, oignons frits + sauce nuoc-mam",  "priceCents": 1550, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 50 },
+
+    { "category": "Gua Bao", "name": "Gua Bao Porc laque",          "description": "Brioche moelleuse, concombre, carotte aigre-douce, herbes, oignons frits, sauce gua bao + frites", "priceCents": 1100, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 10 },
+    { "category": "Gua Bao", "name": "Gua Bao Poulet croustillant", "description": "Brioche moelleuse, concombre, carotte aigre-douce, herbes, oignons frits, sauce gua bao + frites", "priceCents": 1100, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 20 },
+    { "category": "Gua Bao", "name": "Gua Bao Boeuf saute",         "description": "Brioche moelleuse, concombre, carotte aigre-douce, herbes, oignons frits, sauce gua bao + frites", "priceCents": 1100, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 30 },
+    { "category": "Gua Bao", "name": "Gua Bao Tofu pane (vege)",    "description": "Brioche moelleuse, concombre, carotte aigre-douce, herbes, oignons frits, sauce gua bao + frites", "priceCents": 1100, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 40 },
+
+    { "category": "Plats en soupe", "name": "Pho Boeuf",       "description": "Nouilles de riz, boeuf tendre, boulette de boeuf, bouillon parfume", "priceCents": 1650, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 10 },
+    { "category": "Plats en soupe", "name": "Mi Quang poulet", "description": "Riz au curcuma, poulet marine, bouillon",                            "priceCents": 1500, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 20 },
+
+    { "category": "Plat du jour", "name": "Plat du jour Lun-Ven", "description": "Riz parfume + viande du jour + legumes",               "priceCents": 1350, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 10 },
+    { "category": "Plat du jour", "name": "Plat du jour Samedi",  "description": "Plat special selon la semaine — prix affiche en caisse", "priceCents": 0,    "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 20 },
+
+    { "category": "Desserts", "name": "Gateau banane glace coco", "description": null,                                                           "priceCents": 550, "kitchenStation": "dessert", "isAvailable": true, "sortOrder": 10 },
+    { "category": "Desserts", "name": "Mochi glace (2 pcs)",      "description": "Au choix : mangue / matcha / cacao",                           "priceCents": 550, "kitchenStation": "dessert", "isAvailable": true, "sortOrder": 20 },
+    { "category": "Desserts", "name": "Cheesecake matcha",        "description": null,                                                           "priceCents": 550, "kitchenStation": "dessert", "isAvailable": true, "sortOrder": 30 },
+    { "category": "Desserts", "name": "Cheesecake mangue",        "description": null,                                                           "priceCents": 550, "kitchenStation": "dessert", "isAvailable": true, "sortOrder": 40 },
+    { "category": "Desserts", "name": "Le trio Glaces",           "description": "Coco + Chocolat + Vanille, cacahuete, sauce chocolat & biscuit", "priceCents": 550, "kitchenStation": "dessert", "isAvailable": true, "sortOrder": 50 },
+
+    { "category": "Boissons", "name": "Evian San Pellegrino 50cl",          "description": null,                               "priceCents": 250,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 10 },
+    { "category": "Boissons", "name": "Coca-Cola Orangina Jus coco",        "description": null,                               "priceCents": 290,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 20 },
+    { "category": "Boissons", "name": "The glace citron citronnelle 250ml", "description": "The glace maison",                  "priceCents": 350,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 30 },
+    { "category": "Boissons", "name": "The glace citron citronnelle 500ml", "description": "The glace maison",                  "priceCents": 550,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 31 },
+    { "category": "Boissons", "name": "Mojito litchi",                      "description": "Cocktail",                          "priceCents": 600,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 40 },
+    { "category": "Boissons", "name": "Mojito citron-menthe",               "description": "Cocktail",                          "priceCents": 600,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 41 },
+    { "category": "Boissons", "name": "Punch ananas-passion",               "description": "Mocktail",                          "priceCents": 700,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 50 },
+    { "category": "Boissons", "name": "Mojito fruit du dragon",             "description": "Mocktail",                          "priceCents": 700,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 51 },
+    { "category": "Boissons", "name": "Cafe Espresso",                      "description": null,                               "priceCents": 250,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 60 },
+    { "category": "Boissons", "name": "Cafe Allonge",                       "description": null,                               "priceCents": 250,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 61 },
+    { "category": "Boissons", "name": "Cappuccino",                         "description": null,                               "priceCents": 300,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 62 },
+    { "category": "Boissons", "name": "The chaud Kusmi Tea",                "description": "Infusion Kusmi Tea + fruits seches", "priceCents": 300,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 70 },
+    { "category": "Boissons", "name": "Biere vietnamienne verre 12cl",      "description": "Hanoi ou Saigon",                   "priceCents": 450,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 80 },
+    { "category": "Boissons", "name": "Biere vietnamienne pichet 25cl",     "description": "Hanoi ou Saigon",                   "priceCents": 850,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 81 },
+    { "category": "Boissons", "name": "Biere vietnamienne pichet 50cl",     "description": "Hanoi ou Saigon",                   "priceCents": 1500, "kitchenStation": "bar", "isAvailable": true, "sortOrder": 82 },
+    { "category": "Boissons", "name": "Rose Herault IGP verre 12cl",        "description": "Petites Balades",                   "priceCents": 450,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 90 },
+    { "category": "Boissons", "name": "Rose Herault IGP pichet 25cl",       "description": "Petites Balades",                   "priceCents": 850,  "kitchenStation": "bar", "isAvailable": true, "sortOrder": 91 },
+    { "category": "Boissons", "name": "Rose Herault IGP pichet 50cl",       "description": "Petites Balades",                   "priceCents": 1500, "kitchenStation": "bar", "isAvailable": true, "sortOrder": 92 },
+
+    { "category": "Supplements", "name": "Nem a l unite",            "description": "Porc ou vegan", "priceCents": 130, "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 10 },
+    { "category": "Supplements", "name": "Sauce cacahuete LUNA ete", "description": null,            "priceCents": 50,  "kitchenStation": "kitchen", "isAvailable": true, "sortOrder": 20 }
+  ],
+
+  "combos": [
+    {
+      "name":            "Gua Bao Happy",
+      "comboPriceCents": 1250,
+      "priority":        10,
+      "groups": [
+        {
+          "name":        "Gua Bao",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   10,
+          "items": [
+            { "name": "Gua Bao Porc laque",         "extraPriceCents": 0 },
+            { "name": "Gua Bao Poulet croustillant", "extraPriceCents": 0 },
+            { "name": "Gua Bao Boeuf saute",         "extraPriceCents": 0 },
+            { "name": "Gua Bao Tofu pane (vege)",    "extraPriceCents": 0 }
+          ]
+        },
+        {
+          "name":        "Boisson",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   20,
+          "items": [
+            { "name": "The glace citron citronnelle 250ml", "extraPriceCents": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "name":            "Menu Petit Enfant",
+      "comboPriceCents": 650,
+      "priority":        20,
+      "groups": [
+        {
+          "name":        "Plat",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   10,
+          "items": [
+            { "name": "Gua Bao Porc laque", "extraPriceCents": 0 }
+          ]
+        },
+        {
+          "name":        "Entree",
+          "minQuantity": 2,
+          "maxQuantity": 2,
+          "sortOrder":   20,
+          "items": [
+            { "name": "Nems porc (3 pcs)",  "extraPriceCents": 0 },
+            { "name": "Nems vegan (3 pcs)", "extraPriceCents": 0 }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "_excluded_combos_note": "Menu Express (+4EUR), Menu Gourmand (+8EUR) et Combo Ete (+2.50EUR) utilisent prix = prix_plat + supplement. Le schema comboRules.comboPriceCents est fixe — ces formules necessitent une evolution du schema avant import."
+}
