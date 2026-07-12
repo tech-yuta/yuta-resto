@@ -14,8 +14,8 @@ import {
   Separator,
 } from '@yuta/ui';
 import { asc } from 'drizzle-orm';
-import { ArrowLeft, Plus, Users } from 'lucide-react';
-import Link from 'next/link';
+import { Plus, Users } from 'lucide-react';
+import { AdminPosPage } from '../../../components/admin-pos-page';
 import {
   createStaffUserAction,
   toggleStaffUserAction,
@@ -37,19 +37,11 @@ export default async function PosStaffPage() {
   });
 
   return (
-    <main className="min-h-screen bg-yuta-paper px-4 py-6 text-yuta-ink md:px-8 md:py-10">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-yuta-line pb-5">
-          <div>
-            <Link href="/" className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-yuta-ink/60 hover:text-yuta-ink">
-              <ArrowLeft className="h-4 w-4" />
-              Retour admin
-            </Link>
-            <h1 className="text-3xl font-black tracking-tight">POS equipe</h1>
-            <p className="mt-1 text-sm text-yuta-ink/55">Employes, roles et acces POS</p>
-          </div>
-          <Badge variant="neutral">{staffUsers.length} employe(s)</Badge>
-        </header>
+    <AdminPosPage
+      title="POS equipe"
+      description="Employes, roles et acces POS"
+      actions={<Badge variant="neutral">{staffUsers.length} employe(s)</Badge>}
+    >
 
         <section className="grid gap-5 lg:grid-cols-[360px_1fr]">
           <Card>
@@ -108,8 +100,7 @@ export default async function PosStaffPage() {
             </div>
           </Card>
         </section>
-      </div>
-    </main>
+    </AdminPosPage>
   );
 }
 
