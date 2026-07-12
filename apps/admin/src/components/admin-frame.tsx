@@ -10,7 +10,6 @@ import {
   AppTopbar,
   Avatar,
   Button,
-  IconTile,
   IconButton,
   SearchInput,
   cn,
@@ -37,6 +36,7 @@ import {
   Layers,
   ListChecks,
   Mail,
+  Menu,
   Megaphone,
   MessageSquare,
   Package,
@@ -51,9 +51,11 @@ import {
   Tag,
   Truck,
   Users,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import Image from 'next/image';
+import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 
 type NavItem = {
@@ -147,6 +149,22 @@ const navSections: NavSection[] = [
 
 export function AdminFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      return;
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileMenuOpen]);
 
   return (
     <AppShell
@@ -154,15 +172,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
         <AppSidebar
           header={
             <AppSidebarHeader>
-              <IconTile tone="brand" size="sm">
-                <span className="text-sm font-black">Y</span>
-              </IconTile>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold">YuTa Admin</p>
-                <p className="truncate text-xs font-semibold text-primary/45">
-                  Back office restaurant
-                </p>
-              </div>
+              <AdminBrand />
             </AppSidebarHeader>
           }
           footer={
@@ -174,35 +184,34 @@ export function AdminFrame({ children }: { children: ReactNode }) {
             </AppSidebarFooter>
           }
         >
-          {navSections.map((section, sectionIndex) => (
-            <div key={section.title ?? 'main'} className={sectionIndex > 0 ? 'mt-4' : ''}>
-              {section.title && (
-                <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary/40">
-                  {section.title}
-                </p>
-              )}
-              <div className="grid gap-0.5">
-                {section.items.map((item) => (
-                  <NavLink key={item.label} item={item} pathname={pathname} />
-                ))}
-              </div>
-            </div>
-          ))}
+          <AdminNavigation pathname={pathname} />
         </AppSidebar>
       }
     >
       <div className="flex h-screen min-w-0 flex-col overflow-hidden">
         <AppTopbar
           search={
-            <div className="relative min-w-0 max-w-md flex-1">
-              <SearchInput
-                placeholder="Rechercher (ex : commande, produit, employe...)"
-                className="pr-14"
-              />
-              <span className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-border-default bg-white px-1.5 py-0.5 text-[11px] font-semibold text-primary/40 sm:block">
-                &#8984; K
-              </span>
-            </div>
+            <>
+              <IconButton
+                type="button"
+                variant="secondary"
+                size="md"
+                className="h-10 w-10 shrink-0 md:hidden"
+                aria-label="Ouvrir le menu"
+                onClick={() => setMobileMenuOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+              </IconButton>
+              <div className="relative min-w-0 max-w-md flex-1">
+                <SearchInput
+                  placeholder="Rechercher (ex : commande, produit, employe...)"
+                  className="pr-14"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-border-default bg-white px-1.5 py-0.5 text-[11px] font-semibold text-primary/40 sm:block">
+                  &#8984; K
+                </span>
+              </div>
+            </>
           }
           actions={
             <>
@@ -228,13 +237,157 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           YuTa Admin v1.0.0&nbsp;&nbsp; &copy; 2025 YuTa Solutions. Tous droits reserves.
         </AppFooter>
       </div>
+
+      <MobileMenuDrawer
+        open={mobileMenuOpen}
+        pathname={pathname}
+        onClose={() => setMobileMenuOpen(false)}
+      />
     </AppShell>
   );
 }
 
 // ─── NavLink ─────────────────────────────────────────────────────────────────
 
-function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function AdminBrand() {
+  return (
+    <>
+      <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-surface-selected">
+        <Image
+          src="/images/logo.svg"
+          alt="YuTa"
+          width={28}
+          height={28}
+          priority
+          className="h-7 w-7 object-contain"
+        />
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-bold">YuTa Admin</p>
+        <p className="truncate text-xs font-semibold text-primary/45">
+          Back office restaurant
+        </p>
+      </div>
+    </>
+  );
+}
+
+function AdminNavigation({
+  pathname,
+  onNavigate,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <>
+      {navSections.map((section, sectionIndex) => (
+        <div key={section.title ?? 'main'} className={sectionIndex > 0 ? 'mt-4' : ''}>
+          {section.title && (
+            <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary/40">
+              {section.title}
+            </p>
+          )}
+          <div className="grid gap-0.5">
+            {section.items.map((item) => (
+              <NavLink
+                key={item.label}
+                item={item}
+                pathname={pathname}
+                onNavigate={onNavigate}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function MobileMenuDrawer({
+  open,
+  pathname,
+  onClose,
+}: {
+  open: boolean;
+  pathname: string;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        'fixed inset-0 z-50 md:hidden',
+        open ? 'pointer-events-auto' : 'pointer-events-none',
+      )}
+      aria-hidden={!open}
+    >
+      <button
+        type="button"
+        className={cn(
+          'absolute inset-0 bg-primary/40 transition-opacity duration-200 ease-out motion-reduce:transition-none',
+          open ? 'opacity-100' : 'opacity-0',
+        )}
+        aria-label="Fermer le menu"
+        tabIndex={open ? 0 : -1}
+        onClick={onClose}
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-admin-menu-title"
+        className={cn(
+          'relative flex h-dvh w-80 max-w-[85vw] min-h-0 flex-col border-r border-border-default bg-white shadow-md transition-transform duration-200 ease-out will-change-transform motion-reduce:transition-none',
+          open ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <AppSidebarHeader className="pr-3">
+          <AdminBrand />
+          <IconButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            aria-label="Fermer le menu"
+            tabIndex={open ? 0 : -1}
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </IconButton>
+        </AppSidebarHeader>
+        <h2 id="mobile-admin-menu-title" className="sr-only">
+          Menu admin YuTa
+        </h2>
+        <nav className="min-h-0 flex-1 overflow-y-auto p-4">
+          <AdminNavigation pathname={pathname} onNavigate={onClose} />
+        </nav>
+        <AppSidebarFooter>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            fullWidth
+            className="justify-start text-primary/50"
+            tabIndex={open ? 0 : -1}
+            onClick={onClose}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Fermer le menu
+          </Button>
+        </AppSidebarFooter>
+      </aside>
+    </div>
+  );
+}
+
+function NavLink({
+  item,
+  pathname,
+  onNavigate,
+}: {
+  item: NavItem;
+  pathname: string;
+  onNavigate?: () => void;
+}) {
   const Icon = item.icon;
   const isActive =
     item.href === '/'
@@ -246,6 +399,13 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link
       href={item.href}
       aria-disabled={isDisabled}
+      onClick={(event) => {
+        if (isDisabled) {
+          event.preventDefault();
+          return;
+        }
+        onNavigate?.();
+      }}
       className={cn(
         'flex min-h-9 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold transition-colors',
         item.sub && 'pl-6',

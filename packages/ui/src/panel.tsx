@@ -27,7 +27,7 @@ export function Panel({
   const hasHeader = title || action || description;
 
   return (
-    <Card padding={padding} className={cn('overflow-hidden', className)} {...props}>
+    <Card padding={padding} className={cn('flex h-full flex-col overflow-hidden', className)} {...props}>
       {hasHeader && (
         <>
           <PanelHeader
@@ -39,7 +39,7 @@ export function Panel({
           {withSeparator && <Separator />}
         </>
       )}
-      <div className={bodyClassName}>{children}</div>
+      <div className={cn('flex flex-1 flex-col', bodyClassName)}>{children}</div>
     </Card>
   );
 }

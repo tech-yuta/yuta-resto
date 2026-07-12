@@ -142,12 +142,12 @@ export function AdminShell() {
       </section>
 
       {/* ── Row 1 : Réservations · Tâches · Avis ─── */}
-      <section className="grid gap-5 xl:grid-cols-3">
+      <section className="grid items-stretch gap-5 xl:grid-cols-3">
         <Panel
           title="Réservations du jour"
           action={<PanelLink>Voir le planning</PanelLink>}
         >
-          <div className="divide-y divide-border-default">
+          <div className="flex flex-1 flex-col divide-y divide-border-default">
             {reservationsToday.map((r) => (
               <div key={r.time + r.table} className="flex items-center gap-3 px-5 py-2.5">
                 <span className="w-12 shrink-0 text-sm font-semibold tabular-nums text-primary">
@@ -185,23 +185,26 @@ export function AdminShell() {
           title="Avis à répondre"
           action={<PanelLink>Voir tous les avis</PanelLink>}
         >
-          <div className="divide-y divide-border-default">
+          <div className="flex flex-1 flex-col divide-y divide-border-default">
             {reviewsToAnswer.map((r) => (
-              <div key={r.name} className="flex items-start gap-3 px-5 py-3">
+              <div
+                key={r.name}
+                className="grid flex-1 grid-cols-[auto_minmax(0,1fr)_64px_auto] items-center gap-3 px-5 py-2.5"
+              >
                 <ReviewAvatar source={r.source} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-primary">{r.name}</span>
-                    <StarRating value={r.stars} />
-                    <span className="ml-auto shrink-0 text-xs tabular-nums text-primary/40">{r.time}</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 text-sm font-semibold text-primary">{r.name}</span>
+                    <StarRating value={r.stars} className="shrink-0" />
                   </div>
                   <p className="mt-0.5 truncate text-xs text-primary/50">&ldquo;{r.text}&rdquo;</p>
                 </div>
+                <span className="text-right text-xs tabular-nums text-primary/40">{r.time}</span>
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="ghost"
                   size="sm"
-                  className="mt-0.5 shrink-0"
+                  className="h-9 shrink-0 bg-status-success-soft px-3 text-status-success hover:bg-status-success-soft/80"
                 >
                   Répondre
                 </Button>
@@ -213,7 +216,7 @@ export function AdminShell() {
       </section>
 
       {/* ── Row 2 : Emails · Contenus · Plan ────── */}
-      <section className="grid gap-5 xl:grid-cols-3">
+      <section className="grid items-stretch gap-5 xl:grid-cols-3">
         <Panel
           title="Emails non lus"
           action={<PanelLink>Voir tous les emails</PanelLink>}
@@ -239,9 +242,12 @@ export function AdminShell() {
           title="Contenus à valider (Réseaux sociaux)"
           action={<PanelLink>Voir tous</PanelLink>}
         >
-          <div className="divide-y divide-border-default">
+          <div className="flex flex-1 flex-col divide-y divide-border-default">
             {contentsToApprove.map((c) => (
-              <div key={c.title} className="flex items-center gap-3 px-5 py-3">
+              <div
+                key={c.title}
+                className="grid flex-1 grid-cols-[auto_minmax(0,1fr)_96px_48px] items-center gap-3 px-5 py-3"
+              >
                 <div className={cn('relative h-10 w-10 shrink-0 overflow-visible rounded-lg', c.bg)}>
                   <PlatformBadge channel={c.channel} />
                 </div>
@@ -249,8 +255,10 @@ export function AdminShell() {
                   <p className="truncate text-sm font-semibold text-primary">{c.title}</p>
                   <p className="text-xs text-primary/50">{c.channel}</p>
                 </div>
-                <Badge tone="warning" variant="soft" size="sm" className="shrink-0">En attente</Badge>
-                <span className="shrink-0 text-xs tabular-nums text-primary/40">{c.time}</span>
+                <div className="flex justify-end">
+                  <Badge tone="warning" variant="soft" size="sm">En attente</Badge>
+                </div>
+                <span className="text-right text-xs tabular-nums text-primary/40">{c.time}</span>
               </div>
             ))}
           </div>
@@ -309,17 +317,25 @@ function SummaryCard({ metric }: { metric: (typeof metrics)[number] }) {
 }
 
 /** Inline star rating */
-function StarRating({ value, max = 5 }: { value: number; max?: number }) {
+function StarRating({
+  value,
+  max = 5,
+  className,
+}: {
+  value: number;
+  max?: number;
+  className?: string;
+}) {
   return (
-    <div className="flex items-center gap-0.5">
+    <div className={cn('flex items-center gap-0.5', className)}>
       {Array.from({ length: max }).map((_, i) => (
         <Star
           key={i}
           className={cn(
             'h-3 w-3',
             i < value
-              ? 'fill-status-warning text-status-warning'
-              : 'fill-surface-muted text-border-default',
+              ? 'fill-status-rating text-status-rating'
+              : 'fill-transparent text-border-default',
           )}
         />
       ))}
@@ -367,7 +383,7 @@ function PanelLink({ children }: { children: React.ReactNode }) {
 /** Centered footer “Voir tout…” link inside a panel */
 function PanelFooterLink({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-t border-border-default py-3 text-center">
+    <div className="mt-auto border-t border-border-default py-3 text-center">
       <Button variant="ghost" size="sm" className="h-auto p-0 text-primary/50 hover:bg-transparent hover:text-primary">
         {children}
       </Button>
