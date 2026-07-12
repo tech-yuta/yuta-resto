@@ -1,5 +1,6 @@
 'use client';
 
+import { formatEuros, formatEurosInput, parseEuroAmountToCents } from '@yuta/core';
 import { Button, Input, Label } from '@yuta/ui';
 import { Banknote, CircleEllipsis, CreditCard, Ticket } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -177,32 +178,4 @@ export function PaymentCaptureForm({
       </Button>
     </form>
   );
-}
-
-function parseEuroAmountToCents(value: string): number | null {
-  const normalizedValue = value.trim().replace(/\s/g, '').replace(',', '.');
-  if (!/^\d+(\.\d{0,2})?$/.test(normalizedValue)) {
-    return null;
-  }
-
-  const [eurosPart, centsPart = ''] = normalizedValue.split('.');
-  const euros = Number(eurosPart);
-  const cents = Number(centsPart.padEnd(2, '0'));
-
-  if (!Number.isInteger(euros) || !Number.isInteger(cents)) {
-    return null;
-  }
-
-  return euros * 100 + cents;
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
-}
-
-function formatEurosInput(cents: number): string {
-  return (cents / 100).toFixed(2).replace('.', ',');
 }

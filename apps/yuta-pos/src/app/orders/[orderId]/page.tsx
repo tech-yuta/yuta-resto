@@ -1,4 +1,4 @@
-import { createOrderService } from '@yuta/core';
+import { createOrderService, formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { payments } from '@yuta/db/schema';
 import { Badge, Button, Card, Separator, cn } from '@yuta/ui';
@@ -598,11 +598,4 @@ function formatTime(date: Date): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
 }

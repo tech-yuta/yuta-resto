@@ -1,71 +1,62 @@
 'use server';
 
+import { createUserService } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { users } from '@yuta/db/schema';
-import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 const userRoleSchema = z.enum(['admin', 'manager', 'staff', 'kitchen']);
 
-const createStaffUserSchema = z.object({
+const createStaffUserFormSchema = z.object({
   name: z.string().trim().min(1).max(255),
   email: z.string().trim().email().max(320).optional(),
   role: userRoleSchema,
 });
 
-const updateStaffUserSchema = createStaffUserSchema.extend({
+const updateStaffUserFormSchema = createStaffUserFormSchema.extend({
   userId: z.string().uuid(),
 });
 
-const toggleStaffUserSchema = z.object({
+const toggleStaffUserFormSchema = z.object({
   userId: z.string().uuid(),
-  isActive: z.enum(['true', 'false']).transform((value: 'true' | 'false') => value === 'true'),
+  isActive: z.enum(['true', 'false']).transform((v): boolean => v === 'true'),
 });
 
 export async function createStaffUserAction(formData: FormData): Promise<void> {
-  const values = createStaffUserSchema.parse({
+  const values = createStaffUserFormSchema.parse({
     name: formData.get('name'),
     email: formData.get('email') || undefined,
     role: formData.get('role'),
   });
+  const userService = createUserService(db);
 
-  await db.insert(users).values({
-    name: values.name,
-    email: values.email ?? null,
-    role: values.role,
-  });
+  await userService.createUser(values);
 
   revalidatePath('/pos/staff');
 }
 
 export async function updateStaffUserAction(formData: FormData): Promise<void> {
-  const values = updateStaffUserSchema.parse({
+  const values = updateStaffUserFormSchema.parse({
     userId: formData.get('userId'),
     name: formData.get('name'),
     email: formData.get('email') || undefined,
     role: formData.get('role'),
   });
+  const userService = createUserService(db);
 
-  await db
-    .update(users)
-    .set({
-      name: values.name,
-      email: values.email ?? null,
-      role: values.role,
-    })
-    .where(eq(users.id, values.userId));
+  await userService.updateUser(values);
 
   revalidatePath('/pos/staff');
 }
 
 export async function toggleStaffUserAction(formData: FormData): Promise<void> {
-  const values = toggleStaffUserSchema.parse({
+  const values = toggleStaffUserFormSchema.parse({
     userId: formData.get('userId'),
     isActive: formData.get('isActive'),
   });
+  const userService = createUserService(db);
 
-  await db.update(users).set({ isActive: values.isActive }).where(eq(users.id, values.userId));
+  await userService.toggleUserActive(values);
 
   revalidatePath('/pos/staff');
 }

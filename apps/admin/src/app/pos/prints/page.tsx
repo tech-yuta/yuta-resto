@@ -1,6 +1,6 @@
 import { createPrintService } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { Badge, Button, Card, Input, Separator } from '@yuta/ui';
+import { Badge, Button, Card, Input, Separator, StatCard } from '@yuta/ui';
 import { ArrowLeft, BarChart3, CheckCircle2, Printer, RefreshCw, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -55,9 +55,9 @@ export default async function PosPrintsPage() {
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <MetricCard label="En attente" value={String(counters.pending)} />
-          <MetricCard label="Imprimees" value={String(counters.printed)} />
-          <MetricCard label="Echecs" value={String(counters.failed)} />
+          <StatCard icon={<Printer className="h-4 w-4" />} label="En attente" value={String(counters.pending)} />
+          <StatCard icon={<CheckCircle2 className="h-4 w-4" />} label="Imprimees" value={String(counters.printed)} />
+          <StatCard icon={<XCircle className="h-4 w-4" />} label="Echecs" value={String(counters.failed)} />
         </section>
 
         <Card className="overflow-hidden p-0">
@@ -141,22 +141,6 @@ export default async function PosPrintsPage() {
         </Card>
       </div>
     </main>
-  );
-}
-
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <Card>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-yuta-ink/55">{label}</p>
-          <p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
-        </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-yuta-accent">
-          <Printer className="h-5 w-5" />
-        </div>
-      </div>
-    </Card>
   );
 }
 

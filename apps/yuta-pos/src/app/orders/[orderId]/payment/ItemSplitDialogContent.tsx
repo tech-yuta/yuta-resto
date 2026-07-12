@@ -1,5 +1,6 @@
 'use client';
 
+import { formatEuros } from '@yuta/core';
 import { Button, Separator, cn } from '@yuta/ui';
 import { Minus, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -630,11 +631,4 @@ function errorMessage(error: string): string {
   return (
     messages[error] ?? 'Impossible de créer les tickets avec cette sélection.'
   );
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
 }

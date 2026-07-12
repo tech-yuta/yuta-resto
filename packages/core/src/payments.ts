@@ -2,6 +2,8 @@ import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
 import {
   checkItems,
   checks,
+  comboRuleGroups,
+  comboRules,
   orderItems,
   orders,
   payments,
@@ -440,6 +442,79 @@ export function createPaymentService(db: DbClient) {
     }
   }
 
+  async function getPaymentViewData(orderId: string) {
+    const { orderId: parsedOrderId } = orderIdSchema.parse({ orderId });
+
+    const existingOrder = await db.query.orders.findFirst({
+      where: eq(orders.id, parsedOrderId),
+      with: { checks: true },
+    });
+
+    if (!existingOrder) {
+      throw new PaymentServiceError('Order not found.', 'not_found');
+    }
+
+    const hasActiveItemSplitChecks = existingOrder.checks.some(
+      (check) => check.splitMode === 'items' && check.status !== 'void',
+    );
+
+    if (hasActiveItemSplitChecks) {
+      await comboService.clearOrderComboDiscounts(parsedOrderId);
+    } else {
+      await comboService.optimizeOrderCombos(parsedOrderId);
+    }
+
+    const order = await db.query.orders.findFirst({
+      where: eq(orders.id, parsedOrderId),
+      with: {
+        checks: {
+          with: {
+            items: {
+              with: { orderItem: true },
+            },
+            discounts: {
+              with: {
+                items: {
+                  with: {
+                    checkItem: {
+                      with: { orderItem: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        items: true,
+        discounts: {
+          with: {
+            items: {
+              with: { orderItem: true },
+            },
+          },
+        },
+        payments: true,
+      },
+    });
+
+    if (!order) {
+      throw new PaymentServiceError('Order not found.', 'not_found');
+    }
+
+    const activeComboRules = await db.query.comboRules.findMany({
+      where: eq(comboRules.isActive, true),
+      with: {
+        groups: {
+          with: { items: true },
+          orderBy: [asc(comboRuleGroups.sortOrder)],
+        },
+      },
+      orderBy: [asc(comboRules.priority), asc(comboRules.name)],
+    });
+
+    return { order, activeComboRules };
+  }
+
   return {
     payFullOrder,
     createChecksByItems,
@@ -447,6 +522,7 @@ export function createPaymentService(db: DbClient) {
     payCheck,
     cancelOrderSplit,
     getPaymentSummary,
+    getPaymentViewData,
   };
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatEuros } from '@yuta/core';
 import { Button, cn } from '@yuta/ui';
 import { useState } from 'react';
 
@@ -71,11 +72,4 @@ export function EqualSplitDialogContent({
       </Button>
     </form>
   );
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
 }

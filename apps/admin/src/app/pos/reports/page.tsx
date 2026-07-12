@@ -1,6 +1,7 @@
+import { formatEuros, startOfToday } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orders, payments } from '@yuta/db/schema';
-import { Badge, Button, Card, Separator } from '@yuta/ui';
+import { Badge, Button, Card, Separator, StatCard } from '@yuta/ui';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { ArrowLeft, BarChart3, CreditCard, ReceiptText, Utensils } from 'lucide-react';
 import Link from 'next/link';
@@ -64,9 +65,9 @@ export default async function PosReportsPage() {
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <MetricCard icon={CreditCard} label="Revenu encaisse" value={formatEuros(paidRevenueCents)} />
-          <MetricCard icon={ReceiptText} label="Commandes payees" value={String(paidOrders)} />
-          <MetricCard icon={ReceiptText} label="Commandes ouvertes" value={String(openOrders)} />
+          <StatCard icon={<CreditCard className="h-4 w-4" />} label="Revenu encaisse" value={formatEuros(paidRevenueCents)} />
+          <StatCard icon={<ReceiptText className="h-4 w-4" />} label="Commandes payees" value={String(paidOrders)} />
+          <StatCard icon={<ReceiptText className="h-4 w-4" />} label="Commandes ouvertes" value={String(openOrders)} />
         </section>
 
         <Card className="overflow-hidden p-0">
@@ -119,28 +120,6 @@ export default async function PosReportsPage() {
   );
 }
 
-function MetricCard({ icon: Icon, label, value }: { icon: typeof CreditCard; label: string; value: string }) {
-  return (
-    <Card>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-yuta-ink/55">{label}</p>
-          <p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
-        </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-yuta-accent">
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function startOfToday(): Date {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
     draft: 'Brouillon',
@@ -176,11 +155,4 @@ function formatTime(date: Date): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
 }

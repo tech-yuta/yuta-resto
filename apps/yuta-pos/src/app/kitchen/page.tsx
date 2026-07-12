@@ -1,3 +1,4 @@
+import { getServiceDayWindow } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orderItems, orders } from '@yuta/db/schema';
 import { Badge, Button, Card, SegmentedNav, Separator } from '@yuta/ui';
@@ -36,7 +37,6 @@ type KitchenStatusFilter = 'sent' | 'preparing' | 'ready';
 type OrderStatus = typeof orders.$inferSelect.status;
 
 const kitchenQueueLimit = 100;
-const serviceDayStartHour = 5;
 
 const stations: Array<{ value: Station; label: string; icon: typeof Soup }> = [
   { value: 'kitchen', label: 'Cuisine', icon: Soup },
@@ -436,16 +436,4 @@ function formatTime(date: Date): string {
   }).format(date);
 }
 
-function getServiceDayWindow(now: Date): { start: Date; end: Date } {
-  const start = new Date(now);
-  start.setHours(serviceDayStartHour, 0, 0, 0);
 
-  if (now.getHours() < serviceDayStartHour) {
-    start.setDate(start.getDate() - 1);
-  }
-
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-
-  return { start, end };
-}

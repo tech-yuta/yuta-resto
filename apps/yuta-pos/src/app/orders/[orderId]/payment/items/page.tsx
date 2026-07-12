@@ -1,4 +1,4 @@
-import { createComboService } from '@yuta/core';
+import { createComboService, formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
 import { Badge, Button, Card, Input, Label } from '@yuta/ui';
@@ -216,11 +216,4 @@ function errorMessage(error: string): string {
   return (
     messages[error] ?? 'Impossible de créer les tickets avec cette sélection.'
   );
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
 }

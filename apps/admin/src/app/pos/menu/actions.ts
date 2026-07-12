@@ -1,19 +1,18 @@
 'use server';
 
+import { createMenuService } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { menuCategories, menuItems } from '@yuta/db/schema';
-import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 const kitchenStationSchema = z.enum(['kitchen', 'bar', 'dessert', 'none']);
 
-const createCategorySchema = z.object({
+const createCategoryFormSchema = z.object({
   name: z.string().trim().min(1).max(255),
   sortOrder: z.coerce.number().int().default(0),
 });
 
-const createMenuItemSchema = z.object({
+const createMenuItemFormSchema = z.object({
   categoryId: z.string().uuid(),
   name: z.string().trim().min(1).max(255),
   description: z.string().trim().optional(),
@@ -22,31 +21,29 @@ const createMenuItemSchema = z.object({
   sortOrder: z.coerce.number().int().default(0),
 });
 
-const updateMenuItemSchema = createMenuItemSchema.extend({
+const updateMenuItemFormSchema = createMenuItemFormSchema.extend({
   itemId: z.string().uuid(),
 });
 
-const toggleMenuItemSchema = z.object({
+const toggleMenuItemFormSchema = z.object({
   itemId: z.string().uuid(),
-  isAvailable: z.enum(['true', 'false']).transform((value: 'true' | 'false') => value === 'true'),
+  isAvailable: z.enum(['true', 'false']).transform((v): boolean => v === 'true'),
 });
 
 export async function createCategoryAction(formData: FormData): Promise<void> {
-  const values = createCategorySchema.parse({
+  const values = createCategoryFormSchema.parse({
     name: formData.get('name'),
     sortOrder: formData.get('sortOrder'),
   });
+  const menuService = createMenuService(db);
 
-  await db.insert(menuCategories).values({
-    name: values.name,
-    sortOrder: values.sortOrder,
-  });
+  await menuService.createCategory(values);
 
   revalidatePath('/pos/menu');
 }
 
 export async function createMenuItemAction(formData: FormData): Promise<void> {
-  const values = createMenuItemSchema.parse({
+  const values = createMenuItemFormSchema.parse({
     categoryId: formData.get('categoryId'),
     name: formData.get('name'),
     description: formData.get('description') || undefined,
@@ -54,14 +51,15 @@ export async function createMenuItemAction(formData: FormData): Promise<void> {
     kitchenStation: formData.get('kitchenStation'),
     sortOrder: formData.get('sortOrder'),
   });
+  const menuService = createMenuService(db);
 
-  await db.insert(menuItems).values(values);
+  await menuService.createMenuItem(values);
 
   revalidatePath('/pos/menu');
 }
 
 export async function updateMenuItemAction(formData: FormData): Promise<void> {
-  const values = updateMenuItemSchema.parse({
+  const values = updateMenuItemFormSchema.parse({
     itemId: formData.get('itemId'),
     categoryId: formData.get('categoryId'),
     name: formData.get('name'),
@@ -70,29 +68,26 @@ export async function updateMenuItemAction(formData: FormData): Promise<void> {
     kitchenStation: formData.get('kitchenStation'),
     sortOrder: formData.get('sortOrder'),
   });
+  const menuService = createMenuService(db);
 
-  await db
-    .update(menuItems)
-    .set({
-      categoryId: values.categoryId,
-      name: values.name,
-      description: values.description,
-      priceCents: values.priceCents,
-      kitchenStation: values.kitchenStation,
-      sortOrder: values.sortOrder,
-    })
-    .where(eq(menuItems.id, values.itemId));
+  await menuService.updateMenuItem(values);
 
   revalidatePath('/pos/menu');
 }
 
-export async function toggleMenuItemAvailabilityAction(formData: FormData): Promise<void> {
-  const values = toggleMenuItemSchema.parse({
+export async function toggleMenuItemAvailabilityAction(
+  formData: FormData,
+): Promise<void> {
+  const values = toggleMenuItemFormSchema.parse({
     itemId: formData.get('itemId'),
     isAvailable: formData.get('isAvailable'),
   });
+  const menuService = createMenuService(db);
 
-  await db.update(menuItems).set({ isAvailable: values.isAvailable }).where(eq(menuItems.id, values.itemId));
+  await menuService.toggleMenuItemAvailability({
+    itemId: values.itemId,
+    isAvailable: values.isAvailable,
+  });
 
   revalidatePath('/pos/menu');
 }

@@ -1,3 +1,4 @@
+import { formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { comboRuleGroups, comboRules, menuItems } from '@yuta/db/schema';
 import {
@@ -230,11 +231,4 @@ function NumberField({ id, name, label, defaultValue }: { id: string; name: stri
       <Input id={id} name={name} type="number" min={0} defaultValue={defaultValue} />
     </div>
   );
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
 }

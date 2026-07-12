@@ -3,3 +3,7 @@ export * from './orders';
 export * from './combos';
 export * from './payments';
 export * from './prints';
+export * from './formatting';
+export * from './dates';
+export * from './menu';
+export * from './users';

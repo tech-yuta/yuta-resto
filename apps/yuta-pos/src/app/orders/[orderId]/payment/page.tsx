@@ -1,8 +1,6 @@
-import { createComboService } from '@yuta/core';
+import { createPaymentService, formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { comboRuleGroups, comboRules, orders } from '@yuta/db/schema';
 import { Badge, Button, Card, Separator } from '@yuta/ui';
-import { asc, eq } from 'drizzle-orm';
 import { Tags } from 'lucide-react';
 import {
   cancelOrderSplitAction,
@@ -34,83 +32,8 @@ export default async function PaymentPage({
 }: PaymentPageProps) {
   const { orderId } = await params;
   const { error, itemSplitError, paymentDialog } = await searchParams;
-  const comboService = createComboService(db);
-  const existingOrder = await db.query.orders.findFirst({
-    where: eq(orders.id, orderId),
-    with: {
-      checks: true,
-    },
-  });
-
-  if (!existingOrder) {
-    throw new Error('Order not found.');
-  }
-
-  const hasActiveItemSplitChecks = existingOrder.checks.some(
-    (check) => check.splitMode === 'items' && check.status !== 'void',
-  );
-
-  if (hasActiveItemSplitChecks) {
-    await comboService.clearOrderComboDiscounts(orderId);
-  } else {
-    await comboService.optimizeOrderCombos(orderId);
-  }
-
-  const order = await db.query.orders.findFirst({
-    where: eq(orders.id, orderId),
-    with: {
-      checks: {
-        with: {
-          items: {
-            with: {
-              orderItem: true,
-            },
-          },
-          discounts: {
-            with: {
-              items: {
-                with: {
-                  checkItem: {
-                    with: {
-                      orderItem: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      items: true,
-      discounts: {
-        with: {
-          items: {
-            with: {
-              orderItem: true,
-            },
-          },
-        },
-      },
-      payments: true,
-    },
-  });
-
-  if (!order) {
-    throw new Error('Order not found.');
-  }
-
-  const activeComboRules = await db.query.comboRules.findMany({
-    where: eq(comboRules.isActive, true),
-    with: {
-      groups: {
-        with: {
-          items: true,
-        },
-        orderBy: [asc(comboRuleGroups.sortOrder)],
-      },
-    },
-    orderBy: [asc(comboRules.priority), asc(comboRules.name)],
-  });
+  const paymentService = createPaymentService(db);
+  const { order, activeComboRules } = await paymentService.getPaymentViewData(orderId);
 
   const paidCents = order.payments
     .filter((payment) => payment.status === 'paid')
@@ -704,11 +627,4 @@ function formatCheckDiscountItems(
         `${item.quantityApplied} x ${item.checkItem.orderItem.itemNameSnapshot}`,
     )
     .join(' + ');
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
 }

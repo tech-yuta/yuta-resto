@@ -1,3 +1,4 @@
+import { formatEuros, startOfToday } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orders } from '@yuta/db/schema';
 import { Badge, Button, Card, Input, SegmentedNav, Separator } from '@yuta/ui';
@@ -430,11 +431,6 @@ function parseView(value: string | undefined): OrderView {
   return 'open';
 }
 
-function startOfToday(): Date {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
 
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
@@ -519,9 +515,3 @@ function formatTime(date: Date): string {
   }).format(date);
 }
 
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
-}

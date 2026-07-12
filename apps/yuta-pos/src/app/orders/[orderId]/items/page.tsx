@@ -1,4 +1,4 @@
-import { createOrderService } from '@yuta/core';
+import { createOrderService, formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { menuCategories, menuItems } from '@yuta/db/schema';
 import { Badge, Button, Input, Separator, cn } from '@yuta/ui';
@@ -368,11 +368,4 @@ function menuItemInitials(name: string): string {
     .slice(0, 2)
     .map((part) => part.slice(0, 1).toLocaleUpperCase('fr-FR'))
     .join('');
-}
-
-function formatEuros(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(cents / 100);
 }
