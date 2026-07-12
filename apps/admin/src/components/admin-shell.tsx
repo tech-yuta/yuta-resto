@@ -1,555 +1,653 @@
 'use client';
 
-import { Badge, Button, Card, Separator, cn } from '@yuta/ui';
-import Link from 'next/link';
 import {
-  LayoutDashboard,
-  ShoppingCart,
-  LayoutGrid,
-  Utensils,
-  ListChecks,
-  Layers,
-  CreditCard,
-  BarChart2,
-  Box,
-  Folder,
+  AppFooter,
+  AppMain,
+  AppShell,
+  AppSidebar,
+  AppSidebarFooter,
+  AppSidebarHeader,
+  AppTopbar,
+  Badge,
+  Button,
+  Card,
+  IconTile,
+  ListRow,
+  Panel,
+  Separator,
+  cn,
+} from '@yuta/ui';
+import {
   Archive,
-  Truck,
   ArrowLeftRight,
-  Users,
+  ArrowRight,
+  BarChart3,
+  Bell,
+  CalendarCheck,
   CalendarDays,
-  Clock,
-  Shield,
-  Heart,
-  Tag,
-  Star,
-  ImageIcon,
-  FileText,
-  Megaphone,
-  Monitor,
-  Printer,
-  Settings,
+  CheckSquare,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Bell,
-  Search,
-  Plus,
-  TrendingUp,
+  Clock,
+  CreditCard,
+  FileText,
+  Folder,
+  Heart,
+  ImageIcon,
+  LayoutDashboard,
+  LayoutGrid,
+  Layers,
+  ListChecks,
+  Megaphone,
+  Mail,
+  MessageSquare,
   Package,
-  Table2,
-  CheckCircle2,
+  PackageCheck,
+  Plus,
+  Search,
+  Settings,
+  Shield,
+  ShoppingCart,
+  ClipboardCheck,
+  Scale,
+  Send,
+  Star,
+  Store,
+  Tag,
+  Truck,
+  Users,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-// ─── Navigation data ────────────────────────────────────────────────────────
+type NavItem = {
+  label: string;
+  icon: React.ElementType;
+  href: string;
+  note?: string;
+  sub?: boolean;
+};
 
-type NavItem = { label: string; icon: React.ElementType; href?: string; sub?: boolean };
-type NavSection = { title?: string; items: NavItem[] };
+type NavSection = {
+  title?: string;
+  items: NavItem[];
+};
 
 const navSections: NavSection[] = [
   {
-    items: [{ label: 'Tableau de bord', icon: LayoutDashboard, href: '/' }],
+    items: [{ label: "Aujourd'hui", icon: LayoutDashboard, href: '/' }],
   },
   {
-    title: 'GESTION',
+    title: 'Operations',
     items: [
       { label: 'Commandes', icon: ShoppingCart, href: '#' },
-      { label: 'Tables & Salle', icon: LayoutGrid, href: '#' },
-      { label: 'Menu', icon: Utensils, href: '#' },
-      { label: 'Menus & Options', icon: ListChecks, href: '/pos/menu', sub: true },
-      { label: 'Combos', icon: Layers, href: '/pos/combos', sub: true },
+      { label: 'Tables & salle', icon: LayoutGrid, href: '#' },
+      { label: 'Reservations', icon: CalendarCheck, href: '#' },
       { label: 'Paiements', icon: CreditCard, href: '#' },
-      { label: 'Rapports POS', icon: BarChart2, href: '/pos/reports' },
+      { label: 'Rapports POS', icon: BarChart3, href: '/pos/reports' },
     ],
   },
   {
-    title: 'PRODUITS & STOCK',
+    title: 'Menu',
     items: [
-      { label: 'Produits', icon: Box, href: '#' },
-      { label: 'Catégories', icon: Folder, href: '#' },
-      { label: 'Stock', icon: Archive, href: '#' },
+      { label: 'Menus & options', icon: ListChecks, href: '/pos/menu' },
+      { label: 'Combos', icon: Layers, href: '/pos/combos' },
+      { label: 'Produits', icon: Package, href: '#' },
+      { label: 'Categories', icon: Folder, href: '#' },
+    ],
+  },
+  {
+    title: 'Stock',
+    items: [
+      { label: 'Inventaire', icon: Archive, href: '#' },
       { label: 'Fournisseurs', icon: Truck, href: '#' },
-      { label: 'Entrées / Sorties', icon: ArrowLeftRight, href: '#' },
+      { label: 'Entrees / sorties', icon: ArrowLeftRight, href: '#' },
     ],
   },
   {
-    title: 'ÉQUIPE',
+    title: 'Equipe',
     items: [
-      { label: 'Employés', icon: Users, href: '/pos/staff' },
+      { label: 'Employes', icon: Users, href: '/pos/staff' },
       { label: 'Planning', icon: CalendarDays, href: '#' },
       { label: 'Pointage', icon: Clock, href: '#' },
-      { label: 'Rôles & Accès', icon: Shield, href: '#' },
+      { label: 'Taches du jour', icon: ClipboardCheck, href: '#' },
+      { label: 'Roles & acces', icon: Shield, href: '#' },
     ],
   },
   {
-    title: 'CLIENTS & MARKETING',
+    title: 'Conformite & veille',
     items: [
-      { label: 'Clients & Fidélité', icon: Heart, href: '#' },
+      { label: 'Veille & Conformite', icon: Scale, href: '#' },
+    ],
+  },
+  {
+    title: 'Clients',
+    items: [
+      { label: 'Clients', icon: Users, href: '#' },
+      { label: 'Fidelite', icon: Heart, href: '#' },
+      { label: 'Avis & commentaires', icon: MessageSquare, href: '#' },
+      { label: 'Emails', icon: Mail, href: '#' },
+    ],
+  },
+  {
+    title: 'Marketing & contenu',
+    items: [
+      { label: 'Reseaux sociaux', icon: Send, href: '#' },
+      { label: 'Medias', icon: ImageIcon, href: '#' },
+      { label: 'Pages & contenus', icon: FileText, href: '#' },
       { label: 'Promotions', icon: Tag, href: '#' },
-      { label: 'Avis & Réseaux', icon: Star, href: '#' },
-    ],
-  },
-  {
-    title: 'CONTENU & COMMUNICATION',
-    items: [
-      { label: 'Médias', icon: ImageIcon, href: '#' },
-      { label: 'Pages & Contenus', icon: FileText, href: '#' },
       { label: 'Campagnes', icon: Megaphone, href: '#' },
     ],
   },
   {
-    title: 'POS',
+    title: 'Parametres',
     items: [
-      { label: 'Écran cuisine', icon: Monitor, href: '#' },
-      { label: 'Imprimantes', icon: Printer, href: '/pos/prints' },
-      { label: 'Paramètres POS', icon: Settings, href: '#' },
+      { label: 'Restaurant', icon: Store, href: '#' },
+      { label: 'Modules & abonnement', icon: PackageCheck, href: '#' },
+      { label: 'POS', icon: Settings, href: '#' },
     ],
   },
 ];
 
 // ─── Dashboard data ──────────────────────────────────────────────────────────
 
-const recentActivities = [
+const metrics = [
   {
-    id: 1,
-    icon: ShoppingCart,
-    color: 'bg-yuta-success/10 text-yuta-success',
-    title: 'Commande #POS-202506211-1056',
-    sub: 'Table 5  •  32,50 €',
-    time: '10:15',
+    label: "Réservations aujourd'hui",
+    value: '18',
+    delta: 'À venir',
+    iconBg: 'bg-yuta-success/10 text-yuta-success',
+    icon: CalendarCheck,
+    linkText: 'Voir le planning',
   },
   {
-    id: 2,
-    icon: CreditCard,
-    color: 'bg-blue-50 text-blue-500',
-    title: 'Paiement accepté',
-    sub: 'Carte bancaire  •  28,00 €',
-    time: '10:12',
+    label: 'Tâches à faire',
+    value: '7',
+    delta: 'À compléter',
+    iconBg: 'bg-yuta-warning/15 text-yuta-warning',
+    icon: CheckSquare,
+    linkText: 'Voir les tâches',
   },
   {
-    id: 3,
-    icon: Package,
-    color: 'bg-orange-50 text-orange-500',
-    title: 'Entrée de stock',
-    sub: "Maison d'Asie  •  23 produits",
-    time: '09:58',
+    label: 'Avis à répondre',
+    value: '5',
+    delta: 'Nouveaux',
+    iconBg: 'bg-amber-50 text-amber-500',
+    icon: Star,
+    linkText: 'Voir les avis',
   },
   {
-    id: 4,
-    icon: Users,
-    color: 'bg-purple-50 text-purple-500',
-    title: 'Employé pointé',
-    sub: 'Ca sáng đã bắt đầu',
-    time: '09:00',
+    label: 'Emails non lus',
+    value: '6',
+    delta: 'À traiter',
+    iconBg: 'bg-yuta-info text-yuta-ink',
+    icon: Mail,
+    linkText: 'Voir les emails',
   },
   {
-    id: 5,
-    icon: Utensils,
-    color: 'bg-yuta-success/10 text-yuta-success',
-    title: 'Menu mis à jour',
-    sub: 'Bún bò, Phở gà, Bánh bao',
-    time: '08:45',
+    label: 'Contenus à valider',
+    value: '3',
+    delta: 'En attente',
+    iconBg: 'bg-purple-50 text-purple-500',
+    icon: ImageIcon,
+    linkText: 'Voir les contenus',
   },
 ];
 
-const currentOrders = [
-  { id: 1, table: 'Table 5', plats: 3, time: '10:15', status: 'À préparer', badge: 'warning' as const },
-  { id: 2, table: 'Table 7', plats: 2, time: '10:14', status: 'En préparation', badge: 'info' as const },
-  { id: 3, table: 'Table 2', plats: 4, time: '10:13', status: 'À préparer', badge: 'warning' as const },
-  { id: 4, table: 'Table 9 (Takeaway)', plats: 2, time: '10:12', status: 'Prêt', badge: 'success' as const },
+const reservationsToday = [
+  { time: '12:00', guests: '2 pers.', table: 'Table 3',  status: 'Confirmée',  badge: 'success' as const },
+  { time: '12:30', guests: '4 pers.', table: 'Table 6',  status: 'Confirmée',  badge: 'success' as const },
+  { time: '13:00', guests: '6 pers.', table: 'Table 8',  status: 'En attente', badge: 'warning' as const },
+  { time: '19:00', guests: '2 pers.', table: 'Table 2',  status: 'Confirmée',  badge: 'success' as const },
+  { time: '19:30', guests: '4 pers.', table: 'Table 5',  status: 'Confirmée',  badge: 'success' as const },
+  { time: '20:00', guests: '6 pers.', table: 'Table 7',  status: 'En attente', badge: 'warning' as const },
+  { time: '21:00', guests: '2 pers.', table: 'Table 9',  status: 'Confirmée',  badge: 'success' as const },
+  { time: '21:30', guests: '4 pers.', table: 'Table 1',  status: 'Confirmée',  badge: 'success' as const },
 ];
 
-const lowStock = [
-  { id: 1, name: 'Bœuf', unit: '0,8 kg restant' },
-  { id: 2, name: 'Vermicelles de riz', unit: '1 paquet restant' },
-  { id: 3, name: 'Sauce poisson', unit: '2 bouteilles restantes' },
+const tasksToday = [
+  { title: 'Vérifier le stock des ingrédients clés',    priority: 'Haute',   time: '09:00', badge: 'destructive' as const },
+  { title: 'Passer commande fournisseurs',               priority: 'Haute',   time: '10:00', badge: 'destructive' as const },
+  { title: 'Entretien hebdomadaire (cuisine & salle)',   priority: 'Moyenne', time: '11:30', badge: 'warning'     as const },
+  { title: 'Nettoyage hotte aspirante',                  priority: 'Moyenne', time: '13:00', badge: 'warning'     as const },
+  { title: 'Vérifier DLC produits frais',                priority: 'Moyenne', time: '14:00', badge: 'warning'     as const },
+  { title: 'Rapport de caisse du jour',                  priority: 'Basse',   time: '22:30', badge: 'info'        as const },
+  { title: 'Planifier le personnel demain',              priority: 'Basse',   time: '22:30', badge: 'info'        as const },
 ];
 
-const reservations = [
-  { id: 1, time: '12:00', guests: 2, table: 'Table 3' },
-  { id: 2, time: '19:00', guests: 4, table: 'Table 6' },
-  { id: 3, time: '20:00', guests: 6, table: 'Table 8' },
-  { id: 4, time: '21:00', guests: 2, table: 'Table 2' },
+const reviewsToAnswer = [
+  { source: 'G',  name: 'Marie L.',   stars: 5, text: 'Très bon accueil et plats délicieux !...',    time: 'Il y a 2h' },
+  { source: 'G',  name: 'Thomas B.',  stars: 4, text: 'Attente un peu longue mais cuisine...',       time: 'Il y a 5h' },
+  { source: 'f',  name: 'Sophie D.',  stars: 5, text: 'Meilleur restaurant vietnamien du...',        time: 'Il y a 1j' },
+  { source: 'T',  name: 'Julien M.',  stars: 4, text: 'Bon rapport qualité/prix, je...',             time: 'Il y a 1j' },
+  { source: 'G',  name: 'Camille R.', stars: 2, text: 'Les plats sont bons mais le service...',     time: 'Il y a 2j' },
 ];
 
-const teamToday = [
-  { initials: 'YT', name: 'YuTa', role: 'Quản lý', start: '08:00', end: '16:00', color: 'bg-yuta-accent text-yuta-ink' },
-  { initials: 'AN', name: 'Anh', role: 'Cuisinier', start: '08:00', end: '16:00', color: 'bg-blue-100 text-blue-700' },
-  { initials: 'LY', name: 'Linh', role: 'Service', start: '09:00', end: '17:00', color: 'bg-purple-100 text-purple-700' },
-  { initials: 'HA', name: 'Hà', role: 'Plonge', start: '14:00', end: '22:00', color: 'bg-orange-100 text-orange-700' },
+const unreadEmails = [
+  { sender: 'contact@fastviet.fr',         subject: 'Demande de devis traiteur',           time: '09:45' },
+  { sender: 'reservation@futuroscope.com', subject: 'Groupe de 20 personnes — 28/06',      time: '09:12' },
+  { sender: 'partenariat@local-event.fr',  subject: 'Proposition partenariat événement',   time: 'Hier'  },
 ];
 
-// ─── Sparkline SVG ───────────────────────────────────────────────────────────
+const contentsToApprove = [
+  { channel: 'Facebook',   title: "Nouvelle carte d'été",  bg: 'bg-green-100',  time: '10:20' },
+  { channel: 'Instagram',  title: 'Atelier Petit Chef ✨', bg: 'bg-orange-100', time: 'Hier'  },
+  { channel: 'Facebook',   title: 'Bánh mì du jour',       bg: 'bg-amber-100',  time: '20/06' },
+];
 
-function Sparkline({ points, color }: { points: number[]; color: string }) {
-  const w = 120;
-  const h = 40;
-  const max = Math.max(...points);
-  const min = Math.min(...points);
-  const range = max - min || 1;
-  const coords = points.map((p, i) => ({
-    x: (i / (points.length - 1)) * w,
-    y: h - ((p - min) / range) * (h - 4) - 2,
-  }));
-  const d = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
-      <path d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-// ─── Main component ──────────────────────────────────────────────────────────
+const dailyPlan = [
+  { time: '09:00', title: 'Ouverture & préparation équipe' },
+  { time: '12:00', title: 'Service du midi' },
+  { time: '14:30', title: 'Pause équipe' },
+  { time: '18:30', title: 'Service du soir' },
+  { time: '22:30', title: 'Fermeture & clôture caisse' },
+];
 
 export function AdminShell() {
-  return (
-    <div className="flex min-h-screen bg-yuta-paper">
-      {/* ── Sidebar ────────────────────────────────────────────────────────── */}
-      <aside className="hidden w-47 shrink-0 flex-col border-r border-yuta-line bg-white md:flex">
-        {/* Logo */}
-        <div className="flex h-17 shrink-0 items-center gap-2.5 border-b border-yuta-line px-4">
-          <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-yuta-accent font-black text-sm text-yuta-ink">
-            Y
-          </div>
-          <span className="text-sm font-extrabold text-yuta-ink">YuTa Admin</span>
-        </div>
+  const pathname = usePathname();
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto p-2">
-          {navSections.map((section, si) => (
-            <div key={si} className={si > 0 ? 'mt-3' : ''}>
+  return (
+    <AppShell
+      sidebar={
+        <AppSidebar
+          header={
+            <AppSidebarHeader>
+              <IconTile tone="accent" size="sm">
+                <span className="text-sm font-black">Y</span>
+              </IconTile>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold">YuTa Admin</p>
+                <p className="truncate text-xs font-semibold text-yuta-ink/45">
+                  Back office restaurant
+                </p>
+              </div>
+            </AppSidebarHeader>
+          }
+          footer={
+            <AppSidebarFooter>
+              <button className="flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm font-semibold text-yuta-ink/50 hover:bg-yuta-mist hover:text-yuta-ink">
+                <ChevronLeft className="h-4 w-4" />
+                Reduire le menu
+              </button>
+            </AppSidebarFooter>
+          }
+        >
+          {navSections.map((section, sectionIndex) => (
+            <div key={section.title ?? 'main'} className={sectionIndex > 0 ? 'mt-4' : ''}>
               {section.title && (
-                <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-widest text-yuta-ink/40">
+                <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-yuta-ink/40">
                   {section.title}
                 </p>
               )}
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = item.href === '/';
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href ?? '#'}
-                    className={cn(
-                      'flex w-full items-center gap-2.5 rounded-lg px-2 py-1.75 text-[13px] font-medium transition-colors',
-                      item.sub && 'pl-6',
-                      isActive
-                        ? 'bg-yuta-mist font-semibold text-yuta-ink'
-                        : 'text-yuta-ink/60 hover:bg-yuta-mist hover:text-yuta-ink',
-                    )}
-                  >
-                    <Icon className="h-3.75 w-3.75 shrink-0" />
-                    <span className="min-w-0 truncate">{item.label}</span>
-                    {item.label === 'Menu' && (
-                      <ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-yuta-ink/30" />
-                    )}
-                  </Link>
-                );
-              })}
+              <div className="grid gap-0.5">
+                {section.items.map((item) => (
+                  <NavLink key={item.label} item={item} pathname={pathname} />
+                ))}
+              </div>
             </div>
           ))}
-        </nav>
-
-        {/* Réduire */}
-        <div className="shrink-0 border-t border-yuta-line p-2">
-          <button className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[13px] font-medium text-yuta-ink/50 hover:bg-yuta-mist hover:text-yuta-ink">
-            <ChevronLeft className="h-4 w-4" />
-            Réduire le menu
-          </button>
-        </div>
-      </aside>
-
-      {/* ── Main column ────────────────────────────────────────────────────── */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Topbar */}
-        <header className="sticky top-0 z-10 flex h-17 shrink-0 items-center gap-4 border-b border-yuta-line bg-white px-6">
-          <label className="flex flex-1 items-center gap-2 rounded-xl border border-yuta-line bg-yuta-paper px-3 py-2 max-w-xs">
-            <Search className="h-4 w-4 shrink-0 text-yuta-ink/40" />
-            <input
-              type="text"
-              placeholder="Rechercher (ex : commande, produit, employé...)"
-              className="min-w-0 flex-1 bg-transparent text-sm text-yuta-ink placeholder:text-yuta-ink/40 focus:outline-none"
-            />
-            <span className="shrink-0 rounded-md border border-yuta-line bg-white px-1.5 py-0.5 text-[11px] text-yuta-ink/40">
-              ⌘K
-            </span>
-          </label>
-
-          <div className="flex items-center gap-3">
-            <button className="relative rounded-xl p-2 text-yuta-ink/60 hover:bg-yuta-mist">
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-1 top-1 h-4 w-4 rounded-full bg-yuta-danger text-[10px] font-bold text-white flex items-center justify-center">
-                3
+        </AppSidebar>
+      }
+    >
+      <div className="flex h-screen min-w-0 flex-col overflow-hidden">
+        <AppTopbar
+          search={
+            <label className="flex h-10 min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-yuta-line bg-yuta-paper px-3 shadow-sm">
+              <Search className="h-4 w-4 shrink-0 text-yuta-ink/40" />
+              <input
+                type="text"
+                placeholder="Rechercher (ex : commande, produit, employe...)"
+                className="min-w-0 flex-1 bg-transparent text-sm text-yuta-ink placeholder:text-yuta-ink/40 focus:outline-none"
+              />
+              <span className="hidden shrink-0 rounded-md border border-yuta-line bg-white px-1.5 py-0.5 text-[11px] font-semibold text-yuta-ink/40 sm:block">
+                &#8984; K
               </span>
-            </button>
-            <button className="flex items-center gap-1.5">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-yuta-ink text-xs font-bold text-white">
-                YT
-              </div>
-              <ChevronRight className="h-3.5 w-3.5 rotate-90 text-yuta-ink/40" />
-            </button>
-          </div>
-        </header>
+            </label>
+          }
+          actions={
+            <>
+              <button className="relative grid h-10 w-10 place-items-center rounded-lg text-yuta-ink/60 hover:bg-yuta-mist">
+                <Bell className="h-5 w-5" />
+                <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-yuta-danger text-[10px] font-black text-white">
+                  3
+                </span>
+              </button>
+              <button className="flex items-center gap-1.5 rounded-lg p-1 hover:bg-yuta-mist">
+                <div className="grid h-8 w-8 place-items-center rounded-full bg-yuta-ink text-xs font-bold text-white">
+                  YT
+                </div>
+                <ChevronRight className="hidden h-3.5 w-3.5 rotate-90 text-yuta-ink/40 sm:block" />
+              </button>
+            </>
+          }
+        />
 
-        {/* Dashboard */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          {/* Page heading */}
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm text-yuta-ink/50">Samedi 21 juin 2025</p>
-              <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-yuta-ink">
-                Bonjour, YuTa. 👋
-              </h1>
-              <p className="mt-1 text-sm text-yuta-ink/55">
-                Voici un aperçu de l&apos;activité de votre restaurant.
-              </p>
-            </div>
-            <Button variant="accent">
-              <Plus className="h-4 w-4" />
-              Ajouter
-            </Button>
-          </div>
-
-          {/* Metric cards row */}
-          <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
-            <DashMetricCard
-              label="Chiffre d'affaires aujourd'hui"
-              value="1 245,00 €"
-              delta="+18% par rapport à hier"
-              icon={<TrendingUp className="h-4 w-4" />}
-              iconBg="bg-yuta-success/10 text-yuta-success"
-              sparkPoints={[40, 55, 45, 65, 60, 75, 70, 80, 85, 100]}
-              sparkColor="#22c55e"
-            />
-            <DashMetricCard
-              label="Commandes aujourd'hui"
-              value="56"
-              delta="+12% par rapport à hier"
-              icon={<Table2 className="h-4 w-4" />}
-              iconBg="bg-blue-50 text-blue-500"
-              sparkPoints={[30, 40, 35, 50, 45, 58, 55, 65, 68, 75]}
-              sparkColor="#3b82f6"
-            />
-            <DashMetricCard
-              label="Taux de satisfaction"
-              value="4,8 / 5"
-              delta="+0,3 par rapport à hier"
-              icon={<Star className="h-4 w-4" />}
-              iconBg="bg-blue-50 text-blue-500"
-              sparkPoints={[70, 72, 69, 74, 73, 75, 74, 77, 75, 80]}
-              sparkColor="#6366f1"
-            />
-            <DashMetricCard
-              label="Employés en service"
-              value="8"
-              delta="Sur 12 employés"
-              icon={<Users className="h-4 w-4" />}
-              iconBg="bg-purple-50 text-purple-500"
-              sparkPoints={[60, 65, 60, 70, 65, 72, 70, 78, 75, 82]}
-              sparkColor="#a855f7"
-            />
-          </div>
-
-          {/* Mid row: activities + orders */}
-          <div className="mb-6 grid gap-4 lg:grid-cols-2">
-            {/* Activités récentes */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4">
-                <h2 className="font-semibold text-yuta-ink">Activités récentes</h2>
-              </div>
-              <Separator />
+        <AppMain>
+          <div className="flex w-full flex-col gap-6">
+            {/* Greeting */}
+            <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                {recentActivities.map((a, i) => {
-                  const Icon = a.icon;
-                  return (
-                    <div key={a.id}>
-                      <div className="flex items-center gap-3 px-5 py-3">
-                        <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full', a.color)}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-yuta-ink">{a.title}</p>
-                          <p className="text-xs text-yuta-ink/50">{a.sub}</p>
-                        </div>
-                        <span className="shrink-0 text-xs text-yuta-ink/40">{a.time}</span>
-                      </div>
-                      {i < recentActivities.length - 1 && <Separator />}
+                <p className="text-sm font-semibold text-yuta-ink/50">Samedi 21 juin 2025</p>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight">Bonjour, YuTa. 👋</h1>
+                <p className="mt-1.5 max-w-2xl text-sm text-yuta-ink/60">
+                  Voici votre plan d&apos;action pour aujourd&apos;hui.
+                </p>
+              </div>
+              <Button variant="success" size="sm" className="self-start lg:self-end">
+                <Plus className="h-4 w-4" />
+                Ajouter
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </section>
+
+            {/* ── Summary cards ────────────────────────── */}
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              {metrics.map((m) => (
+                <SummaryCard key={m.label} metric={m} />
+              ))}
+            </section>
+
+            {/* ── Row 1 : Réservations · Tâches · Avis ─── */}
+            <section className="grid gap-5 xl:grid-cols-3">
+              {/* Réservations du jour */}
+              <Panel
+                title="Réservations du jour"
+                action={<PanelLink>Voir le planning</PanelLink>}
+              >
+                <div className="divide-y divide-yuta-line">
+                  {reservationsToday.map((r) => (
+                    <div key={r.time + r.table} className="flex items-center gap-3 px-5 py-2.5">
+                      <span className="w-12 shrink-0 text-sm font-semibold tabular-nums text-yuta-ink">
+                        {r.time}
+                      </span>
+                      <span className="w-14 shrink-0 text-sm text-yuta-ink/55">{r.guests}</span>
+                      <span className="flex-1 text-sm text-yuta-ink">{r.table}</span>
+                      <ReservationStatusBadge status={r.status} />
                     </div>
-                  );
-                })}
-              </div>
-              <Separator />
-              <div className="px-5 py-3">
-                <button className="text-sm font-medium text-yuta-ink/50 hover:text-yuta-ink">
-                  Voir toutes les activités
-                </button>
-              </div>
-            </Card>
+                  ))}
+                </div>
+                <PanelFooterLink>Voir toutes les réservations</PanelFooterLink>
+              </Panel>
 
-            {/* Commandes en cours */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4">
-                <h2 className="font-semibold text-yuta-ink">Commandes en cours</h2>
-                <button className="text-sm font-medium text-yuta-ink/50 hover:text-yuta-ink">
-                  Voir tout
-                </button>
-              </div>
-              <Separator />
-              <div>
-                {currentOrders.map((o, i) => (
-                  <div key={o.id}>
-                    <div className="flex items-center gap-3 px-5 py-3">
-                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-yuta-mist">
-                        <Table2 className="h-4 w-4 text-yuta-ink/60" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-yuta-ink">{o.table}</p>
-                        <p className="text-xs text-yuta-ink/50">
-                          {o.plats} plat{o.plats > 1 ? 's' : ''}  •  {o.time}
-                        </p>
-                      </div>
-                      <Badge variant={o.badge} size="sm">
-                        {o.status}
-                      </Badge>
-                    </div>
-                    {i < currentOrders.length - 1 && <Separator />}
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* Bottom row: stock / réservations / équipe */}
-          <div className="grid gap-4 lg:grid-cols-3">
-            {/* Stock faible */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4">
-                <h2 className="font-semibold text-yuta-ink">Stock faible</h2>
-                <button className="text-sm font-medium text-yuta-ink/50 hover:text-yuta-ink">
-                  Voir tout
-                </button>
-              </div>
-              <Separator />
-              <div>
-                {lowStock.map((s, i) => (
-                  <div key={s.id}>
-                    <div className="flex items-center gap-3 px-5 py-3">
-                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-yuta-mist">
-                        <Archive className="h-4 w-4 text-yuta-ink/50" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-yuta-ink">{s.name}</p>
-                        <p className="text-xs text-yuta-ink/50">{s.unit}</p>
-                      </div>
-                      <Badge variant="destructive" size="sm">Faible</Badge>
-                    </div>
-                    {i < lowStock.length - 1 && <Separator />}
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Réservations */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4">
-                <h2 className="font-semibold text-yuta-ink">Réservations aujourd&apos;hui</h2>
-                <button className="text-sm font-medium text-yuta-ink/50 hover:text-yuta-ink">
-                  Voir tout
-                </button>
-              </div>
-              <Separator />
-              <div>
-                {reservations.map((r, i) => (
-                  <div key={r.id}>
-                    <div className="flex items-center gap-3 px-5 py-3">
-                      <span className="w-10 shrink-0 text-sm font-semibold text-yuta-ink">{r.time}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-yuta-ink/70">
-                          {r.guests} pers.  •  {r.table}
-                        </p>
-                      </div>
-                      <Badge variant="success" size="sm">Confirmée</Badge>
-                    </div>
-                    {i < reservations.length - 1 && <Separator />}
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Équipe */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4">
-                <h2 className="font-semibold text-yuta-ink">Équipe aujourd&apos;hui</h2>
-                <button className="text-sm font-medium text-yuta-ink/50 hover:text-yuta-ink">
-                  Voir planning
-                </button>
-              </div>
-              <Separator />
-              <div>
-                {teamToday.map((t, i) => (
-                  <div key={t.initials}>
-                    <div className="flex items-center gap-3 px-5 py-3">
-                      <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold', t.color)}>
-                        {t.initials}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-yuta-ink">
-                          {t.name}{' '}
-                          <span className="font-normal text-yuta-ink/50">({t.role})</span>
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-xs text-yuta-ink/50">
-                        {t.start} – {t.end}
+              {/* Tâches à faire */}
+              <Panel
+                title="Tâches à faire aujourd'hui"
+                action={<PanelLink>Voir toutes</PanelLink>}
+              >
+                <div className="divide-y divide-yuta-line">
+                  {tasksToday.map((t) => (
+                    <div key={t.title} className="flex items-center gap-3 px-5 py-2.5">
+                      <span className="grid h-4 w-4 shrink-0 rounded border border-yuta-line bg-white" />
+                      <span className="flex-1 min-w-0 truncate text-sm text-yuta-ink">{t.title}</span>
+                      <TaskPriorityBadge priority={t.priority} />
+                      <span className="w-12 shrink-0 text-right text-xs tabular-nums text-yuta-ink/40">
+                        {t.time}
                       </span>
                     </div>
-                    {i < teamToday.length - 1 && <Separator />}
-                  </div>
-                ))}
-              </div>
-            </Card>
+                  ))}
+                </div>
+                <PanelFooterLink>Voir toutes les tâches</PanelFooterLink>
+              </Panel>
+
+              {/* Avis à répondre */}
+              <Panel
+                title="Avis à répondre"
+                action={<PanelLink>Voir tous les avis</PanelLink>}
+              >
+                <div className="divide-y divide-yuta-line">
+                  {reviewsToAnswer.map((r) => (
+                    <div key={r.name} className="flex items-start gap-3 px-5 py-3">
+                      <ReviewAvatar source={r.source} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-yuta-ink">{r.name}</span>
+                          <StarRating value={r.stars} />
+                          <span className="ml-auto shrink-0 text-xs tabular-nums text-yuta-ink/40">{r.time}</span>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-yuta-ink/50">&ldquo;{r.text}&rdquo;</p>
+                      </div>
+                      <button
+                        type="button"
+                        style={{ backgroundColor: 'white', color: '#16211d' }}
+                        className="mt-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-yuta-line px-3 py-1.5 text-xs font-semibold transition-colors"
+                      >
+                        Répondre
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <PanelFooterLink>Voir tous les avis</PanelFooterLink>
+              </Panel>
+            </section>
+
+            {/* ── Row 2 : Emails · Contenus · Plan ────── */}
+            <section className="grid gap-5 xl:grid-cols-3">
+              {/* Emails non lus */}
+              <Panel
+                title="Emails non lus"
+                action={<PanelLink>Voir tous les emails</PanelLink>}
+              >
+                <div className="divide-y divide-yuta-line">
+                  {unreadEmails.map((e) => (
+                    <div key={e.sender} className="flex items-start gap-3 px-5 py-3">
+                      <IconTile tone="info" size="sm" className="mt-0.5 shrink-0">
+                        <Mail className="h-3.5 w-3.5" />
+                      </IconTile>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-yuta-ink">{e.sender}</p>
+                        <p className="truncate text-xs text-yuta-ink/50">{e.subject}</p>
+                      </div>
+                      <span className="shrink-0 text-xs tabular-nums text-yuta-ink/40">{e.time}</span>
+                    </div>
+                  ))}
+                </div>
+                <PanelFooterLink>Voir tous les emails</PanelFooterLink>
+              </Panel>
+
+              {/* Contenus à valider */}
+              <Panel
+                title="Contenus à valider (Réseaux sociaux)"
+                action={<PanelLink>Voir tous</PanelLink>}
+              >
+                <div className="divide-y divide-yuta-line">
+                  {contentsToApprove.map((c) => (
+                    <div key={c.title} className="flex items-center gap-3 px-5 py-3">
+                      {/* Thumbnail + platform badge */}
+                      <div className={cn('relative h-10 w-10 shrink-0 overflow-visible rounded-lg', c.bg)}>
+                        <PlatformBadge channel={c.channel} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-yuta-ink">{c.title}</p>
+                        <p className="text-xs text-yuta-ink/50">{c.channel}</p>
+                      </div>
+                      <Badge size="sm" className="shrink-0 bg-orange-100 text-orange-700">En attente</Badge>
+                      <span className="shrink-0 text-xs tabular-nums text-yuta-ink/40">{c.time}</span>
+                    </div>
+                  ))}
+                </div>
+                <PanelFooterLink>Voir tous les contenus</PanelFooterLink>
+              </Panel>
+
+              {/* Plan du jour */}
+              <Panel
+                title="Plan du jour"
+                action={<PanelLink>Modifier</PanelLink>}
+              >
+                <div className="divide-y divide-yuta-line">
+                  {dailyPlan.map((item) => (
+                    <div key={item.time} className="flex items-center gap-4 px-5 py-3">
+                      <span className="w-12 shrink-0 text-sm font-semibold tabular-nums text-yuta-ink">
+                        {item.time}
+                      </span>
+                      <span className="flex-1 text-sm text-yuta-ink">{item.title}</span>
+                    </div>
+                  ))}
+                </div>
+                <PanelFooterLink>Voir tout le planning</PanelFooterLink>
+              </Panel>
+            </section>
           </div>
-        </main>
+        </AppMain>
+
+        <AppFooter>
+          YuTa Admin v1.0.0&nbsp;&nbsp; &copy; 2025 YuTa Solutions. Tous droits reserves.
+        </AppFooter>
       </div>
+    </AppShell>
+  );
+}
+
+// ─── NavLink ─────────────────────────────────────────────────────────────────
+
+function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+  const Icon = item.icon;
+  const isActive = item.href === '/' ? pathname === '/' : item.href !== '#' && pathname.startsWith(item.href);
+  const isDisabled = item.href === '#';
+
+  return (
+    <Link
+      href={item.href}
+      aria-disabled={isDisabled}
+      className={cn(
+        'flex min-h-9 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold transition-colors',
+        item.sub && 'pl-6',
+        isActive
+          ? 'bg-yuta-mist text-yuta-ink'
+          : 'text-yuta-ink/60 hover:bg-yuta-mist hover:text-yuta-ink',
+        isDisabled && 'cursor-default',
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      {item.note && (
+        <span className="rounded-md bg-yuta-info px-1.5 py-0.5 text-[10px] font-black uppercase text-yuta-ink/60">
+          {item.note}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+// ─── Dashboard helpers ────────────────────────────────────────────────────────
+
+/** Top summary card: icon + number + subtitle + "Voir…" link */
+function SummaryCard({ metric }: { metric: (typeof metrics)[number] }) {
+  const Icon = metric.icon;
+  return (
+    <Card padding="none" className="flex flex-col">
+      <div className="flex flex-col gap-3 p-5">
+        <div className="flex items-center gap-2.5">
+          <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg', metric.iconBg)}>
+            <Icon className="h-4 w-4" />
+          </div>
+          <p className="text-sm font-medium leading-snug text-yuta-ink/70">{metric.label}</p>
+        </div>
+        <div>
+          <p className="text-3xl font-bold tracking-tight text-yuta-ink">{metric.value}</p>
+          <p className="mt-0.5 text-xs text-yuta-ink/50">{metric.delta}</p>
+        </div>
+      </div>
+      <Separator />
+      <div className="px-5 py-3">
+        <button className="flex items-center gap-1 text-sm font-semibold text-yuta-success transition-colors hover:text-yuta-success/80">
+          {metric.linkText}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+/** Inline star rating */
+function StarRating({ value, max = 5 }: { value: number; max?: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: max }).map((_, i) => (
+        <Star
+          key={i}
+          className={cn(
+            'h-3 w-3',
+            i < value ? 'fill-amber-400 text-amber-400' : 'fill-yuta-mist text-yuta-line',
+          )}
+        />
+      ))}
     </div>
   );
 }
 
-// ─── DashMetricCard ──────────────────────────────────────────────────────────
-
-function DashMetricCard({
-  label,
-  value,
-  delta,
-  icon,
-  iconBg,
-  sparkPoints,
-  sparkColor,
-}: {
-  label: string;
-  value: string;
-  delta: string;
-  icon: React.ReactNode;
-  iconBg: string;
-  sparkPoints: number[];
-  sparkColor: string;
-}) {
+/** Circular review source avatar (G / f / T) */
+function ReviewAvatar({ source }: { source: string }) {
+  const palette: Record<string, string> = {
+    G: 'bg-red-100 text-red-600',
+    f: 'bg-blue-100 text-blue-600',
+    T: 'bg-green-100 text-green-600',
+  };
+  const cls = palette[source] ?? 'bg-yuta-mist text-yuta-ink';
   return (
-    <Card padding="default" className="flex flex-col gap-3 overflow-hidden">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium leading-snug text-yuta-ink/60">{label}</p>
-        <div className={cn('grid h-7 w-7 shrink-0 place-items-center rounded-lg', iconBg)}>
-          {icon}
-        </div>
-      </div>
-      <div>
-        <p className="text-2xl font-extrabold tracking-tight text-yuta-ink">{value}</p>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-yuta-success">
-          <CheckCircle2 className="h-3 w-3" />
-          {delta}
-        </p>
-      </div>
-      <div className="-mx-1 mt-auto">
-        <Sparkline points={sparkPoints} color={sparkColor} />
-      </div>
-    </Card>
+    <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold', cls)}>
+      {source}
+    </div>
+  );
+}
+
+/** Content thumbnail platform badge overlay */
+function PlatformBadge({ channel }: { channel: string }) {
+  const isFb = channel === 'Facebook';
+  return (
+    <div
+      className={cn(
+        'absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-full text-[9px] font-black text-white',
+        isFb ? 'bg-blue-600' : 'bg-pink-500',
+      )}
+    >
+      {isFb ? 'f' : 'ig'}
+    </div>
+  );
+}
+
+/** Header action link */
+function PanelLink({ children }: { children: React.ReactNode }) {
+  return (
+    <button className="text-sm font-semibold text-yuta-ink/50 hover:text-yuta-ink">
+      {children}
+    </button>
+  );
+}
+
+/** Centered footer “Voir tout…” link inside a panel */
+function PanelFooterLink({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="border-t border-yuta-line py-3 text-center">
+      <p className="cursor-pointer text-sm font-medium text-yuta-ink/50 transition-colors hover:text-yuta-ink">
+        {children}
+      </p>
+    </div>
+  );
+}
+
+/** Soft-color badge for task priority — uses core Badge */
+function TaskPriorityBadge({ priority }: { priority: string }) {
+  const cls: Record<string, string> = {
+    Haute:   'bg-red-100 text-red-700',
+    Moyenne: 'bg-orange-100 text-orange-700',
+    Basse:   'bg-sky-100 text-sky-700',
+  };
+  return (
+    <Badge size="sm" className={cls[priority] ?? 'bg-yuta-mist text-yuta-ink'}>
+      {priority}
+    </Badge>
+  );
+}
+
+/** Soft reservation status badge — uses core Badge */
+function ReservationStatusBadge({ status }: { status: string }) {
+  const cls = status === 'Confirmée'
+    ? 'bg-green-100 text-green-700'
+    : 'bg-orange-100 text-orange-700';
+  return (
+    <Badge size="sm" className={cls}>
+      {status}
+    </Badge>
   );
 }

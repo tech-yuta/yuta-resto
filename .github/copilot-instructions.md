@@ -63,8 +63,14 @@ Available components:
 - `Checkbox` — Radix UI checkbox (use `Controller` from react-hook-form to integrate)
 - `Separator` — horizontal or vertical divider
 - `MetricCard` — compact label/value metric block
+- `StatCard` — metric card with optional icon, helper, and sparkline
 - `ActionPanel` — framed action block with optional icon, title, description
 - `PageHeader` — standard page header with optional media/actions
+- `Panel`, `PanelHeader` — card section with optional header/action and reusable panel header
+- `ListRow` — standard row with media, title, description, meta, and action
+- `IconTile` — tokenized icon container for repeated icon affordances
+- `EmptyState` — centered empty-state block with icon, title, description, action
+- `AppShell`, `AppSidebar`, `AppSidebarHeader`, `AppSidebarFooter`, `AppTopbar`, `AppMain`, `AppFooter` — app shell primitives for fixed sidebar/topbar/main/footer layouts
 - `SegmentedNav` — horizontal segmented navigation container
 - `Toaster` (from `sonner`) — toast notifications
 - `cn()` — utility for merging Tailwind classes

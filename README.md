@@ -1,18 +1,33 @@
 # YuTa
 
-Nền tảng cho các công cụ YuTa, xây bằng Next.js, TypeScript, Tailwind CSS và SCSS.
+YuTa is a modular restaurant operations platform built with Next.js,
+TypeScript, Tailwind CSS, and shared workspace packages.
 
-## Cấu trúc
+## Workspace
 
-- `apps/web` — portal và tool đầu tiên.
-- `packages/ui` — component, token SCSS và UI primitives dùng chung.
-- `packages/core` — domain models, registry và logic không phụ thuộc giao diện.
+- `apps/web` - public YuTa website and product landing page for restaurants.
+- `apps/admin` - restaurant back office for daily operations, clients, staff,
+  marketing, compliance, and module settings.
+- `apps/yuta-pos` - restaurant POS runtime for orders, payments, tables, and
+  service workflows.
+- `apps/yuta-display` - digital signage display app.
+- `packages/ui` - shared UI components, app-shell primitives, and design tokens.
+- `packages/core` - shared business logic and registries.
+- `packages/db` - shared database schema/client for operations apps.
 
-## Bắt đầu
+## Local Development
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Mở `http://localhost:3000`. Để thêm tool mới, khai báo metadata của nó trong `packages/core/src/tools.ts`, sau đó tạo route ở `apps/web/src/app/tools/<slug>`.
+Open `http://localhost:3000` for the public website.
+
+Useful app scripts:
+
+```bash
+pnpm dev:admin
+pnpm dev:pos
+pnpm dev:display
+```

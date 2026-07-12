@@ -67,8 +67,20 @@ Dialog       — DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogD
 Checkbox     — Radix UI, use Controller from react-hook-form
 Separator    — horizontal/vertical divider
 MetricCard   — compact label/value metric block
+StatCard     — metric card with optional icon, helper, and sparkline
 ActionPanel  — framed action block with optional icon, title, description
 PageHeader   — standard page header with optional media/actions
+Panel        — card section with optional header, action, description, and body
+PanelHeader  — reusable panel header
+ListRow      — standard row with media, title, description, meta, and action
+IconTile     — tokenized icon container for repeated icon affordances
+EmptyState   — centered empty-state block with icon, title, description, action
+AppShell     — fixed-height app shell with sidebar slot
+AppSidebar   — fixed app sidebar with independent nav scroll
+              includes AppSidebarHeader and AppSidebarFooter
+AppTopbar    — top application bar with search/actions slots
+AppMain      — independently scrolling main content region
+AppFooter    — compact fixed footer bar
 SegmentedNav — horizontal segmented navigation container
 Toaster      — toast via sonner
 cn()         — utility: clsx + tailwind-merge
