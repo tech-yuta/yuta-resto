@@ -56,44 +56,71 @@ Use semantic Tailwind CSS token classes. Never use raw hex values in `className`
 ### Available `@yuta/ui` components
 
 ```
-Button       — variants: primary | secondary | outline | ghost | danger | success
+Button       - variants: primary | secondary | outline | ghost | danger | success
               sizes: sm | md | lg
               props: loading | fullWidth | asChild
-Badge        — tones: neutral | brand | success | warning | danger | info
+IconButton   - icon-only action button with Button variants and sizes
+Badge        - tones: neutral | brand | success | warning | danger | info
               variants: soft | outline | solid
               sizes: sm | md
-Card         — container with border + shadow-sm
+StatusBadge  - semantic order/status badge with icon
+Avatar      - image/fallback avatar
+AvatarGroup - stacked avatar group
+Card         - container with border + shadow-sm
               variants: default | muted | canvas | inverse
               padding: default | none | sm | lg
               radius: default | sm | lg
-Input        — styled text/number/email/etc input
+Input        - styled text/number/email/etc input
               sizes: sm | md | lg
               align: left | center | right
-Label        — form label
-Textarea     — styled textarea
-Select       — SelectTrigger, SelectContent, SelectItem, SelectValue, SelectGroup
-Dialog       — DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
-Checkbox     — Radix UI, use Controller from react-hook-form
-Separator    — horizontal/vertical divider
-MetricCard   — compact label/value metric block
-StatCard     — metric card with optional icon, helper, and sparkline
-ActionPanel  — framed action block with optional icon, title, description
-PageHeader   — standard page header with optional media/actions
-Panel        — card section with optional header, action, description, and body
-PanelHeader  — reusable panel header
-ListRow      — standard row with media, title, description, meta, and action
-IconTile     — tones: neutral | brand | success | warning | info | danger | inverse
-EmptyState   — centered empty-state block with icon, title, description, action
-AppShell     — fixed-height app shell with sidebar slot
-AppSidebar   — fixed app sidebar with independent nav scroll
+Label        - form label
+Textarea     - styled textarea
+FormField    - label/content/hint/error form wrapper
+FieldError   - field-level error text
+FieldHint    - field-level helper text
+FormSection  - grouped form section with title/description
+Select       - SelectTrigger, SelectContent, SelectItem, SelectValue, SelectGroup
+Checkbox     - Radix UI checkbox, use Controller from react-hook-form
+RadioGroup   - RadioGroup and RadioGroupItem
+Switch       - Radix UI switch
+Tabs         - Tabs, TabsList, TabsTrigger, TabsContent
+Dialog       - DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
+ConfirmDialog - controlled confirmation dialog for destructive/primary confirms
+DropdownMenu - menu, item, checkbox/radio item, label, separator, shortcut, submenu
+Popover      - PopoverTrigger, PopoverContent, PopoverAnchor
+Tooltip      - TooltipProvider, Tooltip, TooltipTrigger, TooltipContent
+Alert        - Alert, AlertTitle, AlertDescription
+Progress     - accessible progress bar
+Skeleton     - loading placeholder
+LoadingOverlay - absolute loading overlay for async panels
+ErrorState   - standardized error state block
+SimpleTable  - table primitives for compact admin data
+DataTable    - typed table with loading and empty states
+Pagination   - previous/next pagination control
+FilterBar    - search/filter/action toolbar
+SearchInput  - tokenized search input
+BulkActionBar - selected-row action toolbar
+Separator    - horizontal/vertical divider
+MetricCard   - compact label/value metric block
+StatCard     - metric card with optional icon, helper, and sparkline
+ActionPanel  - framed action block with optional icon, title, description
+PageHeader   - standard page header with optional media/actions
+Panel        - card section with optional header, action, description, and body
+PanelHeader  - reusable panel header
+ListRow      - standard row with media, title, description, meta, and action
+IconTile     - tones: neutral | brand | success | warning | info | danger | inverse
+EmptyState   - centered empty-state block with icon, title, description, action
+AppShell     - fixed-height app shell with sidebar slot
+AppSidebar   - fixed app sidebar with independent nav scroll
               includes AppSidebarHeader and AppSidebarFooter
-AppTopbar    — top application bar with search/actions slots
-AppMain      — independently scrolling main content region
-AppFooter    — compact fixed footer bar
-SegmentedNav — horizontal segmented navigation container
-Toaster      — toast via sonner
-cn()         — utility: clsx + tailwind-merge
+AppTopbar    - top application bar with search/actions slots
+AppMain      - independently scrolling main content region
+AppFooter    - compact fixed footer bar
+SegmentedNav - horizontal segmented navigation container
+Toaster      - toast via sonner
+cn()         - utility: clsx + tailwind-merge
 ```
+
 ### Icons
 
 Use `lucide-react` only. Never `@mui/icons-material`.
