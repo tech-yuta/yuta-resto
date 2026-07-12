@@ -64,32 +64,32 @@ export default async function SplitItemsPage({
       title="Séparer par articles"
       description={order.tableLabel}
       actions={
-        <Badge variant="success" size="lg">
+        <Badge tone="success" variant="solid">
           {activeItems.length} article(s)
         </Badge>
       }
     >
       <Card className="rounded-lg p-0">
         <div className="flex items-center gap-3">
-          <div className="ml-5 mt-5 grid h-10 w-10 place-items-center rounded-lg bg-yuta-accent">
+          <div className="ml-5 mt-5 grid h-10 w-10 place-items-center rounded-lg bg-action-primary">
             <Users className="h-5 w-5" />
           </div>
           <div className="mt-5">
             <h2 className="font-bold">Clients</h2>
-            <p className="text-sm text-yuta-ink/55">
+            <p className="text-sm text-primary/55">
               {splitClients.length} client(s)
             </p>
           </div>
         </div>
 
         {error && (
-          <div className="mx-5 mt-5 rounded-lg border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
+          <div className="mx-5 mt-5 rounded-lg border border-border-default bg-surface-muted p-3 text-sm font-semibold text-primary">
             {errorMessage(error)}
           </div>
         )}
 
         <div className="mt-5 flex flex-wrap items-center gap-2 px-5">
-          <span className="text-sm font-semibold text-yuta-ink/55">
+          <span className="text-sm font-semibold text-primary/55">
             Nombre de clients
           </span>
           {clientCountOptions.map((option) => (
@@ -115,10 +115,10 @@ export default async function SplitItemsPage({
         >
           <input type="hidden" name="orderId" value={order.id} />
           <input type="hidden" name="clientCount" value={splitClients.length} />
-          <div className="overflow-x-auto rounded-lg border border-yuta-line bg-white pb-2">
+          <div className="overflow-x-auto rounded-lg border border-border-default bg-white pb-2">
             <div className="min-w-max">
               <div
-                className="grid gap-3 bg-yuta-mist px-3 py-3 text-xs font-bold uppercase text-yuta-ink/45"
+                className="grid gap-3 bg-surface-muted px-3 py-3 text-xs font-bold uppercase text-primary/45"
                 style={{ gridTemplateColumns }}
               >
                 <span>Article</span>
@@ -130,14 +130,14 @@ export default async function SplitItemsPage({
                 {activeItems.map((item) => (
                   <div
                     key={item.id}
-                    className="grid items-center gap-3 rounded-lg border border-yuta-line bg-yuta-paper p-3"
+                    className="grid items-center gap-3 rounded-lg border border-border-default bg-canvas p-3"
                     style={{ gridTemplateColumns }}
                   >
                     <div>
                       <p className="font-bold">
                         {item.quantity} x {item.itemNameSnapshot}
                       </p>
-                      <p className="text-sm text-yuta-ink/55">
+                      <p className="text-sm text-primary/55">
                         {formatEuros(item.unitPriceCentsSnapshot)} / unité
                       </p>
                     </div>
@@ -156,7 +156,7 @@ export default async function SplitItemsPage({
           </div>
           <Button
             type="submit"
-            variant="accent"
+            variant="primary"
             size="lg"
             disabled={activeItems.length === 0 || order.status === 'paid'}
           >

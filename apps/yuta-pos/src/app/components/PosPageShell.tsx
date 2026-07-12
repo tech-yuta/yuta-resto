@@ -41,7 +41,7 @@ export function PosPageShell({
   maxWidthClassName = 'max-w-6xl',
 }: PosPageShellProps) {
   return (
-    <main className="h-dvh overflow-hidden bg-yuta-paper text-yuta-ink">
+    <main className="h-dvh overflow-hidden bg-canvas text-primary">
       <div
         className={cn(
           'mx-auto flex h-dvh w-full flex-col bg-white',
@@ -59,7 +59,7 @@ export function PosPageShell({
           className={headerClassName}
         />
         {subHeader && (
-          <div className="shrink-0 border-b border-yuta-line bg-white">
+          <div className="shrink-0 border-b border-border-default bg-white">
             {subHeader}
           </div>
         )}
@@ -82,8 +82,8 @@ export function PosMobileFab({ href, label, icon }: PosMobileFabProps) {
     <Button
       asChild
       variant="primary"
-      size="icon"
-      className="fixed bottom-5 right-5 z-20 h-14 w-14 rounded-full shadow-card sm:hidden"
+      size="sm"
+      className="fixed bottom-5 right-5 z-20 h-14 w-14 rounded-full shadow-sm sm:hidden"
       aria-label={label}
     >
       <Link href={href}>{icon}</Link>

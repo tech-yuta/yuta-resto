@@ -63,9 +63,9 @@ export function PanelHeader({
       {...props}
     >
       <div className="min-w-0">
-        {title && <h2 className="truncate font-bold text-yuta-ink">{title}</h2>}
+        {title && <h2 className="truncate font-bold text-primary">{title}</h2>}
         {description && (
-          <p className="mt-1 text-sm font-medium text-yuta-ink/55">
+          <p className="mt-1 text-sm font-medium text-primary/55">
             {description}
           </p>
         )}

@@ -15,7 +15,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-yuta-ink/40 backdrop-blur-sm',
+      'fixed inset-0 z-50 bg-primary/40 backdrop-blur-sm',
       'data-[state=open]:animate-in data-[state=closed]:animate-out',
       'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className
@@ -35,7 +35,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         'fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
-        'rounded-2xl border border-yuta-line bg-white p-6 shadow-card',
+        'rounded-2xl border border-border-default bg-white p-6 shadow-sm',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -46,7 +46,7 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1 text-yuta-ink/50 transition-colors hover:bg-yuta-mist hover:text-yuta-ink focus:outline-none focus:ring-2 focus:ring-yuta-accent">
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-lg p-1 text-primary/50 transition-colors hover:bg-surface-muted hover:text-primary focus:outline-none focus:ring-2 focus:ring-focus-ring">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
@@ -78,7 +78,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-lg font-semibold leading-none tracking-tight text-yuta-ink', className)}
+    className={cn('text-lg font-semibold leading-none tracking-tight text-primary', className)}
     {...props}
   />
 ));
@@ -90,7 +90,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-sm text-yuta-ink/60', className)}
+    className={cn('text-sm text-primary/60', className)}
     {...props}
   />
 ));

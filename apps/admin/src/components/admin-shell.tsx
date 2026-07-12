@@ -27,7 +27,7 @@ const metrics = [
     label: "Réservations aujourd'hui",
     value: '18',
     delta: 'À venir',
-    iconBg: 'bg-yuta-success/10 text-yuta-success',
+    iconBg: 'bg-status-success/10 text-status-success',
     icon: CalendarCheck,
     linkText: 'Voir le planning',
   },
@@ -35,7 +35,7 @@ const metrics = [
     label: 'Tâches à faire',
     value: '7',
     delta: 'À compléter',
-    iconBg: 'bg-yuta-warning/15 text-yuta-warning',
+    iconBg: 'bg-status-warning/15 text-status-warning',
     icon: CheckSquare,
     linkText: 'Voir les tâches',
   },
@@ -51,7 +51,7 @@ const metrics = [
     label: 'Emails non lus',
     value: '6',
     delta: 'À traiter',
-    iconBg: 'bg-yuta-info text-yuta-ink',
+    iconBg: 'bg-status-info-soft text-primary',
     icon: Mail,
     linkText: 'Voir les emails',
   },
@@ -120,9 +120,9 @@ export function AdminShell() {
       {/* Greeting */}
       <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold text-yuta-ink/50">Samedi 21 juin 2025</p>
+          <p className="text-sm font-semibold text-primary/50">Samedi 21 juin 2025</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight">Bonjour, YuTa. 👋</h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-yuta-ink/60">
+          <p className="mt-1.5 max-w-2xl text-sm text-primary/60">
             Voici votre plan d&apos;action pour aujourd&apos;hui.
           </p>
         </div>
@@ -146,14 +146,14 @@ export function AdminShell() {
           title="Réservations du jour"
           action={<PanelLink>Voir le planning</PanelLink>}
         >
-          <div className="divide-y divide-yuta-line">
+          <div className="divide-y divide-border-default">
             {reservationsToday.map((r) => (
               <div key={r.time + r.table} className="flex items-center gap-3 px-5 py-2.5">
-                <span className="w-12 shrink-0 text-sm font-semibold tabular-nums text-yuta-ink">
+                <span className="w-12 shrink-0 text-sm font-semibold tabular-nums text-primary">
                   {r.time}
                 </span>
-                <span className="w-14 shrink-0 text-sm text-yuta-ink/55">{r.guests}</span>
-                <span className="flex-1 text-sm text-yuta-ink">{r.table}</span>
+                <span className="w-14 shrink-0 text-sm text-primary/55">{r.guests}</span>
+                <span className="flex-1 text-sm text-primary">{r.table}</span>
                 <ReservationStatusBadge status={r.status} />
               </div>
             ))}
@@ -165,13 +165,13 @@ export function AdminShell() {
           title="Tâches à faire aujourd'hui"
           action={<PanelLink>Voir toutes</PanelLink>}
         >
-          <div className="divide-y divide-yuta-line">
+          <div className="divide-y divide-border-default">
             {tasksToday.map((t) => (
               <div key={t.title} className="flex items-center gap-3 px-5 py-2.5">
-                <span className="grid h-4 w-4 shrink-0 rounded border border-yuta-line bg-white" />
-                <span className="flex-1 min-w-0 truncate text-sm text-yuta-ink">{t.title}</span>
+                <span className="grid h-4 w-4 shrink-0 rounded border border-border-default bg-white" />
+                <span className="flex-1 min-w-0 truncate text-sm text-primary">{t.title}</span>
                 <TaskPriorityBadge priority={t.priority} />
-                <span className="w-12 shrink-0 text-right text-xs tabular-nums text-yuta-ink/40">
+                <span className="w-12 shrink-0 text-right text-xs tabular-nums text-primary/40">
                   {t.time}
                 </span>
               </div>
@@ -184,22 +184,22 @@ export function AdminShell() {
           title="Avis à répondre"
           action={<PanelLink>Voir tous les avis</PanelLink>}
         >
-          <div className="divide-y divide-yuta-line">
+          <div className="divide-y divide-border-default">
             {reviewsToAnswer.map((r) => (
               <div key={r.name} className="flex items-start gap-3 px-5 py-3">
                 <ReviewAvatar source={r.source} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-yuta-ink">{r.name}</span>
+                    <span className="text-sm font-semibold text-primary">{r.name}</span>
                     <StarRating value={r.stars} />
-                    <span className="ml-auto shrink-0 text-xs tabular-nums text-yuta-ink/40">{r.time}</span>
+                    <span className="ml-auto shrink-0 text-xs tabular-nums text-primary/40">{r.time}</span>
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-yuta-ink/50">&ldquo;{r.text}&rdquo;</p>
+                  <p className="mt-0.5 truncate text-xs text-primary/50">&ldquo;{r.text}&rdquo;</p>
                 </div>
                 <button
                   type="button"
                   style={{ backgroundColor: 'white', color: '#16211d' }}
-                  className="mt-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-yuta-line px-3 py-1.5 text-xs font-semibold transition-colors"
+                  className="mt-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border-default px-3 py-1.5 text-xs font-semibold transition-colors"
                 >
                   Répondre
                 </button>
@@ -216,17 +216,17 @@ export function AdminShell() {
           title="Emails non lus"
           action={<PanelLink>Voir tous les emails</PanelLink>}
         >
-          <div className="divide-y divide-yuta-line">
+          <div className="divide-y divide-border-default">
             {unreadEmails.map((e) => (
               <div key={e.sender} className="flex items-start gap-3 px-5 py-3">
                 <IconTile tone="info" size="sm" className="mt-0.5 shrink-0">
                   <Mail className="h-3.5 w-3.5" />
                 </IconTile>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-yuta-ink">{e.sender}</p>
-                  <p className="truncate text-xs text-yuta-ink/50">{e.subject}</p>
+                  <p className="truncate text-sm font-semibold text-primary">{e.sender}</p>
+                  <p className="truncate text-xs text-primary/50">{e.subject}</p>
                 </div>
-                <span className="shrink-0 text-xs tabular-nums text-yuta-ink/40">{e.time}</span>
+                <span className="shrink-0 text-xs tabular-nums text-primary/40">{e.time}</span>
               </div>
             ))}
           </div>
@@ -237,18 +237,18 @@ export function AdminShell() {
           title="Contenus à valider (Réseaux sociaux)"
           action={<PanelLink>Voir tous</PanelLink>}
         >
-          <div className="divide-y divide-yuta-line">
+          <div className="divide-y divide-border-default">
             {contentsToApprove.map((c) => (
               <div key={c.title} className="flex items-center gap-3 px-5 py-3">
                 <div className={cn('relative h-10 w-10 shrink-0 overflow-visible rounded-lg', c.bg)}>
                   <PlatformBadge channel={c.channel} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-yuta-ink">{c.title}</p>
-                  <p className="text-xs text-yuta-ink/50">{c.channel}</p>
+                  <p className="truncate text-sm font-semibold text-primary">{c.title}</p>
+                  <p className="text-xs text-primary/50">{c.channel}</p>
                 </div>
                 <Badge size="sm" className="shrink-0 bg-orange-100 text-orange-700">En attente</Badge>
-                <span className="shrink-0 text-xs tabular-nums text-yuta-ink/40">{c.time}</span>
+                <span className="shrink-0 text-xs tabular-nums text-primary/40">{c.time}</span>
               </div>
             ))}
           </div>
@@ -259,13 +259,13 @@ export function AdminShell() {
           title="Plan du jour"
           action={<PanelLink>Modifier</PanelLink>}
         >
-          <div className="divide-y divide-yuta-line">
+          <div className="divide-y divide-border-default">
             {dailyPlan.map((item) => (
               <div key={item.time} className="flex items-center gap-4 px-5 py-3">
-                <span className="w-12 shrink-0 text-sm font-semibold tabular-nums text-yuta-ink">
+                <span className="w-12 shrink-0 text-sm font-semibold tabular-nums text-primary">
                   {item.time}
                 </span>
-                <span className="flex-1 text-sm text-yuta-ink">{item.title}</span>
+                <span className="flex-1 text-sm text-primary">{item.title}</span>
               </div>
             ))}
           </div>
@@ -288,16 +288,16 @@ function SummaryCard({ metric }: { metric: (typeof metrics)[number] }) {
           <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg', metric.iconBg)}>
             <Icon className="h-4 w-4" />
           </div>
-          <p className="text-sm font-medium leading-snug text-yuta-ink/70">{metric.label}</p>
+          <p className="text-sm font-medium leading-snug text-primary/70">{metric.label}</p>
         </div>
         <div>
-          <p className="text-3xl font-bold tracking-tight text-yuta-ink">{metric.value}</p>
-          <p className="mt-0.5 text-xs text-yuta-ink/50">{metric.delta}</p>
+          <p className="text-3xl font-bold tracking-tight text-primary">{metric.value}</p>
+          <p className="mt-0.5 text-xs text-primary/50">{metric.delta}</p>
         </div>
       </div>
       <Separator />
       <div className="px-5 py-3">
-        <button className="flex items-center gap-1 text-sm font-semibold text-yuta-success transition-colors hover:text-yuta-success/80">
+        <button className="flex items-center gap-1 text-sm font-semibold text-status-success transition-colors hover:text-status-success/80">
           {metric.linkText}
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
@@ -315,7 +315,9 @@ function StarRating({ value, max = 5 }: { value: number; max?: number }) {
           key={i}
           className={cn(
             'h-3 w-3',
-            i < value ? 'fill-amber-400 text-amber-400' : 'fill-yuta-mist text-yuta-line',
+            i < value
+              ? 'fill-status-warning text-status-warning'
+              : 'fill-surface-muted text-border-default',
           )}
         />
       ))}
@@ -330,7 +332,7 @@ function ReviewAvatar({ source }: { source: string }) {
     f: 'bg-blue-100 text-blue-600',
     T: 'bg-green-100 text-green-600',
   };
-  const cls = palette[source] ?? 'bg-yuta-mist text-yuta-ink';
+  const cls = palette[source] ?? 'bg-surface-muted text-primary';
   return (
     <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold', cls)}>
       {source}
@@ -356,7 +358,7 @@ function PlatformBadge({ channel }: { channel: string }) {
 /** Header action link */
 function PanelLink({ children }: { children: React.ReactNode }) {
   return (
-    <button className="text-sm font-semibold text-yuta-ink/50 hover:text-yuta-ink">
+    <button className="text-sm font-semibold text-primary/50 hover:text-primary">
       {children}
     </button>
   );
@@ -365,8 +367,8 @@ function PanelLink({ children }: { children: React.ReactNode }) {
 /** Centered footer “Voir tout…” link inside a panel */
 function PanelFooterLink({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-t border-yuta-line py-3 text-center">
-      <p className="cursor-pointer text-sm font-medium text-yuta-ink/50 transition-colors hover:text-yuta-ink">
+    <div className="border-t border-border-default py-3 text-center">
+      <p className="cursor-pointer text-sm font-medium text-primary/50 transition-colors hover:text-primary">
         {children}
       </p>
     </div>
@@ -381,7 +383,7 @@ function TaskPriorityBadge({ priority }: { priority: string }) {
     Basse:   'bg-sky-100 text-sky-700',
   };
   return (
-    <Badge size="sm" className={cls[priority] ?? 'bg-yuta-mist text-yuta-ink'}>
+    <Badge size="sm" className={cls[priority] ?? 'bg-surface-muted text-primary'}>
       {priority}
     </Badge>
   );

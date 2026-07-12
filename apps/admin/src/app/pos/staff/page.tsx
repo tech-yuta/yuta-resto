@@ -40,30 +40,30 @@ export default async function PosStaffPage() {
     <AdminPosPage
       title="POS equipe"
       description="Employes, roles et acces POS"
-      actions={<Badge variant="neutral">{staffUsers.length} employe(s)</Badge>}
+      actions={<Badge tone="neutral" variant="soft">{staffUsers.length} employe(s)</Badge>}
     >
 
         <section className="grid gap-5 lg:grid-cols-[360px_1fr]">
           <Card>
             <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-yuta-accent">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-action-primary">
                 <Plus className="h-5 w-5" />
               </div>
               <div>
                 <h2 className="font-bold">Nouvel employe</h2>
-                <p className="text-sm text-yuta-ink/55">Visible dans le selecteur POS</p>
+                <p className="text-sm text-primary/55">Visible dans le selecteur POS</p>
               </div>
             </div>
             <form action={createStaffUserAction} className="mt-5 grid gap-3">
               <StaffUserFields idPrefix="new" defaultRole="staff" />
-              <Button type="submit" variant="accent">Ajouter employe</Button>
+              <Button type="submit" variant="primary">Ajouter employe</Button>
             </form>
           </Card>
 
           <Card className="overflow-hidden p-0">
             <div className="px-5 py-4">
               <h2 className="text-lg font-bold">Equipe</h2>
-              <p className="mt-1 text-sm text-yuta-ink/55">Desactiver au lieu de supprimer pour garder l historique.</p>
+              <p className="mt-1 text-sm text-primary/55">Desactiver au lieu de supprimer pour garder l historique.</p>
             </div>
             <Separator />
             <div className="grid gap-0">
@@ -74,7 +74,7 @@ export default async function PosStaffPage() {
                     <div className="grid gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <Label htmlFor={`name-${staffUser.id}`}>Nom</Label>
-                        <Badge variant={staffUser.isActive ? 'active' : 'inactive'}>
+                        <Badge tone={staffUser.isActive ? 'success' : 'neutral'} variant="soft">
                           {staffUser.isActive ? 'Actif' : 'Inactif'}
                         </Badge>
                       </div>
@@ -90,7 +90,7 @@ export default async function PosStaffPage() {
                   <form action={toggleStaffUserAction} className="px-5 pb-5">
                     <input type="hidden" name="userId" value={staffUser.id} />
                     <input type="hidden" name="isActive" value={String(!staffUser.isActive)} />
-                    <Button type="submit" variant={staffUser.isActive ? 'ghost' : 'accent'} size="sm">
+                    <Button type="submit" variant={staffUser.isActive ? 'ghost' : 'primary'} size="sm">
                       {staffUser.isActive ? 'Desactiver' : 'Reactiver'}
                     </Button>
                   </form>

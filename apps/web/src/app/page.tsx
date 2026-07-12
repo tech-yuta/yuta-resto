@@ -101,27 +101,27 @@ const packageNotes = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-yuta-paper text-yuta-ink">
-      <header className="sticky top-0 z-20 border-b border-yuta-line bg-yuta-paper/95">
+    <main className="min-h-screen bg-canvas text-primary">
+      <header className="sticky top-0 z-20 border-b border-border-default bg-canvas/95">
         <nav className="mx-auto flex h-20 w-full max-w-[1720px] items-center justify-between px-6 lg:px-10 2xl:px-20">
           <Link href="/" className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-full bg-yuta-success text-white">
+            <div className="grid h-11 w-11 place-items-center rounded-full bg-status-success text-white">
               <Store className="h-6 w-6" />
             </div>
-            <span className="text-4xl font-bold tracking-tight text-yuta-success">YUTA</span>
+            <span className="text-4xl font-bold tracking-tight text-status-success">YUTA</span>
           </Link>
 
-          <div className="hidden items-center gap-8 text-sm font-medium text-yuta-ink/75 lg:flex">
-            <a href="#solutions" className="inline-flex items-center gap-1 hover:text-yuta-ink">
+          <div className="hidden items-center gap-8 text-sm font-medium text-primary/75 lg:flex">
+            <a href="#solutions" className="inline-flex items-center gap-1 hover:text-primary">
               Solutions <ChevronDown className="h-4 w-4" />
             </a>
-            <a href="#diagnostic" className="hover:text-yuta-ink">Diagnostic</a>
-            <a href="#tarifs" className="hover:text-yuta-ink">Tarifs</a>
-            <a href="#modules" className="hover:text-yuta-ink">A propos</a>
-            <a href="#ressources" className="inline-flex items-center gap-1 hover:text-yuta-ink">
+            <a href="#diagnostic" className="hover:text-primary">Diagnostic</a>
+            <a href="#tarifs" className="hover:text-primary">Tarifs</a>
+            <a href="#modules" className="hover:text-primary">A propos</a>
+            <a href="#ressources" className="inline-flex items-center gap-1 hover:text-primary">
               Ressources <ChevronDown className="h-4 w-4" />
             </a>
-            <a href="#contact" className="hover:text-yuta-ink">Contact</a>
+            <a href="#contact" className="hover:text-primary">Contact</a>
           </div>
 
           <div className="flex items-center gap-3">
@@ -139,8 +139,8 @@ export default function Home() {
 
       <section className="mx-auto grid w-full max-w-[1720px] gap-10 px-6 py-12 md:py-16 lg:min-h-[calc(100vh-80px)] lg:grid-cols-[minmax(480px,0.95fr)_minmax(560px,1.05fr)] lg:items-center lg:px-10 xl:grid-cols-[minmax(520px,0.95fr)_minmax(680px,1.05fr)] 2xl:px-20">
         <div>
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-yuta-line bg-white px-4 py-2 text-sm font-medium text-yuta-ink/70 shadow-card">
-            <span className="grid h-6 w-6 place-items-center rounded-full bg-yuta-success text-white">
+          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-border-default bg-white px-4 py-2 text-sm font-medium text-primary/70 shadow-sm">
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-status-success text-white">
               <Heart className="h-4 w-4" />
             </span>
             Cree par des restaurateurs, pour des restaurateurs
@@ -148,10 +148,10 @@ export default function Home() {
 
           <h1 className="max-w-[760px] text-4xl font-bold leading-tight tracking-tight sm:text-5xl xl:text-6xl 2xl:text-7xl">
             Des outils simples pour les restaurants qui veulent{' '}
-            <span className="text-yuta-success">gagner du temps</span>
+            <span className="text-status-success">gagner du temps</span>
           </h1>
 
-          <p className="mt-7 max-w-2xl text-xl leading-9 text-yuta-ink/70">
+          <p className="mt-7 max-w-2xl text-xl leading-9 text-primary/70">
             Centralisez avis clients, reservations, messages, taches quotidiennes et modules POS depuis une seule plateforme.
           </p>
 
@@ -165,10 +165,10 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="mt-9 flex flex-wrap gap-6 text-sm font-medium text-yuta-ink/65">
+          <div className="mt-9 flex flex-wrap gap-6 text-sm font-medium text-primary/65">
             {packageNotes.map((note) => (
               <span key={note} className="inline-flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-yuta-success" />
+                <CheckCircle2 className="h-5 w-5 text-status-success" />
                 {note}
               </span>
             ))}
@@ -180,10 +180,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="diagnostic" className="border-t border-yuta-line bg-white/65 py-16">
+      <section id="diagnostic" className="border-t border-border-default bg-white/65 py-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-yuta-success">Vos defis quotidiens</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-status-success">Vos defis quotidiens</p>
             <h2 className="mt-4 text-4xl font-bold tracking-tight">
               On connait vos problemes, on a les solutions
             </h2>
@@ -199,7 +199,7 @@ export default function Home() {
                     <Icon className="h-6 w-6" />
                   </IconTile>
                   <h3 className="text-xl font-bold leading-tight">{point.title}</h3>
-                  <p className="mt-4 leading-7 text-yuta-ink/62">{point.description}</p>
+                  <p className="mt-4 leading-7 text-primary/62">{point.description}</p>
                 </Card>
               );
             })}
@@ -210,11 +210,11 @@ export default function Home() {
       <section id="solutions" className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-yuta-success">Fonctions par app</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-status-success">Fonctions par app</p>
             <h2 className="mt-4 text-4xl font-bold tracking-tight">
               Une plateforme, plusieurs surfaces de travail
             </h2>
-            <p className="mt-5 leading-8 text-yuta-ink/65">
+            <p className="mt-5 leading-8 text-primary/65">
               YuTa se deploie par modules. Chaque restaurant active uniquement les fonctions utiles a son abonnement: gestion quotidienne, relation client, POS, affichage ou conformite.
             </p>
           </div>
@@ -231,13 +231,13 @@ export default function Home() {
                     </IconTile>
                     <div>
                       <h3 className="text-xl font-bold">{module.name}</h3>
-                      <p className="mt-2 leading-7 text-yuta-ink/62">{module.description}</p>
+                      <p className="mt-2 leading-7 text-primary/62">{module.description}</p>
                     </div>
                   </div>
                   <div className="mt-5 grid gap-2">
                     {module.items.map((item) => (
-                      <span key={item} className="inline-flex items-center gap-2 text-sm font-medium text-yuta-ink/65">
-                        <Check className="h-4 w-4 text-yuta-success" />
+                      <span key={item} className="inline-flex items-center gap-2 text-sm font-medium text-primary/65">
+                        <Check className="h-4 w-4 text-status-success" />
                         {item}
                       </span>
                     ))}
@@ -252,11 +252,11 @@ export default function Home() {
       <section id="tarifs" className="bg-white/65 py-16">
         <div className="mx-auto grid max-w-7xl gap-8 px-6 lg:grid-cols-[1fr_0.9fr] lg:px-10">
           <Card className="p-8">
-            <Badge variant="success">Abonnement modulaire</Badge>
+            <Badge tone="success" variant="solid">Abonnement modulaire</Badge>
             <h2 className="mt-5 text-3xl font-bold tracking-tight">
               Payez pour les modules que votre restaurant utilise vraiment
             </h2>
-            <p className="mt-4 max-w-2xl leading-8 text-yuta-ink/65">
+            <p className="mt-4 max-w-2xl leading-8 text-primary/65">
               Commencez avec avis, reservations et taches du jour. Ajoutez ensuite POS, ecrans, stock, marketing ou veille conformite selon votre maturite.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
@@ -270,7 +270,7 @@ export default function Home() {
 
           <Card className="p-8">
             <h3 className="text-xl font-bold">Diagnostic gratuit</h3>
-            <p className="mt-3 leading-7 text-yuta-ink/65">
+            <p className="mt-3 leading-7 text-primary/65">
               En 30 minutes, on identifie les pertes de temps, les canaux clients a centraliser et les modules prioritaires pour votre restaurant.
             </p>
             <Button variant="success" className="mt-7 w-full rounded-full">
@@ -281,9 +281,9 @@ export default function Home() {
         </div>
       </section>
 
-      <footer id="contact" className="border-t border-yuta-line py-10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 text-sm text-yuta-ink/55 md:flex-row md:items-center md:justify-between lg:px-10">
-          <p className="font-semibold text-yuta-ink">YUTA</p>
+      <footer id="contact" className="border-t border-border-default py-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 text-sm text-primary/55 md:flex-row md:items-center md:justify-between lg:px-10">
+          <p className="font-semibold text-primary">YUTA</p>
           <p>Des outils simples pour restaurants independants, groupes et franchises.</p>
           <p>contact@yuta.local</p>
         </div>
@@ -294,20 +294,20 @@ export default function Home() {
 
 function DashboardPreview() {
   return (
-    <Card className="overflow-hidden p-0 shadow-card">
+    <Card className="overflow-hidden p-0 shadow-sm">
       <div className="grid min-h-[420px] xl:min-h-[560px] xl:grid-cols-[220px_1fr]">
-        <aside className="hidden border-r border-yuta-line bg-white p-5 xl:block">
+        <aside className="hidden border-r border-border-default bg-white p-5 xl:block">
           <div className="mb-8 flex items-center gap-2">
             <IconTile tone="success" size="sm" shape="circle">
               <Store className="h-4 w-4" />
             </IconTile>
-            <span className="text-lg font-bold text-yuta-success">YUTA</span>
+            <span className="text-lg font-bold text-status-success">YUTA</span>
           </div>
-          <div className="grid gap-2 text-sm font-semibold text-yuta-ink/62">
+          <div className="grid gap-2 text-sm font-semibold text-primary/62">
             {['Tableau de bord', 'Avis clients', 'Reservations', 'Messages', 'Pointage', 'Retours internes', 'Parametres'].map((item, index) => (
               <div
                 key={item}
-                className={index === 0 ? 'rounded-lg bg-yuta-mist px-3 py-2 text-yuta-ink' : 'px-3 py-2'}
+                className={index === 0 ? 'rounded-lg bg-surface-muted px-3 py-2 text-primary' : 'px-3 py-2'}
               >
                 {item}
               </div>
@@ -315,10 +315,10 @@ function DashboardPreview() {
           </div>
         </aside>
 
-        <div className="bg-yuta-paper p-4 sm:p-5 md:p-7">
+        <div className="bg-canvas p-4 sm:p-5 md:p-7">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-yuta-ink/55">Bonjour, Maison Saigon</p>
+              <p className="text-sm font-semibold text-primary/55">Bonjour, Maison Saigon</p>
               <h3 className="mt-1 text-2xl font-bold">Aujourd'hui</h3>
             </div>
             <Badge variant="outline">Maison Saigon</Badge>
@@ -351,7 +351,7 @@ function DashboardPreview() {
                   return (
                     <ListRow
                       key={event.title}
-                      className={index > 0 ? 'border-t border-yuta-line' : undefined}
+                      className={index > 0 ? 'border-t border-border-default' : undefined}
                       media={
                         <IconTile tone={index === 0 ? 'info' : index === 1 ? 'success' : 'warning'}>
                           <Icon className="h-4 w-4" />
@@ -368,13 +368,13 @@ function DashboardPreview() {
 
             <Panel title="Avis clients">
               <div className="grid place-items-center p-5 text-center">
-                <div className="grid h-36 w-36 place-items-center rounded-full border-[18px] border-yuta-success bg-white">
+                <div className="grid h-36 w-36 place-items-center rounded-full border-[18px] border-status-success bg-white">
                   <div>
                     <p className="text-3xl font-bold">128</p>
-                    <p className="text-xs font-medium text-yuta-ink/50">avis</p>
+                    <p className="text-xs font-medium text-primary/50">avis</p>
                   </div>
                 </div>
-                <div className="mt-5 grid gap-2 text-sm text-yuta-ink/62">
+                <div className="mt-5 grid gap-2 text-sm text-primary/62">
                   <span>5 etoiles - 68%</span>
                   <span>4 etoiles - 22%</span>
                   <span>3 etoiles - 7%</span>

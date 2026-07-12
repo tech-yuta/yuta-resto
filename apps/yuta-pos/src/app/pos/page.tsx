@@ -19,18 +19,17 @@ export default function PosHome() {
         <>
           <Badge
             variant="outline"
-            size="lg"
             className="hidden border-white/25 text-white md:flex"
           >
             Service actif
           </Badge>
-          <Button asChild variant="secondary" size="touch">
+          <Button asChild variant="secondary" size="lg">
             <Link href="/">
               <ClipboardList className="h-4 w-4" />
               Commandes
             </Link>
           </Button>
-          <Button asChild variant="secondary" size="touch">
+          <Button asChild variant="secondary" size="lg">
             <Link href="/kitchen">
               <ChefHat className="h-4 w-4" />
               Cuisine
@@ -42,7 +41,7 @@ export default function PosHome() {
     >
       <section className="mx-auto grid w-full max-w-2xl content-start">
         <Card padding="none" className="overflow-hidden rounded-lg shadow-none">
-          <div className="border-b border-yuta-line px-5 py-4 sm:px-6">
+          <div className="border-b border-border-default px-5 py-4 sm:px-6">
             <h2 className="text-xl font-black">Nouvelle commande</h2>
           </div>
 
@@ -55,7 +54,7 @@ export default function PosHome() {
                 placeholder="Terrasse 5"
                 autoComplete="off"
                 required
-                inputSize="touch"
+                size="lg"
               />
             </div>
 
@@ -74,7 +73,7 @@ export default function PosHome() {
                       className="peer sr-only"
                       required
                     />
-                    <span className="flex min-h-12 items-center justify-center rounded-lg border border-yuta-line bg-white px-3 text-sm font-black transition-colors peer-checked:border-yuta-success peer-checked:bg-yuta-success peer-checked:text-white">
+                    <span className="flex min-h-12 items-center justify-center rounded-lg border border-border-default bg-white px-3 text-sm font-black transition-colors peer-checked:border-status-success peer-checked:bg-status-success peer-checked:text-white">
                       {orderType.label}
                     </span>
                   </label>
@@ -96,7 +95,7 @@ export default function PosHome() {
               type="submit"
               variant="primary"
               size="lg"
-              className="min-h-14 justify-center bg-yuta-ink text-white hover:bg-yuta-ink/90"
+              className="min-h-14 justify-center bg-primary text-white hover:bg-primary/90"
             >
               Creer la commande
             </Button>

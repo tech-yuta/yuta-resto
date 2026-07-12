@@ -27,20 +27,20 @@ export function AdminShell({ initialMedia }: AdminShellProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-yuta-paper">
+    <div className="min-h-screen bg-canvas">
       {/* Header */}
-      <header className="border-b border-yuta-line bg-white px-6 py-4">
+      <header className="border-b border-border-default bg-white px-6 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-lg font-semibold text-yuta-ink">Yuta Display</span>
-            <span className="rounded-lg bg-yuta-mist px-3 py-1 text-sm font-medium text-yuta-ink">
+            <span className="text-lg font-semibold text-primary">Yuta Display</span>
+            <span className="rounded-lg bg-surface-muted px-3 py-1 text-sm font-medium text-primary">
               {uiText.dashboard}
             </span>
           </div>
           <Link
             href="/display"
             target="_blank"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-yuta-accent px-4 py-2 text-sm font-semibold text-yuta-ink transition-colors hover:bg-yuta-accent/80"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-action-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-action-primary/80"
           >
             {uiText.openDisplay}
             <span aria-hidden>↗</span>
@@ -52,7 +52,7 @@ export function AdminShell({ initialMedia }: AdminShellProps) {
       <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
         {/* Section header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-yuta-ink">{uiText.media}</h1>
+          <h1 className="text-xl font-semibold text-primary">{uiText.media}</h1>
           {!showForm && (
             <Button onClick={() => setShowForm(true)}>{uiText.addMedia}</Button>
           )}
@@ -61,7 +61,7 @@ export function AdminShell({ initialMedia }: AdminShellProps) {
         {/* Add-media form */}
         {showForm && (
           <Card>
-            <h2 className="mb-4 text-base font-semibold text-yuta-ink">{uiText.addMedia}</h2>
+            <h2 className="mb-4 text-base font-semibold text-primary">{uiText.addMedia}</h2>
             <MediaForm
               onSuccess={async () => {
                 setShowForm(false);

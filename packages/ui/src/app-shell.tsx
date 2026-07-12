@@ -14,7 +14,7 @@ export function AppShell({
   return (
     <div
       className={cn(
-        'h-screen overflow-hidden bg-yuta-paper text-yuta-ink md:grid md:grid-cols-[256px_minmax(0,1fr)]',
+        'h-screen overflow-hidden bg-canvas text-primary md:grid md:grid-cols-[256px_minmax(0,1fr)]',
         className,
       )}
       {...props}
@@ -40,7 +40,7 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        'hidden h-screen min-h-0 flex-col border-r border-yuta-line bg-white md:flex',
+        'hidden h-screen min-h-0 flex-col border-r border-border-default bg-white md:flex',
         className,
       )}
       {...props}
@@ -60,7 +60,7 @@ export function AppSidebarHeader({
   return (
     <div
       className={cn(
-        'flex h-16 shrink-0 items-center gap-3 border-b border-yuta-line px-5',
+        'flex h-16 shrink-0 items-center gap-3 border-b border-border-default px-5',
         className,
       )}
       {...props}
@@ -77,7 +77,7 @@ export function AppSidebarFooter({
 }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>) {
   return (
     <div
-      className={cn('shrink-0 border-t border-yuta-line px-4 py-2', className)}
+      className={cn('shrink-0 border-t border-border-default px-4 py-2', className)}
       {...props}
     >
       {children}
@@ -99,7 +99,7 @@ export function AppTopbar({
   return (
     <header
       className={cn(
-        'sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b border-yuta-line bg-white px-5 md:gap-4 md:px-7',
+        'sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b border-border-default bg-white px-5 md:gap-4 md:px-7',
         className,
       )}
       {...props}
@@ -133,7 +133,7 @@ export function AppFooter({
   return (
     <footer
       className={cn(
-        'flex h-10 shrink-0 items-center justify-center border-t border-yuta-line bg-yuta-paper px-4 text-xs font-medium text-yuta-ink/45',
+        'flex h-10 shrink-0 items-center justify-center border-t border-border-default bg-canvas px-4 text-xs font-medium text-primary/45',
         className,
       )}
       {...props}

@@ -7,16 +7,17 @@ const iconTileVariants = cva(
   {
     variants: {
       tone: {
-        mist: 'bg-yuta-mist text-yuta-ink/65',
-        success: 'bg-yuta-success/10 text-yuta-success',
-        warning: 'bg-yuta-warning/15 text-yuta-ink',
-        info: 'bg-yuta-info text-yuta-ink',
-        accent: 'bg-yuta-accent text-yuta-ink',
-        dark: 'bg-yuta-ink text-white',
+        neutral: 'bg-surface-muted text-secondary',
+        brand: 'bg-surface-selected text-brand-800',
+        success: 'bg-status-success-soft text-status-success',
+        warning: 'bg-status-warning-soft text-status-warning',
+        info: 'bg-status-info-soft text-status-info',
+        danger: 'bg-status-danger-soft text-status-danger',
+        inverse: 'bg-primary text-inverse',
       },
       size: {
         sm: 'h-8 w-8',
-        default: 'h-9 w-9',
+        md: 'h-9 w-9',
         lg: 'h-11 w-11',
       },
       shape: {
@@ -25,8 +26,8 @@ const iconTileVariants = cva(
       },
     },
     defaultVariants: {
-      tone: 'mist',
-      size: 'default',
+      tone: 'neutral',
+      size: 'md',
       shape: 'rounded',
     },
   },

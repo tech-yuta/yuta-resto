@@ -68,15 +68,15 @@ export default async function PosReportsPage() {
         <Card className="overflow-hidden p-0">
           <div className="px-5 py-4">
             <h2 className="text-lg font-bold">Commandes aujourd hui</h2>
-            <p className="mt-1 text-sm text-yuta-ink/55">{orderRows.length} commande(s)</p>
+            <p className="mt-1 text-sm text-primary/55">{orderRows.length} commande(s)</p>
           </div>
           <Separator />
           {orderRows.length === 0 ? (
             <div className="grid min-h-64 place-items-center p-8 text-center">
               <div>
-                <ReceiptText className="mx-auto h-10 w-10 text-yuta-ink/35" />
+                <ReceiptText className="mx-auto h-10 w-10 text-primary/35" />
                 <h3 className="mt-4 font-bold">Aucune commande</h3>
-                <p className="mt-1 text-sm text-yuta-ink/55">Les commandes du jour apparaitront ici.</p>
+                <p className="mt-1 text-sm text-primary/55">Les commandes du jour apparaitront ici.</p>
               </div>
             </div>
           ) : (
@@ -91,13 +91,13 @@ export default async function PosReportsPage() {
                     <div className="grid gap-3 px-5 py-4 md:grid-cols-[1.1fr_1fr_0.7fr_0.7fr_auto] md:items-center">
                       <div>
                         <p className="font-black">{order.tableLabel}</p>
-                        <p className="mt-1 text-sm text-yuta-ink/55">{formatTime(order.createdAt)}</p>
+                        <p className="mt-1 text-sm text-primary/55">{formatTime(order.createdAt)}</p>
                       </div>
                       <p className="text-sm font-semibold">{order.orderNumber}</p>
-                      <Badge variant={statusBadgeVariant(order.status)}>{statusLabel(order.status)}</Badge>
+                      <Badge {...statusBadgeProps(order.status)}>{statusLabel(order.status)}</Badge>
                       <div>
                         <p className="font-black">{formatEuros(order.totalCents)}</p>
-                        {paidCents > 0 && <p className="text-xs font-semibold text-yuta-ink/45">Paye {formatEuros(paidCents)}</p>}
+                        {paidCents > 0 && <p className="text-xs font-semibold text-primary/45">Paye {formatEuros(paidCents)}</p>}
                       </div>
                       <Button asChild variant="secondary" size="sm">
                         <Link href={`${posBaseUrl}/orders/${order.id}`}>Ouvrir POS</Link>
@@ -128,20 +128,20 @@ function statusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
-function statusBadgeVariant(status: string): 'active' | 'inactive' | 'neutral' | 'destructive' | 'outline' {
+function statusBadgeProps(status: string) {
   if (status === 'paid' || status === 'ready') {
-    return 'active';
+    return { tone: 'success', variant: 'soft' } as const;
   }
 
   if (status === 'cancelled') {
-    return 'destructive';
+    return { tone: 'danger', variant: 'solid' } as const;
   }
 
   if (status === 'draft') {
-    return 'outline';
+    return { tone: 'neutral', variant: 'outline' } as const;
   }
 
-  return 'neutral';
+  return { tone: 'neutral', variant: 'soft' } as const;
 }
 
 function formatTime(date: Date): string {

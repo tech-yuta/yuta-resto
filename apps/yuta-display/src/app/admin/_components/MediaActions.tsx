@@ -82,7 +82,7 @@ export function MediaActions({ item, onRefresh }: MediaActionsProps) {
         />
 
         {/* Active toggle */}
-        <label className="flex items-center gap-2 text-sm text-yuta-ink">
+        <label className="flex items-center gap-2 text-sm text-primary">
           <Checkbox
             checked={values.isActive}
             onCheckedChange={(checked) => setValues(v => ({ ...v, isActive: !!checked }))}
@@ -108,7 +108,7 @@ export function MediaActions({ item, onRefresh }: MediaActionsProps) {
       <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
         {uiText.edit}
       </Button>
-      <Button size="sm" variant="destructive" onClick={handleDelete}>
+      <Button size="sm" variant="danger" onClick={handleDelete}>
         {uiText.delete}
       </Button>
     </div>

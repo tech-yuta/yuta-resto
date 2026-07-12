@@ -26,7 +26,7 @@ export function PosHeader({
   return (
     <header
       className={cn(
-        'relative flex flex-wrap items-center justify-between gap-3 bg-yuta-ink px-4 py-3 text-white',
+        'relative flex flex-wrap items-center justify-between gap-3 bg-primary px-4 py-3 text-white',
         className,
       )}
     >
@@ -35,7 +35,7 @@ export function PosHeader({
           <Button
             asChild
             variant="ghost"
-            size="icon"
+            size="sm"
             className="shrink-0 text-white hover:bg-white/10"
           >
             <Link href={backHref} aria-label={backLabel}>
@@ -46,7 +46,7 @@ export function PosHeader({
         <Link
           href="/"
           aria-label="Retour aux commandes"
-          className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/15 bg-white transition-colors hover:bg-yuta-mist"
+          className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/15 bg-white transition-colors hover:bg-surface-muted"
         >
           <Image
             src="/images/logo.svg"
@@ -86,7 +86,7 @@ export function PosHeader({
               <Menu className="h-6 w-6" />
               <span className="sr-only">Menu</span>
             </summary>
-            <div className="absolute right-4 top-full z-30 mt-2 grid min-w-64 gap-2 rounded-lg border border-yuta-line bg-white p-3 text-yuta-ink shadow-card [&>a]:w-full [&>button]:w-full [&>form>button]:w-full [&>form]:w-full">
+            <div className="absolute right-4 top-full z-30 mt-2 grid min-w-64 gap-2 rounded-lg border border-border-default bg-white p-3 text-primary shadow-sm [&>a]:w-full [&>button]:w-full [&>form>button]:w-full [&>form]:w-full">
               {actions}
             </div>
           </details>

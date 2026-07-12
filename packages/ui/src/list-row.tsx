@@ -28,15 +28,15 @@ export function ListRow({
     >
       {media}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-yuta-ink">{title}</p>
+        <p className="truncate text-sm font-semibold text-primary">{title}</p>
         {description && (
-          <p className="truncate text-xs font-medium text-yuta-ink/50">
+          <p className="truncate text-xs font-medium text-primary/50">
             {description}
           </p>
         )}
       </div>
       {meta && (
-        <div className="shrink-0 text-xs font-medium text-yuta-ink/40">
+        <div className="shrink-0 text-xs font-medium text-primary/40">
           {meta}
         </div>
       )}

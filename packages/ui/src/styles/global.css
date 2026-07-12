@@ -3,31 +3,82 @@
 @source '..';
 
 @theme {
-  --color-yuta-ink: #16211d;
-  --color-yuta-paper: #f8f8f4;
-  --color-yuta-mist: #eef1ea;
-  --color-yuta-line: #dce3d9;
-  --color-yuta-accent: #b7ef5b;
-  --color-yuta-success: #128a4a;
-  --color-yuta-warning: #f2a900;
-  --color-yuta-danger: #e02424;
-  --color-yuta-info: #dce8ff;
-  --shadow-card: 0 12px 30px rgb(22 33 29 / 6%);
+  --color-brand-50: #f0faf6;
+  --color-brand-100: #ddf4eb;
+  --color-brand-200: #bce8d7;
+  --color-brand-300: #91d6be;
+  --color-brand-400: #61be9f;
+  --color-brand-500: #3a9c7c;
+  --color-brand-600: #2d7e65;
+  --color-brand-700: #286653;
+  --color-brand-800: #234f43;
+  --color-brand-900: #1d4238;
+
+  --color-neutral-0: #ffffff;
+  --color-neutral-25: #fbfcfc;
+  --color-neutral-50: #f6f8f7;
+  --color-neutral-100: #eef1ef;
+  --color-neutral-200: #dde3e0;
+  --color-neutral-300: #c6cfca;
+  --color-neutral-400: #97a49e;
+  --color-neutral-500: #6e7b75;
+  --color-neutral-600: #505d57;
+  --color-neutral-700: #37443e;
+  --color-neutral-800: #25312c;
+  --color-neutral-900: #17221e;
+
+  --color-canvas: var(--color-neutral-50);
+  --color-surface: var(--color-neutral-0);
+  --color-surface-muted: var(--color-neutral-25);
+  --color-surface-selected: var(--color-brand-50);
+
+  --color-primary: var(--color-neutral-900);
+  --color-secondary: var(--color-neutral-700);
+  --color-muted: var(--color-neutral-500);
+  --color-inverse: var(--color-neutral-0);
+
+  --color-border-default: var(--color-neutral-200);
+  --color-border-strong: var(--color-neutral-300);
+
+  --color-action-primary: var(--color-brand-500);
+  --color-action-primary-hover: var(--color-brand-600);
+  --color-action-primary-active: var(--color-brand-700);
+  --color-action-danger: #c43d3d;
+
+  --color-status-success: #218a5b;
+  --color-status-success-soft: #eaf8f0;
+  --color-status-success-border: #a8dfc1;
+  --color-status-warning: #b36b00;
+  --color-status-warning-soft: #fff6e5;
+  --color-status-warning-border: #f4cf8c;
+  --color-status-danger: #c43d3d;
+  --color-status-danger-soft: #fff0f0;
+  --color-status-danger-border: #f2b8b8;
+  --color-status-info: #2670b8;
+  --color-status-info-soft: #eef6ff;
+  --color-status-info-border: #b8d8f5;
+
+  --color-focus-ring: var(--color-brand-300);
+
+  --shadow-xs: 0 1px 2px rgb(23 34 30 / 5%);
+  --shadow-sm: 0 2px 8px rgb(23 34 30 / 8%);
+  --shadow-md: 0 8px 24px rgb(23 34 30 / 12%);
+  --shadow-lg: 0 18px 48px rgb(23 34 30 / 16%);
 }
 
 @layer base {
   * {
-    border-color: var(--color-yuta-line);
+    border-color: var(--color-border-default);
   }
 
   html {
-    background: var(--color-yuta-paper);
+    background: var(--color-canvas);
   }
 
   body {
     min-height: 100vh;
-    background: var(--color-yuta-paper);
-    color: var(--color-yuta-ink);
+    background: var(--color-canvas);
+    color: var(--color-primary);
     font-family: Arial, Helvetica, sans-serif;
   }
 }

@@ -31,7 +31,7 @@ export function EqualSplitDialogContent({
       <input type="hidden" name="parts" value={parts} />
       <input type="hidden" name="returnTo" value="payment" />
 
-      <p className="text-sm font-semibold text-yuta-ink/55">Nombre de parts</p>
+      <p className="text-sm font-semibold text-primary/55">Nombre de parts</p>
       <div className="grid grid-cols-5 gap-2">
         {partOptions.map((option) => (
           <Button
@@ -46,18 +46,18 @@ export function EqualSplitDialogContent({
           </Button>
         ))}
       </div>
-      <div className="rounded-lg border border-yuta-line bg-yuta-paper p-3">
-        <p className="text-xs font-black uppercase text-yuta-ink/45">
+      <div className="rounded-lg border border-border-default bg-canvas p-3">
+        <p className="text-xs font-black uppercase text-primary/45">
           Montant par part
         </p>
         <p className="mt-1 text-2xl font-black">
           {formatEuros(amountPerPartCents)}
         </p>
-        <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
+        <p className="mt-1 text-xs font-semibold text-primary/55">
           Aperçu pour {parts} part(s).
         </p>
         {remainingCents > 0 && (
-          <p className="mt-1 text-xs font-semibold text-yuta-ink/45">
+          <p className="mt-1 text-xs font-semibold text-primary/45">
             Ajustement d'arrondi: {formatEuros(remainingCents)}
           </p>
         )}

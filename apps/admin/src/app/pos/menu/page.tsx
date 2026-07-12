@@ -43,19 +43,19 @@ export default async function PosMenuPage() {
     <AdminPosPage
       title="POS menu"
       description="Categories, articles, prix et postes cuisine"
-      actions={<Badge variant="neutral">{items.length} article(s)</Badge>}
+      actions={<Badge tone="neutral" variant="soft">{items.length} article(s)</Badge>}
     >
 
         <section className="grid gap-5 lg:grid-cols-[360px_1fr]">
           <div className="grid content-start gap-5">
             <Card>
               <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-yuta-accent">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-action-primary">
                   <Plus className="h-5 w-5" />
                 </div>
                 <div>
                   <h2 className="font-bold">Nouvelle categorie</h2>
-                  <p className="text-sm text-yuta-ink/55">Ex: Plats, Boissons</p>
+                  <p className="text-sm text-primary/55">Ex: Plats, Boissons</p>
                 </div>
               </div>
               <form action={createCategoryAction} className="mt-5 grid gap-3">
@@ -73,17 +73,17 @@ export default async function PosMenuPage() {
 
             <Card>
               <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-yuta-accent">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-action-primary">
                   <Utensils className="h-5 w-5" />
                 </div>
                 <div>
                   <h2 className="font-bold">Nouvel article</h2>
-                  <p className="text-sm text-yuta-ink/55">Prix en centimes</p>
+                  <p className="text-sm text-primary/55">Prix en centimes</p>
                 </div>
               </div>
               <form action={createMenuItemAction} className="mt-5 grid gap-3">
                 <MenuItemFields categories={categories} />
-                <Button type="submit" variant="accent">Ajouter article</Button>
+                <Button type="submit" variant="primary">Ajouter article</Button>
               </form>
             </Card>
           </div>
@@ -91,7 +91,7 @@ export default async function PosMenuPage() {
           <Card className="overflow-hidden p-0">
             <div className="px-5 py-4">
               <h2 className="text-lg font-bold">Articles</h2>
-              <p className="mt-1 text-sm text-yuta-ink/55">Modifications appliquees au menu actif</p>
+              <p className="mt-1 text-sm text-primary/55">Modifications appliquees au menu actif</p>
             </div>
             <Separator />
             <div className="grid gap-0">
@@ -102,7 +102,7 @@ export default async function PosMenuPage() {
                     <div className="grid gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <Label htmlFor={`name-${item.id}`}>Nom</Label>
-                        <Badge variant={item.isAvailable ? 'active' : 'inactive'}>
+                        <Badge tone={item.isAvailable ? 'success' : 'neutral'} variant="soft">
                           {item.isAvailable ? 'Disponible' : 'Indisponible'}
                         </Badge>
                       </div>
@@ -123,7 +123,7 @@ export default async function PosMenuPage() {
                   <form action={toggleMenuItemAvailabilityAction} className="px-5 pb-5">
                     <input type="hidden" name="itemId" value={item.id} />
                     <input type="hidden" name="isAvailable" value={String(!item.isAvailable)} />
-                    <Button type="submit" variant={item.isAvailable ? 'ghost' : 'accent'} size="sm">
+                    <Button type="submit" variant={item.isAvailable ? 'ghost' : 'primary'} size="sm">
                       {item.isAvailable ? 'Desactiver' : 'Reactiver'}
                     </Button>
                   </form>

@@ -58,15 +58,15 @@ export default async function PosPrintsPage() {
         <Card className="overflow-hidden p-0">
           <div className="px-5 py-4">
             <h2 className="text-lg font-bold">Jobs recents</h2>
-            <p className="mt-1 text-sm text-yuta-ink/55">{jobs.length} job(s)</p>
+            <p className="mt-1 text-sm text-primary/55">{jobs.length} job(s)</p>
           </div>
           <Separator />
           {jobs.length === 0 ? (
             <div className="grid min-h-64 place-items-center p-8 text-center">
               <div>
-                <Printer className="mx-auto h-10 w-10 text-yuta-ink/35" />
+                <Printer className="mx-auto h-10 w-10 text-primary/35" />
                 <h3 className="mt-4 font-bold">Aucun ticket</h3>
-                <p className="mt-1 text-sm text-yuta-ink/55">Les tickets cuisine apparaitront apres un envoi cuisine.</p>
+                <p className="mt-1 text-sm text-primary/55">Les tickets cuisine apparaitront apres un envoi cuisine.</p>
               </div>
             </div>
           ) : (
@@ -80,27 +80,27 @@ export default async function PosPrintsPage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-black">{summary.tableLabel ?? 'Ticket'}</p>
-                          <Badge variant={statusBadgeVariant(job.status)}>{statusLabel(job.status)}</Badge>
+                          <Badge {...statusBadgeProps(job.status)}>{statusLabel(job.status)}</Badge>
                         </div>
-                        <p className="mt-1 text-sm font-semibold text-yuta-ink/55">{summary.orderNumber ?? job.id}</p>
-                        {job.errorMessage && <p className="mt-2 text-sm font-semibold text-yuta-ink">{job.errorMessage}</p>}
+                        <p className="mt-1 text-sm font-semibold text-primary/55">{summary.orderNumber ?? job.id}</p>
+                        {job.errorMessage && <p className="mt-2 text-sm font-semibold text-primary">{job.errorMessage}</p>}
                       </div>
 
                       <div className="text-sm">
                         <p className="font-semibold">{job.printerName}</p>
-                        <p className="text-yuta-ink/55">{typeLabel(job.jobType)} - {sourceLabel(job.source)}</p>
+                        <p className="text-primary/55">{typeLabel(job.jobType)} - {sourceLabel(job.source)}</p>
                       </div>
 
                       <div className="text-sm">
                         <p className="font-semibold">{summary.itemCount ?? 0} article(s)</p>
-                        <p className="text-yuta-ink/55">{formatDateTime(job.createdAt)}</p>
+                        <p className="text-primary/55">{formatDateTime(job.createdAt)}</p>
                       </div>
 
                       <div className="flex flex-wrap gap-2 xl:justify-end">
                         {job.status !== 'printed' && (
                           <form action={markPrintJobPrintedAction}>
                             <input type="hidden" name="printJobId" value={job.id} />
-                            <Button type="submit" variant="accent" size="sm">
+                            <Button type="submit" variant="primary" size="sm">
                               <CheckCircle2 className="h-4 w-4" />
                               Marquer imprime
                             </Button>
@@ -119,7 +119,7 @@ export default async function PosPrintsPage() {
                           <form action={markPrintJobFailedAction} className="flex min-w-72 flex-1 gap-2 xl:max-w-md">
                             <input type="hidden" name="printJobId" value={job.id} />
                             <Input name="errorMessage" placeholder="Erreur mock" required />
-                            <Button type="submit" variant="destructive" size="sm">
+                            <Button type="submit" variant="danger" size="sm">
                               <XCircle className="h-4 w-4" />
                               Echec
                             </Button>
@@ -164,20 +164,20 @@ function statusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
-function statusBadgeVariant(status: string): 'active' | 'inactive' | 'neutral' | 'destructive' | 'outline' {
+function statusBadgeProps(status: string) {
   if (status === 'printed') {
-    return 'active';
+    return { tone: 'success', variant: 'soft' } as const;
   }
 
   if (status === 'failed') {
-    return 'destructive';
+    return { tone: 'danger', variant: 'solid' } as const;
   }
 
   if (status === 'pending') {
-    return 'outline';
+    return { tone: 'neutral', variant: 'outline' } as const;
   }
 
-  return 'neutral';
+  return { tone: 'neutral', variant: 'soft' } as const;
 }
 
 function typeLabel(type: string): string {

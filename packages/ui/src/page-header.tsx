@@ -24,7 +24,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        'flex flex-wrap items-center justify-between gap-4 rounded-lg border border-yuta-line bg-white px-4 py-3 shadow-card',
+        'flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border-default bg-white px-4 py-3 shadow-sm',
         className,
       )}
       {...props}
@@ -33,7 +33,7 @@ export function PageHeader({
         {media}
         <div className="min-w-0">
           {eyebrow && (
-            <p className="text-xs font-black uppercase tracking-normal text-yuta-ink/45">
+            <p className="text-xs font-black uppercase tracking-normal text-primary/45">
               {eyebrow}
             </p>
           )}
@@ -41,7 +41,7 @@ export function PageHeader({
             {title}
           </h1>
           {description && (
-            <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
+            <p className="mt-1 text-sm font-semibold text-primary/55">
               {description}
             </p>
           )}

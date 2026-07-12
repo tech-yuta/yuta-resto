@@ -142,11 +142,11 @@ export function MediaForm({ onSuccess, onCancel }: MediaFormProps) {
           type="file"
           accept="image/jpeg,image/png,image/webp,video/mp4"
           onChange={handleFileChange}
-          className="block w-full text-sm text-yuta-ink file:mr-4 file:rounded-lg file:border-0 file:bg-yuta-mist file:px-4 file:py-2 file:text-sm file:font-medium file:text-yuta-ink hover:file:bg-yuta-line"
+          className="block w-full text-sm text-primary file:mr-4 file:rounded-lg file:border-0 file:bg-surface-muted file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary hover:file:bg-border-default"
         />
         {fileError && <p className="mt-1 text-sm text-red-500">{fileError}</p>}
         {file && (
-          <p className="mt-1 text-sm text-yuta-ink/60">
+          <p className="mt-1 text-sm text-primary/60">
             {file.name} — {(file.size / 1024 / 1024).toFixed(2)} Mo
           </p>
         )}

@@ -68,8 +68,8 @@ export default async function PaymentPage({
       />
 
       {splitChecks.length > 0 && (
-        <div className="mt-4 rounded-lg border border-yuta-line bg-yuta-mist p-3">
-          <p className="text-sm font-semibold text-yuta-ink/70">
+        <div className="mt-4 rounded-lg border border-border-default bg-surface-muted p-3">
+          <p className="text-sm font-semibold text-primary/70">
             Paiement complet bloqué car un partage est actif.
           </p>
         </div>
@@ -160,15 +160,15 @@ export default async function PaymentPage({
       description={order.orderNumber}
       actions={
         <Badge
-          variant={order.status === 'paid' ? 'success' : 'warning'}
-          size="lg"
+          tone={order.status === 'paid' ? 'success' : 'warning'}
+          variant="solid"
         >
           {order.status === 'paid' ? 'Payée' : 'À encaisser'}
         </Badge>
       }
     >
       {error && (
-        <div className="rounded-lg border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
+        <div className="rounded-lg border border-border-default bg-surface-muted p-3 text-sm font-semibold text-primary">
           {paymentErrorMessage(error)}
         </div>
       )}
@@ -179,12 +179,12 @@ export default async function PaymentPage({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold">Récapitulatif</h2>
-                <p className="mt-1 text-sm text-yuta-ink/55">
+                <p className="mt-1 text-sm text-primary/55">
                   Les combos sont calculés au paiement.
                 </p>
               </div>
               {order.discountCents > 0 ? (
-                <Badge variant="active" className="gap-1">
+                <Badge tone="success" variant="soft" className="gap-1">
                   <Tags className="h-3.5 w-3.5" />
                   Combo actif
                 </Badge>
@@ -211,14 +211,14 @@ export default async function PaymentPage({
               </div>
             ))}
             {cancelledOrderItems.length > 0 && (
-              <div className="mt-2 grid gap-2 rounded-lg border border-yuta-line bg-yuta-paper p-3">
-                <p className="text-xs font-black uppercase text-yuta-ink/45">
+              <div className="mt-2 grid gap-2 rounded-lg border border-border-default bg-canvas p-3">
+                <p className="text-xs font-black uppercase text-primary/45">
                   Articles annulés
                 </p>
                 {cancelledOrderItems.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-start justify-between gap-3 text-yuta-ink/55"
+                    className="flex items-start justify-between gap-3 text-primary/55"
                   >
                     <div>
                       <p className="font-semibold line-through">
@@ -245,25 +245,25 @@ export default async function PaymentPage({
           {order.discounts.length > 0 && (
             <>
               <Separator />
-              <div className="grid gap-3 bg-yuta-mist p-5">
+              <div className="grid gap-3 bg-surface-muted p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="inline-flex items-center gap-2 text-sm font-black text-yuta-ink">
+                  <h3 className="inline-flex items-center gap-2 text-sm font-black text-primary">
                     <Tags className="h-4 w-4" />
                     Remises combos
                   </h3>
-                  <span className="text-sm font-black text-yuta-ink">
+                  <span className="text-sm font-black text-primary">
                     -{formatEuros(order.discountCents)}
                   </span>
                 </div>
                 {order.discounts.map((discount) => (
                   <div
                     key={discount.id}
-                    className="rounded-lg border border-yuta-line bg-white px-3 py-2"
+                    className="rounded-lg border border-border-default bg-white px-3 py-2"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold">{discount.nameSnapshot}</p>
-                        <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
+                        <p className="mt-1 text-xs font-semibold text-primary/55">
                           {formatDiscountItems(discount.items)}
                         </p>
                       </div>
@@ -284,14 +284,14 @@ export default async function PaymentPage({
               value={order.subtotalCents}
             />
             <AmountRow label="Remises combos" value={-order.discountCents} />
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-yuta-line bg-yuta-paper px-3 py-2">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border-default bg-canvas px-3 py-2">
               <span className="font-black">Total après combos</span>
               <span className="text-lg font-black">
                 {formatEuros(order.totalCents)}
               </span>
             </div>
             <AmountRow label="Déjà payé" value={paidCents} />
-            <div className="mt-2 flex items-center justify-between border-t border-yuta-line pt-4">
+            <div className="mt-2 flex items-center justify-between border-t border-border-default pt-4">
               <span className="text-lg font-black">Reste à payer</span>
               <span className="text-2xl font-black">
                 {formatEuros(remainingCents)}
@@ -318,11 +318,11 @@ export default async function PaymentPage({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-black">Partage actif</p>
-                <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
+                <p className="mt-1 text-sm font-semibold text-primary/55">
                   Annuler le partage pour revenir au paiement complet.
                 </p>
                 {hasPaidSplitCheck && (
-                  <p className="mt-1 text-xs font-semibold text-yuta-ink/45">
+                  <p className="mt-1 text-xs font-semibold text-primary/45">
                     Impossible après encaissement d'un ticket.
                   </p>
                 )}
@@ -402,23 +402,26 @@ function CheckPaymentList({
         return (
           <div
             key={check.id}
-            className="rounded-lg border border-yuta-line bg-yuta-paper p-3"
+            className="rounded-lg border border-border-default bg-canvas p-3"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-bold">{check.checkLabel}</p>
-                <p className="text-sm text-yuta-ink/55">
+                <p className="text-sm text-primary/55">
                   {check.splitMode === 'equal'
                     ? 'Part égale'
                     : 'Articles assignés'}
                 </p>
               </div>
-              <Badge variant={check.status === 'paid' ? 'active' : 'outline'}>
+              <Badge
+                tone={check.status === 'paid' ? 'success' : 'neutral'}
+                variant={check.status === 'paid' ? 'soft' : 'outline'}
+              >
                 {check.status === 'paid' ? 'Payée' : 'Ouverte'}
               </Badge>
             </div>
 
-            <div className="mt-3 grid gap-2 rounded-lg border border-yuta-line bg-white p-3">
+            <div className="mt-3 grid gap-2 rounded-lg border border-border-default bg-white p-3">
               {check.items.length > 0 ? (
                 <div className="grid gap-1.5">
                   {check.items.map((item) => (
@@ -426,7 +429,7 @@ function CheckPaymentList({
                       key={`${check.id}-${item.orderItem.itemNameSnapshot}-${item.quantity}`}
                       className="flex items-center justify-between gap-3 text-sm"
                     >
-                      <span className="font-semibold text-yuta-ink/70">
+                      <span className="font-semibold text-primary/70">
                         {item.quantity} x {item.orderItem.itemNameSnapshot}
                       </span>
                       <span className="font-bold">
@@ -437,7 +440,7 @@ function CheckPaymentList({
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="font-semibold text-yuta-ink/70">
+                  <span className="font-semibold text-primary/70">
                     Part égale
                   </span>
                   <span className="font-bold">
@@ -447,7 +450,7 @@ function CheckPaymentList({
               )}
 
               {check.discounts.length > 0 && (
-                <div className="grid gap-1.5 rounded-lg bg-yuta-mist p-2">
+                <div className="grid gap-1.5 rounded-lg bg-surface-muted p-2">
                   <div className="flex items-center justify-between gap-3 text-xs font-black">
                     <span className="inline-flex items-center gap-1">
                       <Tags className="h-3.5 w-3.5" />
@@ -462,7 +465,7 @@ function CheckPaymentList({
                     >
                       <div>
                         <p className="font-bold">{discount.nameSnapshot}</p>
-                        <p className="mt-0.5 font-semibold text-yuta-ink/55">
+                        <p className="mt-0.5 font-semibold text-primary/55">
                           {formatCheckDiscountItems(discount.items)}
                         </p>
                       </div>
@@ -474,7 +477,7 @@ function CheckPaymentList({
                 </div>
               )}
 
-              <div className="grid gap-1 border-t border-yuta-line pt-2">
+              <div className="grid gap-1 border-t border-border-default pt-2">
                 <AmountRow
                   label="Sous-total ticket"
                   value={check.subtotalCents}
@@ -566,7 +569,7 @@ function parseClientIndex(label: string): number | null {
 function AmountRow({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="font-semibold text-yuta-ink/65">{label}</span>
+      <span className="font-semibold text-primary/65">{label}</span>
       <span className="font-bold">
         {value < 0 ? '-' : ''}
         {formatEuros(Math.abs(value))}

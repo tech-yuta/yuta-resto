@@ -21,21 +21,21 @@ export function ActionPanel({
   return (
     <section
       className={cn(
-        'rounded-lg border border-yuta-line bg-white p-5 shadow-card',
+        'rounded-lg border border-border-default bg-white p-5 shadow-sm',
         className,
       )}
       {...props}
     >
       <div className="flex items-center gap-3">
         {icon && (
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-yuta-mist">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-surface-muted">
             {icon}
           </div>
         )}
         <div>
           <h2 className="font-bold">{title}</h2>
           {description && (
-            <p className="text-sm text-yuta-ink/55">{description}</p>
+            <p className="text-sm text-primary/55">{description}</p>
           )}
         </div>
       </div>

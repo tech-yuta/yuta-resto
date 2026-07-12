@@ -39,7 +39,7 @@ export function PaymentChoiceDialogs({
         title="Payer tout"
         description="Encaisser le reste de la commande."
         label={fullPaymentLabel}
-        className="bg-yuta-success text-white hover:bg-yuta-success/90"
+        className="bg-status-success text-white hover:bg-status-success/90"
       >
         {fullPaymentContent}
       </PaymentChoiceDialog>
@@ -48,7 +48,7 @@ export function PaymentChoiceDialogs({
         title="Séparer par articles"
         description="Créer des tickets par client."
         label={itemSplitLabel}
-        className="bg-yuta-info text-yuta-ink hover:bg-yuta-info/80"
+        className="bg-status-info-soft text-primary hover:bg-status-info-soft/80"
         contentClassName="max-w-3xl"
         defaultOpen={itemSplitDefaultOpen}
       >
@@ -59,7 +59,7 @@ export function PaymentChoiceDialogs({
         title="Partager en parts égales"
         description="Diviser le total optimisé."
         label={equalSplitLabel}
-        className="bg-yuta-accent text-yuta-ink hover:bg-yuta-accent/90"
+        className="bg-action-primary text-primary hover:bg-action-primary/90"
         defaultOpen={equalSplitDefaultOpen}
       >
         {equalSplitContent}

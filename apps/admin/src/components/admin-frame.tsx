@@ -151,12 +151,12 @@ export function AdminFrame({ children }: { children: ReactNode }) {
         <AppSidebar
           header={
             <AppSidebarHeader>
-              <IconTile tone="accent" size="sm">
+              <IconTile tone="brand" size="sm">
                 <span className="text-sm font-black">Y</span>
               </IconTile>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold">YuTa Admin</p>
-                <p className="truncate text-xs font-semibold text-yuta-ink/45">
+                <p className="truncate text-xs font-semibold text-primary/45">
                   Back office restaurant
                 </p>
               </div>
@@ -164,7 +164,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           }
           footer={
             <AppSidebarFooter>
-              <button className="flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm font-semibold text-yuta-ink/50 hover:bg-yuta-mist hover:text-yuta-ink">
+              <button className="flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm font-semibold text-primary/50 hover:bg-surface-muted hover:text-primary">
                 <ChevronLeft className="h-4 w-4" />
                 Reduire le menu
               </button>
@@ -174,7 +174,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           {navSections.map((section, sectionIndex) => (
             <div key={section.title ?? 'main'} className={sectionIndex > 0 ? 'mt-4' : ''}>
               {section.title && (
-                <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-yuta-ink/40">
+                <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary/40">
                   {section.title}
                 </p>
               )}
@@ -191,31 +191,31 @@ export function AdminFrame({ children }: { children: ReactNode }) {
       <div className="flex h-screen min-w-0 flex-col overflow-hidden">
         <AppTopbar
           search={
-            <label className="flex h-10 min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-yuta-line bg-yuta-paper px-3 shadow-sm">
-              <Search className="h-4 w-4 shrink-0 text-yuta-ink/40" />
+            <label className="flex h-10 min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-border-default bg-canvas px-3 shadow-sm">
+              <Search className="h-4 w-4 shrink-0 text-primary/40" />
               <input
                 type="text"
                 placeholder="Rechercher (ex : commande, produit, employe...)"
-                className="min-w-0 flex-1 bg-transparent text-sm text-yuta-ink placeholder:text-yuta-ink/40 focus:outline-none"
+                className="min-w-0 flex-1 bg-transparent text-sm text-primary placeholder:text-primary/40 focus:outline-none"
               />
-              <span className="hidden shrink-0 rounded-md border border-yuta-line bg-white px-1.5 py-0.5 text-[11px] font-semibold text-yuta-ink/40 sm:block">
+              <span className="hidden shrink-0 rounded-md border border-border-default bg-white px-1.5 py-0.5 text-[11px] font-semibold text-primary/40 sm:block">
                 &#8984; K
               </span>
             </label>
           }
           actions={
             <>
-              <button className="relative grid h-10 w-10 place-items-center rounded-lg text-yuta-ink/60 hover:bg-yuta-mist">
+              <button className="relative grid h-10 w-10 place-items-center rounded-lg text-primary/60 hover:bg-surface-muted">
                 <Bell className="h-5 w-5" />
-                <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-yuta-danger text-[10px] font-black text-white">
+                <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-action-danger text-[10px] font-black text-white">
                   3
                 </span>
               </button>
-              <button className="flex items-center gap-1.5 rounded-lg p-1 hover:bg-yuta-mist">
-                <div className="grid h-8 w-8 place-items-center rounded-full bg-yuta-ink text-xs font-bold text-white">
+              <button className="flex items-center gap-1.5 rounded-lg p-1 hover:bg-surface-muted">
+                <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-bold text-white">
                   YT
                 </div>
-                <ChevronRight className="hidden h-3.5 w-3.5 rotate-90 text-yuta-ink/40 sm:block" />
+                <ChevronRight className="hidden h-3.5 w-3.5 rotate-90 text-primary/40 sm:block" />
               </button>
             </>
           }
@@ -251,15 +251,15 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
         'flex min-h-9 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold transition-colors',
         item.sub && 'pl-6',
         isActive
-          ? 'bg-yuta-mist text-yuta-ink'
-          : 'text-yuta-ink/60 hover:bg-yuta-mist hover:text-yuta-ink',
+          ? 'bg-surface-muted text-primary'
+          : 'text-primary/60 hover:bg-surface-muted hover:text-primary',
         isDisabled && 'cursor-default',
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate">{item.label}</span>
       {item.note && (
-        <span className="rounded-md bg-yuta-info px-1.5 py-0.5 text-[10px] font-black uppercase text-yuta-ink/60">
+        <span className="rounded-md bg-status-info-soft px-1.5 py-0.5 text-[10px] font-black uppercase text-primary/60">
           {item.note}
         </span>
       )}

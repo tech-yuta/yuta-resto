@@ -149,13 +149,13 @@ export function ItemSplitDialogContent({
       )}
 
       {error && (
-        <div className="rounded-lg border border-yuta-line bg-yuta-mist p-3 text-sm font-semibold text-yuta-ink">
+        <div className="rounded-lg border border-border-default bg-surface-muted p-3 text-sm font-semibold text-primary">
           {errorMessage(error)}
         </div>
       )}
 
-      <div className="rounded-lg border border-yuta-line bg-white">
-        <div className="flex items-center gap-2 border-b border-yuta-line bg-yuta-paper p-2">
+      <div className="rounded-lg border border-border-default bg-white">
+        <div className="flex items-center gap-2 border-b border-border-default bg-canvas p-2">
           <Button
             type="button"
             variant="secondary"
@@ -180,7 +180,7 @@ export function ItemSplitDialogContent({
           <Button
             type="button"
             variant="primary"
-            size="icon"
+            size="sm"
             className="ml-auto rounded-full"
             disabled={clientCount >= maxClientCount}
             onClick={() => {
@@ -194,9 +194,9 @@ export function ItemSplitDialogContent({
         </div>
 
         <div className="grid min-h-80 md:grid-cols-[1.1fr_0.9fr]">
-          <div className="grid content-start gap-3 border-b border-yuta-line p-3 md:border-b-0 md:border-r">
+          <div className="grid content-start gap-3 border-b border-border-default p-3 md:border-b-0 md:border-r">
             {items.length === 0 ? (
-              <p className="rounded-lg border border-yuta-line bg-yuta-paper p-3 text-sm font-semibold text-yuta-ink/60">
+              <p className="rounded-lg border border-border-default bg-canvas p-3 text-sm font-semibold text-primary/60">
                 Aucun article disponible.
               </p>
             ) : (
@@ -219,18 +219,18 @@ export function ItemSplitDialogContent({
                       <p className="font-black">
                         {item.name} x{item.quantity}
                       </p>
-                      <p className="text-xs font-semibold text-yuta-ink/50">
+                      <p className="text-xs font-semibold text-primary/50">
                         Reste {Math.max(0, item.quantity - assignedQuantity)}
                       </p>
                     </div>
-                    <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-yuta-line bg-white">
+                    <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-border-default bg-white">
                       <QuantityButton
                         disabled={disabled || selectedQuantity <= 0}
                         onClick={() => updateQuantity(activeClient, item, -1)}
                       >
                         <Minus className="h-4 w-4" />
                       </QuantityButton>
-                      <div className="grid place-items-center border-x border-yuta-line text-sm font-black">
+                      <div className="grid place-items-center border-x border-border-default text-sm font-black">
                         {selectedQuantity}
                       </div>
                       <QuantityButton
@@ -248,12 +248,12 @@ export function ItemSplitDialogContent({
 
           <div className="grid content-between gap-4 p-3">
             <div>
-              <p className="text-sm font-black text-yuta-ink/55">
+              <p className="text-sm font-black text-primary/55">
                 Client {activeClient}
               </p>
               <div className="mt-3 grid gap-3">
                 {activeClientItems.length === 0 ? (
-                  <p className="rounded-lg border border-yuta-line bg-yuta-paper p-3 text-sm font-semibold text-yuta-ink/55">
+                  <p className="rounded-lg border border-border-default bg-canvas p-3 text-sm font-semibold text-primary/55">
                     Aucun article sélectionné.
                   </p>
                 ) : (
@@ -317,8 +317,8 @@ function QuantityButton({
     <button
       type="button"
       className={cn(
-        'grid h-9 place-items-center bg-white text-yuta-ink transition-colors hover:bg-yuta-mist',
-        disabled && 'cursor-not-allowed text-yuta-ink/25 hover:bg-white',
+        'grid h-9 place-items-center bg-white text-primary transition-colors hover:bg-surface-muted',
+        disabled && 'cursor-not-allowed text-primary/25 hover:bg-white',
       )}
       disabled={disabled}
       onClick={onClick}
@@ -344,13 +344,13 @@ function AmountRow({
       className={cn(
         'flex items-center justify-between gap-3 text-sm',
         strong && 'text-base font-black',
-        danger && 'text-yuta-danger',
+        danger && 'text-action-danger',
       )}
     >
       <span className={cn('font-semibold', strong && 'font-black')}>
         {label}
       </span>
-      <span className={cn('font-black', strong && 'text-yuta-success')}>
+      <span className={cn('font-black', strong && 'text-status-success')}>
         {danger && value > 0 ? '-' : ''}
         {formatEuros(value)}
       </span>

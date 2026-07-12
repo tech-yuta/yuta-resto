@@ -17,15 +17,15 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-yuta-line bg-yuta-paper p-3',
+        'rounded-lg border border-border-default bg-canvas p-3',
         className,
       )}
       {...props}
     >
-      <p className="text-xs font-semibold text-yuta-ink/55">{label}</p>
+      <p className="text-xs font-semibold text-primary/55">{label}</p>
       <p className="mt-1 text-2xl font-black">{value}</p>
       {helper && (
-        <p className="mt-1 text-xs font-semibold text-yuta-ink/50">{helper}</p>
+        <p className="mt-1 text-xs font-semibold text-primary/50">{helper}</p>
       )}
     </div>
   );

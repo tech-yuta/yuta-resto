@@ -2,13 +2,13 @@ import type { HTMLAttributes, PropsWithChildren } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from './utils';
 
-const cardVariants = cva('border border-yuta-line bg-white shadow-card', {
+const cardVariants = cva('border border-border-default bg-surface shadow-sm', {
   variants: {
     variant: {
       default: '',
-      mist: 'bg-yuta-mist',
-      paper: 'bg-yuta-paper',
-      dark: 'border-yuta-ink bg-yuta-ink text-white',
+      muted: 'bg-surface-muted',
+      canvas: 'bg-canvas',
+      inverse: 'border-primary bg-primary text-inverse',
     },
     padding: {
       default: 'p-5',

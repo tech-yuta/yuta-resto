@@ -70,13 +70,13 @@ export default async function OrdersHomePage({
       description="Suivi des commandes du service"
       actions={
         <>
-          <Button asChild variant="primary" size="touch">
+          <Button asChild variant="primary" size="lg">
             <Link href="/pos">
               <Plus className="h-4 w-4" />
               Nouvelle commande
             </Link>
           </Button>
-          <Button asChild variant="secondary" size="touch">
+          <Button asChild variant="secondary" size="lg">
             <Link href="/kitchen">
               <ChefHat className="h-4 w-4" />
               Cuisine
@@ -101,7 +101,7 @@ export default async function OrdersHomePage({
                     <span className="sm:hidden">{item.shortLabel}</span>
                     <span className="hidden sm:inline">{item.label}</span>
                     {item.value !== 'all_today' && (
-                      <span className="rounded-full bg-yuta-mist px-1.5 py-0.5 text-[10px] font-black text-yuta-ink">
+                      <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-black text-primary">
                         {item.value === 'open'
                           ? openOrders.length
                           : paidTodayOrders.length}
@@ -116,7 +116,7 @@ export default async function OrdersHomePage({
           <form action="/" className="flex gap-3">
             <input type="hidden" name="view" value={selectedView} />
             <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-yuta-ink/45" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/45" />
               <Input
                 name="q"
                 defaultValue={searchQuery}
@@ -189,7 +189,7 @@ function MobileOrderList({ orders: orderRows }: { orders: OrderRow[] }) {
 
 function TabletOrderList({ orders: orderRows }: { orders: OrderRow[] }) {
   return (
-    <section className="hidden overflow-hidden rounded-lg border border-yuta-line bg-white md:block xl:hidden">
+    <section className="hidden overflow-hidden rounded-lg border border-border-default bg-white md:block xl:hidden">
       {orderRows.map((order, index) => (
         <div key={order.id}>
           <TabletOrderRow order={order} />
@@ -206,7 +206,7 @@ function DesktopOrderTable({ orders: orderRows }: { orders: OrderRow[] }) {
       padding="none"
       className="hidden overflow-hidden rounded-lg shadow-none xl:block"
     >
-      <div className="grid grid-cols-[1fr_1.65fr_0.85fr_0.65fr_0.75fr_0.75fr_1.25fr] gap-4 px-8 py-4 text-xs font-bold uppercase text-yuta-ink/45">
+      <div className="grid grid-cols-[1fr_1.65fr_0.85fr_0.65fr_0.75fr_0.75fr_1.25fr] gap-4 px-8 py-4 text-xs font-bold uppercase text-primary/45">
         <span>Repere</span>
         <span>Commande</span>
         <span>Statut</span>
@@ -224,7 +224,7 @@ function DesktopOrderTable({ orders: orderRows }: { orders: OrderRow[] }) {
             >
               <div>
                 <p className="font-black">{order.tableLabel}</p>
-                <p className="mt-1 text-xs font-semibold text-yuta-ink/50">
+                <p className="mt-1 text-xs font-semibold text-primary/50">
                   {orderTypeLabel(order.orderType)}
                 </p>
               </div>
@@ -232,10 +232,10 @@ function DesktopOrderTable({ orders: orderRows }: { orders: OrderRow[] }) {
               <div className="self-center">
                 <StatusBadge status={order.status} />
               </div>
-              <p className="self-center text-sm text-yuta-ink/65">
+              <p className="self-center text-sm text-primary/65">
                 {formatTime(order.createdAt)}
               </p>
-              <p className="self-center text-sm text-yuta-ink/65">
+              <p className="self-center text-sm text-primary/65">
                 {order.items.length} article(s)
               </p>
               <p className="self-center font-black">
@@ -253,7 +253,7 @@ function DesktopOrderTable({ orders: orderRows }: { orders: OrderRow[] }) {
                   </Link>
                 </Button>
                 {renderPrimaryOrderAction(order)}
-                <Button variant="ghost" size="icon" aria-label="Options">
+                <Button variant="ghost" size="sm" aria-label="Options">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </div>
@@ -269,19 +269,19 @@ function DesktopOrderTable({ orders: orderRows }: { orders: OrderRow[] }) {
 function OrderCard({ order }: { order: OrderRow }) {
   return (
     <article
-      className={`overflow-hidden rounded-lg border-l-4 bg-white ${statusAccentClass(order.status)} ${order.status === 'sent' ? 'bg-yuta-mist' : ''}`}
+      className={`overflow-hidden rounded-lg border-l-4 bg-white ${statusAccentClass(order.status)} ${order.status === 'sent' ? 'bg-surface-muted' : ''}`}
     >
       <div className="grid gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="truncate text-lg font-black">{order.tableLabel}</h2>
-            <p className="mt-2 truncate text-sm font-semibold text-yuta-ink/55">
+            <p className="mt-2 truncate text-sm font-semibold text-primary/55">
               {order.orderNumber}
             </p>
           </div>
           <StatusBadge status={order.status} />
         </div>
-        <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-yuta-ink/55">
+        <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-primary/55">
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
             {formatTime(order.createdAt)}
@@ -315,18 +315,18 @@ function TabletOrderRow({ order }: { order: OrderRow }) {
     >
       <div>
         <p className="font-black">{order.tableLabel}</p>
-        <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
+        <p className="mt-1 text-xs font-semibold text-primary/55">
           {orderTypeLabel(order.orderType)}
         </p>
       </div>
       <div className="min-w-0">
         <div className="flex items-center gap-3">
-          <p className="truncate text-xs font-semibold text-yuta-ink/65">
+          <p className="truncate text-xs font-semibold text-primary/65">
             {order.orderNumber}
           </p>
           <StatusBadge status={order.status} />
         </div>
-        <div className="mt-2 flex items-center gap-4 text-xs font-semibold text-yuta-ink/55">
+        <div className="mt-2 flex items-center gap-4 text-xs font-semibold text-primary/55">
           <span>{formatTime(order.createdAt)}</span>
           <span>{order.items.length} article(s)</span>
         </div>
@@ -351,9 +351,9 @@ function EmptyOrders() {
   return (
     <div className="grid min-h-[60vh] place-items-center text-center">
       <div>
-        <ReceiptText className="mx-auto h-10 w-10 text-yuta-ink/35" />
+        <ReceiptText className="mx-auto h-10 w-10 text-primary/35" />
         <h2 className="mt-4 text-lg font-bold">Aucune commande</h2>
-        <p className="mt-1 text-sm text-yuta-ink/55">
+        <p className="mt-1 text-sm text-primary/55">
           Cette vue est vide pour le moment.
         </p>
         <Button asChild variant="primary" className="mt-4">
@@ -369,7 +369,7 @@ function EmptyOrders() {
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <Badge variant={statusBadgeVariant(status)}>{statusLabel(status)}</Badge>
+    <Badge {...statusBadgeProps(status)}>{statusLabel(status)}</Badge>
   );
 }
 
@@ -390,7 +390,7 @@ function renderPrimaryOrderAction(order: OrderRow) {
   }
 
   return (
-    <Button asChild variant="accent" size="sm">
+    <Button asChild variant="primary" size="sm">
       <Link href={`/orders/${order.id}/payment`}>
         <CreditCard className="h-4 w-4" />
         Payer
@@ -446,56 +446,46 @@ function statusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
-function statusBadgeVariant(
-  status: string,
-):
-  | 'active'
-  | 'inactive'
-  | 'neutral'
-  | 'destructive'
-  | 'outline'
-  | 'info'
-  | 'warning'
-  | 'success' {
+function statusBadgeProps(status: string) {
   if (status === 'sent') {
-    return 'success';
+    return { tone: 'success', variant: 'soft' } as const;
   }
 
   if (status === 'preparing') {
-    return 'info';
+    return { tone: 'info', variant: 'soft' } as const;
   }
 
   if (status === 'draft') {
-    return 'warning';
+    return { tone: 'warning', variant: 'soft' } as const;
   }
 
   if (status === 'ready') {
-    return 'success';
+    return { tone: 'success', variant: 'solid' } as const;
   }
 
   if (status === 'paid') {
-    return 'neutral';
+    return { tone: 'neutral', variant: 'soft' } as const;
   }
 
   if (status === 'cancelled') {
-    return 'destructive';
+    return { tone: 'danger', variant: 'solid' } as const;
   }
 
-  return 'outline';
+  return { tone: 'neutral', variant: 'outline' } as const;
 }
 
 function statusAccentClass(status: string): string {
   const classes: Record<string, string> = {
-    draft: 'border-yuta-warning',
-    sent: 'border-yuta-success',
-    preparing: 'border-yuta-info',
-    ready: 'border-yuta-success',
-    served: 'border-yuta-line',
-    paid: 'border-yuta-line',
-    cancelled: 'border-yuta-danger',
+    draft: 'border-status-warning',
+    sent: 'border-status-success',
+    preparing: 'border-status-info',
+    ready: 'border-status-success',
+    served: 'border-border-default',
+    paid: 'border-border-default',
+    cancelled: 'border-status-danger',
   };
 
-  return classes[status] ?? 'border-yuta-line';
+  return classes[status] ?? 'border-border-default';
 }
 
 function orderTypeLabel(type: string): string {
@@ -514,4 +504,3 @@ function formatTime(date: Date): string {
     minute: '2-digit',
   }).format(date);
 }
-

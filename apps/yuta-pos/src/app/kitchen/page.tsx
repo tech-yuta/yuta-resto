@@ -109,18 +109,17 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
         <>
           <Badge
             variant="outline"
-            size="lg"
             className="hidden border-white/25 text-white md:flex"
           >
             {items.length} article(s)
           </Badge>
-          <Button asChild variant="primary" size="touch">
+          <Button asChild variant="primary" size="lg">
             <Link href="/pos">
               <Plus className="h-4 w-4" />
               Nouvelle commande
             </Link>
           </Button>
-          <Button asChild variant="secondary" size="touch">
+          <Button asChild variant="secondary" size="lg">
             <Link href="/">Commandes</Link>
           </Button>
         </>
@@ -156,7 +155,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                 <Link href={kitchenUrl(selectedStation, value)}>
                   <Icon className="h-4 w-4" />
                   {label}
-                  <span className="rounded-full bg-yuta-mist px-1.5 py-0.5 text-[10px] font-black text-yuta-ink">
+                  <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-black text-primary">
                     {counts[value]}
                   </span>
                 </Link>
@@ -171,9 +170,9 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
         {groups.length === 0 ? (
           <Card className="grid min-h-80 place-items-center text-center shadow-none">
             <div>
-              <ChefHat className="mx-auto h-10 w-10 text-yuta-ink/35" />
+              <ChefHat className="mx-auto h-10 w-10 text-primary/35" />
               <h2 className="mt-4 text-lg font-black">Aucun article</h2>
-              <p className="mt-1 text-sm font-semibold text-yuta-ink/55">
+              <p className="mt-1 text-sm font-semibold text-primary/55">
                 Rien a afficher pour ce poste et ce statut.
               </p>
             </div>
@@ -197,12 +196,12 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                       </Badge>
                       {renderOrderStatusBadge(group.order.status)}
                     </div>
-                    <p className="mt-1 text-xs font-semibold text-yuta-ink/45">
+                    <p className="mt-1 text-xs font-semibold text-primary/45">
                       {group.order.orderNumber}
                     </p>
                     {group.order.note?.trim() && (
-                      <p className="mt-2 inline-flex max-w-full items-start gap-2 rounded-lg bg-yuta-info px-3 py-2 text-sm font-semibold text-yuta-ink">
-                        <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-yuta-success" />
+                      <p className="mt-2 inline-flex max-w-full items-start gap-2 rounded-lg bg-status-info-soft px-3 py-2 text-sm font-semibold text-primary">
+                        <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-status-success" />
                         <span className="min-w-0 break-words">
                           Note commande: {group.order.note.trim()}
                         </span>
@@ -210,10 +209,10 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="neutral">
+                    <Badge tone="neutral" variant="soft">
                       {group.items.length} article(s)
                     </Badge>
-                    <span className="inline-flex items-center gap-1 text-xs font-black text-yuta-ink/45">
+                    <span className="inline-flex items-center gap-1 text-xs font-black text-primary/45">
                       <Clock className="h-3.5 w-3.5" />
                       {groupTimeLabel(group.items)}
                     </span>
@@ -224,7 +223,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                   {group.items.map((item) => (
                     <article
                       key={item.id}
-                      className="grid gap-3 rounded-lg border border-yuta-line bg-yuta-paper p-3 md:grid-cols-[1fr_auto] md:items-center"
+                      className="grid gap-3 rounded-lg border border-border-default bg-canvas p-3 md:grid-cols-[1fr_auto] md:items-center"
                     >
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -237,7 +236,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                           {renderStatusBadge(item.status)}
                         </div>
                         {item.note && (
-                          <p className="mt-2 text-sm font-semibold text-yuta-ink/65">
+                          <p className="mt-2 text-sm font-semibold text-primary/65">
                             Note: {item.note}
                           </p>
                         )}
@@ -252,10 +251,10 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
           </section>
         )}
 
-        <footer className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yuta-line bg-white px-4 py-3 text-xs font-bold text-yuta-ink/55">
+        <footer className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-default bg-white px-4 py-3 text-xs font-bold text-primary/55">
           <span>Derniere mise a jour : {formatTime(new Date())}</span>
-          <span className="inline-flex items-center gap-1 text-yuta-ink">
-            <Wifi className="h-3.5 w-3.5 text-yuta-success" />
+          <span className="inline-flex items-center gap-1 text-primary">
+            <Wifi className="h-3.5 w-3.5 text-status-success" />
             Connecte
           </span>
         </footer>
@@ -314,11 +313,11 @@ function countItemsByStatus(items: Array<typeof orderItems.$inferSelect>) {
 
 function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
   if (status === 'preparing') {
-    return <Badge variant="warning">En preparation</Badge>;
+    return <Badge tone="warning" variant="soft">En preparation</Badge>;
   }
 
   if (status === 'ready') {
-    return <Badge variant="success">Pret</Badge>;
+    return <Badge tone="success" variant="solid">Pret</Badge>;
   }
 
   return <Badge variant="outline">A preparer</Badge>;
@@ -326,11 +325,11 @@ function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
 
 function renderOrderStatusBadge(status: OrderStatus) {
   if (status === 'paid') {
-    return <Badge variant="success">Payee</Badge>;
+    return <Badge tone="success" variant="solid">Payee</Badge>;
   }
 
   if (status === 'cancelled') {
-    return <Badge variant="destructive">Annulee</Badge>;
+    return <Badge tone="danger" variant="solid">Annulee</Badge>;
   }
 
   return null;
@@ -342,7 +341,7 @@ function renderKitchenActions(
 ) {
   if (orderStatus === 'cancelled') {
     return (
-      <div className="rounded-lg border border-yuta-line bg-yuta-mist px-3 py-2 text-sm font-semibold text-yuta-ink/60">
+      <div className="rounded-lg border border-border-default bg-surface-muted px-3 py-2 text-sm font-semibold text-primary/60">
         Commande annulee
       </div>
     );
@@ -378,7 +377,7 @@ function renderKitchenActions(
         }
       >
         <input type="hidden" name="orderItemId" value={item.id} />
-        <Button type="submit" variant="kitchen" className="w-full">
+        <Button type="submit" variant="primary" className="w-full">
           {item.status === 'preparing' ? (
             <RotateCcw className="h-4 w-4" />
           ) : (
@@ -435,5 +434,4 @@ function formatTime(date: Date): string {
     second: '2-digit',
   }).format(date);
 }
-
 

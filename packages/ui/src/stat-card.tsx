@@ -7,10 +7,10 @@ import { cn } from './utils';
 const statToneVariants = cva('', {
   variants: {
     tone: {
-      success: 'text-yuta-success',
-      warning: 'text-yuta-warning',
-      info: 'text-yuta-ink',
-      neutral: 'text-yuta-ink/55',
+      success: 'text-status-success',
+      warning: 'text-status-warning',
+      info: 'text-primary',
+      neutral: 'text-primary/55',
     },
   },
   defaultVariants: {
@@ -45,17 +45,17 @@ export function StatCard({
       {...props}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium leading-snug text-yuta-ink/60">
+        <p className="text-xs font-medium leading-snug text-primary/60">
           {label}
         </p>
         {icon && (
-          <IconTile tone={tone === 'neutral' ? 'mist' : tone ?? 'success'}>
+          <IconTile tone={tone ?? 'success'}>
             {icon}
           </IconTile>
         )}
       </div>
       <div>
-        <p className="text-2xl font-bold tracking-tight text-yuta-ink">
+        <p className="text-2xl font-bold tracking-tight text-primary">
           {value}
         </p>
         {helper && (

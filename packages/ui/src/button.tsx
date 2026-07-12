@@ -4,32 +4,29 @@ import { Slot } from '@radix-ui/react-slot';
 import { cn } from './utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-yuta-success focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-focus-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        primary: 'bg-yuta-success text-white hover:bg-yuta-success/90',
+        primary:
+          'bg-action-primary text-inverse hover:bg-action-primary-hover active:bg-action-primary-active',
         secondary:
-          'border border-yuta-line bg-white text-yuta-ink hover:bg-yuta-mist',
-        accent: 'bg-yuta-accent text-yuta-ink hover:bg-yuta-accent/90',
-        ghost: 'text-yuta-ink hover:bg-yuta-mist',
-        destructive: 'bg-yuta-danger text-white hover:bg-yuta-danger/90',
-        link: 'text-yuta-ink underline-offset-4 hover:underline',
-        kitchen: 'bg-yuta-warning text-yuta-ink hover:bg-yuta-warning/90',
-        success: 'bg-yuta-success text-white hover:bg-yuta-success/90',
+          'border border-border-default bg-surface text-primary hover:bg-surface-muted',
+        outline:
+          'border border-border-default bg-transparent text-primary hover:bg-surface-muted',
+        ghost: 'text-primary hover:bg-surface-muted',
+        danger: 'bg-action-danger text-inverse hover:bg-action-danger/90',
+        success: 'bg-status-success text-inverse hover:bg-status-success/90',
       },
       size: {
-        default: 'px-4 py-2.5',
-        sm: 'px-3 py-1.5 text-xs',
-        lg: 'px-6 py-3 text-base',
-        icon: 'h-9 w-9 p-0',
-        touch: 'min-h-12 px-5 py-3 text-base',
-        tile: 'min-h-16 flex-col px-3 py-3',
+        sm: 'h-9 px-3 text-xs',
+        md: 'h-10 px-4',
+        lg: 'h-12 px-6 text-base',
       },
     },
     defaultVariants: {
       variant: 'primary',
-      size: 'default',
+      size: 'md',
     },
   },
 );
@@ -39,22 +36,36 @@ export interface ButtonProps
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  fullWidth?: boolean;
+  loading?: boolean;
 }
 
 export function Button({
   asChild = false,
   className,
+  disabled,
+  fullWidth,
+  loading,
   variant,
   size,
+  children,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : 'button';
 
   return (
     <Comp
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size }),
+        fullWidth && 'w-full',
+        className,
+      )}
+      data-loading={loading ? '' : undefined}
+      disabled={disabled || loading}
       {...props}
-    />
+    >
+      {children}
+    </Comp>
   );
 }
 

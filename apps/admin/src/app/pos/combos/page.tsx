@@ -58,7 +58,7 @@ export default async function PosCombosPage() {
           <Button asChild variant="secondary">
             <Link href="/pos/menu">Menu</Link>
           </Button>
-          <Badge variant="neutral">{rules.length} combo(s)</Badge>
+          <Badge tone="neutral" variant="soft">{rules.length} combo(s)</Badge>
         </>
       }
     >
@@ -66,17 +66,17 @@ export default async function PosCombosPage() {
         <section className="grid gap-5 lg:grid-cols-[360px_1fr]">
           <Card className="content-start">
             <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-yuta-accent">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-action-primary">
                 <Plus className="h-5 w-5" />
               </div>
               <div>
                 <h2 className="font-bold">Nouveau combo</h2>
-                <p className="text-sm text-yuta-ink/55">Prix final en centimes</p>
+                <p className="text-sm text-primary/55">Prix final en centimes</p>
               </div>
             </div>
             <form action={createComboRuleAction} className="mt-5 grid gap-3">
               <RuleFields />
-              <Button type="submit" variant="accent">Ajouter combo</Button>
+              <Button type="submit" variant="primary">Ajouter combo</Button>
             </form>
           </Card>
 
@@ -88,7 +88,7 @@ export default async function PosCombosPage() {
                     <input type="hidden" name="comboRuleId" value={rule.id} />
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-xl font-black">{rule.name}</h2>
-                      <Badge variant={rule.isActive ? 'active' : 'inactive'}>
+                      <Badge tone={rule.isActive ? 'success' : 'neutral'} variant="soft">
                         {rule.isActive ? 'Actif' : 'Inactif'}
                       </Badge>
                     </div>
@@ -102,7 +102,7 @@ export default async function PosCombosPage() {
                     <Button type="submit" variant="secondary">Enregistrer combo</Button>
                   </form>
 
-                  <form action={createComboRuleGroupAction} className="grid content-start gap-3 rounded-2xl border border-yuta-line bg-yuta-paper p-4">
+                  <form action={createComboRuleGroupAction} className="grid content-start gap-3 rounded-2xl border border-border-default bg-canvas p-4">
                     <input type="hidden" name="comboRuleId" value={rule.id} />
                     <h3 className="font-bold">Ajouter groupe</h3>
                     <div className="grid gap-2">
@@ -123,18 +123,18 @@ export default async function PosCombosPage() {
                     <Separator />
                     <div className="grid gap-4 p-5 md:grid-cols-2">
                       {rule.groups.map((group) => (
-                        <div key={group.id} className="rounded-2xl border border-yuta-line bg-yuta-paper p-4">
+                        <div key={group.id} className="rounded-2xl border border-border-default bg-canvas p-4">
                           <div className="flex items-center justify-between gap-3">
                             <div>
                               <h3 className="font-black">{group.name}</h3>
-                              <p className="text-sm text-yuta-ink/55">Min {group.minQuantity} / Max {group.maxQuantity}</p>
+                              <p className="text-sm text-primary/55">Min {group.minQuantity} / Max {group.maxQuantity}</p>
                             </div>
-                            <Layers3 className="h-5 w-5 text-yuta-ink/35" />
+                            <Layers3 className="h-5 w-5 text-primary/35" />
                           </div>
 
                           <div className="mt-4 grid gap-2">
                             {group.items.length === 0 ? (
-                              <p className="text-sm text-yuta-ink/55">Aucun article eligible.</p>
+                              <p className="text-sm text-primary/55">Aucun article eligible.</p>
                             ) : (
                               group.items.map((groupItem) => (
                                 <div key={groupItem.id} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2">

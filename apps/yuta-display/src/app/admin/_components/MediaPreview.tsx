@@ -11,7 +11,7 @@ export function MediaPreview({ item }: MediaPreviewProps) {
     return (
       <video
         src={item.fileUrl}
-        className="size-16 rounded-lg object-cover bg-yuta-ink/10"
+        className="size-16 rounded-lg object-cover bg-primary/10"
         muted
         preload="metadata"
       />
@@ -22,7 +22,7 @@ export function MediaPreview({ item }: MediaPreviewProps) {
     <img
       src={item.fileUrl}
       alt={item.title ?? ''}
-      className="size-16 rounded-lg object-cover bg-yuta-mist"
+      className="size-16 rounded-lg object-cover bg-surface-muted"
       loading="lazy"
     />
   );

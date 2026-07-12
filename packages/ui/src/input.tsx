@@ -4,16 +4,16 @@ import { cn } from './utils';
 
 const inputVariants = cva(
   [
-    'flex w-full rounded-lg border border-yuta-line bg-white px-3 py-2 text-sm text-yuta-ink placeholder:text-yuta-ink/40 transition-colors',
-    'focus:border-yuta-accent focus:outline-none focus:ring-2 focus:ring-yuta-accent/20',
+    'flex w-full rounded-lg border border-border-default bg-surface px-3 py-2 text-sm text-primary placeholder:text-muted transition-colors',
+    'focus:border-focus-ring focus:outline-none focus:ring-2 focus:ring-focus-ring/20',
     'disabled:cursor-not-allowed disabled:opacity-50',
   ],
   {
     variants: {
-      inputSize: {
-        default: 'h-10',
-        touch: 'h-12 text-base',
-        compact: 'h-9 text-sm',
+      size: {
+        sm: 'h-9 text-sm',
+        md: 'h-10',
+        lg: 'h-12 text-base',
       },
       align: {
         left: 'text-left',
@@ -22,7 +22,7 @@ const inputVariants = cva(
       },
     },
     defaultVariants: {
-      inputSize: 'default',
+      size: 'md',
       align: 'left',
     },
   },
@@ -30,15 +30,15 @@ const inputVariants = cva(
 
 export interface InputProps
   extends
-    React.InputHTMLAttributes<HTMLInputElement>,
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof inputVariants> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, inputSize, align, ...props }, ref) => {
+  ({ className, type, size, align, ...props }, ref) => {
     return (
       <input
         type={type}
-        className={cn(inputVariants({ inputSize, align, className }))}
+        className={cn(inputVariants({ size, align, className }))}
         ref={ref}
         {...props}
       />

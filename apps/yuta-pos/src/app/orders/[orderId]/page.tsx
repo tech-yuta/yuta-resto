@@ -57,7 +57,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
           <SendOrderButton
             orderId={order.id}
             disabled={!canSendToKitchen}
-            className="border-white/15 bg-yuta-ink text-white hover:bg-white/10"
+            className="border-white/15 bg-primary text-white hover:bg-white/10"
             fullWidth={false}
           />
           <PaymentButton
@@ -89,8 +89,8 @@ export default async function OrderPage({ params }: OrderPageProps) {
           <input type="hidden" name="orderId" value={order.id} />
           <Button
             type="submit"
-            variant="destructive"
-            className="min-h-12 w-full justify-center border border-yuta-danger bg-white text-yuta-danger hover:bg-yuta-mist"
+            variant="danger"
+            className="min-h-12 w-full justify-center border border-status-danger bg-white text-action-danger hover:bg-surface-muted"
             disabled={!canCancel}
           >
             <Trash2 className="h-4 w-4" />
@@ -118,10 +118,10 @@ function OrderSummaryHeader({
           <h2 className="text-2xl font-black">{order.tableLabel}</h2>
           <StatusBadge status={order.status} />
         </div>
-        <p className="mt-2 text-sm font-semibold text-yuta-ink/55">
+        <p className="mt-2 text-sm font-semibold text-primary/55">
           {order.orderNumber}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-sm font-semibold text-yuta-ink/55">
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-sm font-semibold text-primary/55">
           <span className="inline-flex items-center gap-1">
             <Clock className="h-4 w-4" />
             {formatTime(order.createdAt)}
@@ -229,7 +229,7 @@ function ArticlesPanel({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h3 className="text-base font-black">Articles</h3>
-            <Badge variant="neutral" size="sm">
+            <Badge tone="neutral" variant="soft" size="sm">
               {items.length}
             </Badge>
           </div>
@@ -246,7 +246,7 @@ function ArticlesPanel({
       <Separator />
       <div className="grid gap-3 p-4">
         {items.length === 0 ? (
-          <p className="rounded-lg bg-yuta-paper p-3 text-sm font-semibold text-yuta-ink/55">
+          <p className="rounded-lg bg-canvas p-3 text-sm font-semibold text-primary/55">
             Aucun article pour le moment.
           </p>
         ) : (
@@ -262,7 +262,7 @@ function ArticlesPanel({
               <div className="min-w-0">
                 <p className="truncate font-black">{item.itemNameSnapshot}</p>
                 {item.note && (
-                  <p className="mt-1 text-xs font-semibold text-yuta-ink/55">
+                  <p className="mt-1 text-xs font-semibold text-primary/55">
                     Note: {item.note}
                   </p>
                 )}
@@ -287,7 +287,7 @@ function TotalsPanel({ order }: { order: OrderDetail }) {
         <Separator />
         <div className="flex items-center justify-between gap-3 pt-1">
           <span className="text-lg font-black">Total</span>
-          <span className="text-xl font-black text-yuta-success">
+          <span className="text-xl font-black text-status-success">
             {formatEuros(order.totalCents)}
           </span>
         </div>
@@ -314,15 +314,15 @@ function HistoryPanel({ order }: { order: OrderDetail }) {
             <span
               className={cn(
                 'mt-1.5 h-2 w-2 rounded-full',
-                event.done ? 'bg-yuta-success' : 'bg-yuta-line',
+                event.done ? 'bg-status-success' : 'bg-border-default',
               )}
             />
-            <span className="font-semibold text-yuta-ink/55">{event.time}</span>
+            <span className="font-semibold text-primary/55">{event.time}</span>
             <span
               className={cn(
                 'font-semibold',
-                event.done && event.highlight && 'text-yuta-success',
-                !event.done && 'text-yuta-ink/55',
+                event.done && event.highlight && 'text-status-success',
+                !event.done && 'text-primary/55',
               )}
             >
               {event.label}
@@ -345,23 +345,23 @@ function InfoPanel({ order }: { order: OrderDetail }) {
       <Separator />
       <div className="grid gap-4 p-4">
         <InfoRow
-          icon={<ShieldCheck className="h-4 w-4 text-yuta-success" />}
+          icon={<ShieldCheck className="h-4 w-4 text-status-success" />}
           label="Type de commande"
           value={orderTypeLabel(order.orderType)}
         />
         <InfoRow
-          icon={<Table2 className="h-4 w-4 text-yuta-success" />}
+          icon={<Table2 className="h-4 w-4 text-status-success" />}
           label="Repere / Table"
           value={order.tableLabel}
         />
         <InfoRow
-          icon={<Printer className="h-4 w-4 text-yuta-ink/55" />}
+          icon={<Printer className="h-4 w-4 text-primary/55" />}
           label="Imprimante cuisine"
           value="Cuisine"
         />
         {note && (
           <InfoRow
-            icon={<StickyNote className="h-4 w-4 text-yuta-ink/55" />}
+            icon={<StickyNote className="h-4 w-4 text-primary/55" />}
             label="Note"
             value={note}
           />
@@ -383,7 +383,7 @@ function InfoRow({
   return (
     <div className="grid grid-cols-[20px_minmax(0,1fr)_minmax(0,auto)] items-center gap-3 text-sm">
       {icon}
-      <span className="font-semibold text-yuta-ink/55">{label}</span>
+      <span className="font-semibold text-primary/55">{label}</span>
       <span className="min-w-0 text-right font-black">{value}</span>
     </div>
   );
@@ -392,7 +392,7 @@ function InfoRow({
 function AmountRow({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="font-semibold text-yuta-ink/60">{label}</span>
+      <span className="font-semibold text-primary/60">{label}</span>
       <span className="font-black">
         {value < 0 ? '-' : ''}
         {formatEuros(Math.abs(value))}
@@ -403,7 +403,7 @@ function AmountRow({ label, value }: { label: string; value: number }) {
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <Badge variant={statusBadgeVariant(status)}>{statusLabel(status)}</Badge>
+    <Badge {...statusBadgeProps(status)}>{statusLabel(status)}</Badge>
   );
 }
 
@@ -549,38 +549,28 @@ function statusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
-function statusBadgeVariant(
-  status: string,
-):
-  | 'active'
-  | 'inactive'
-  | 'neutral'
-  | 'destructive'
-  | 'outline'
-  | 'info'
-  | 'warning'
-  | 'success' {
+function statusBadgeProps(status: string) {
   if (status === 'sent' || status === 'ready') {
-    return 'success';
+    return { tone: 'success', variant: 'soft' } as const;
   }
 
   if (status === 'preparing') {
-    return 'info';
+    return { tone: 'info', variant: 'soft' } as const;
   }
 
   if (status === 'draft') {
-    return 'warning';
+    return { tone: 'warning', variant: 'soft' } as const;
   }
 
   if (status === 'paid') {
-    return 'neutral';
+    return { tone: 'neutral', variant: 'soft' } as const;
   }
 
   if (status === 'cancelled') {
-    return 'destructive';
+    return { tone: 'danger', variant: 'solid' } as const;
   }
 
-  return 'outline';
+  return { tone: 'neutral', variant: 'outline' } as const;
 }
 
 function orderTypeLabel(type: string): string {

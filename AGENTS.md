@@ -32,60 +32,68 @@ NEVER introduce MUI, Ant Design, Chakra UI, Mantine, or any other component libr
 
 ### Design tokens
 
-Use Tailwind CSS token classes â€” never raw hex values in `className` or `style={{}}`:
+Use semantic Tailwind CSS token classes. Never use raw hex values in `className` or `style={{}}`. Core UI components must use role-based tokens, not product/story color names.
 
-| Token          | Hex       | Purpose                                     |
-| -------------- | --------- | ------------------------------------------- |
-| `yuta-ink`     | `#16211d` | Text, dark backgrounds                      |
-| `yuta-paper`   | `#f8f8f4` | Page background                             |
-| `yuta-mist`    | `#eef1ea` | Hover, subtle backgrounds                   |
-| `yuta-line`    | `#dce3d9` | Borders, dividers                           |
-| `yuta-accent`  | `#b7ef5b` | CTAs, active, highlights                    |
-| `yuta-success` | `#128a4a` | Ready, paid, success states                 |
-| `yuta-warning` | `#f2a900` | Kitchen, preparation, warning states        |
-| `yuta-danger`  | `#e02424` | Destructive and error states                |
-| `yuta-info`    | `#dce8ff` | Informational badges and subtle backgrounds |
+| Token family | Purpose |
+| ------------- | ------- |
+| `brand-*` | Brand palette foundation |
+| `neutral-*` | Neutral palette foundation |
+| `bg-canvas` | Page background |
+| `bg-surface` | Default card, panel, input surface |
+| `bg-surface-muted` | Subtle backgrounds and hover states |
+| `bg-surface-selected` | Selected or brand-tinted soft surface |
+| `text-primary` | Primary text |
+| `text-secondary` | Secondary text |
+| `text-muted` | Muted text |
+| `text-inverse` | Text on dark or solid backgrounds |
+| `border-border-default` | Default borders and dividers |
+| `border-border-strong` | Stronger borders |
+| `bg-action-primary` | Primary action background |
+| `bg-action-danger` | Destructive action background |
+| `ring-focus-ring` | Focus rings |
+| `status-*` | Success, warning, danger, and info states |
 
 ### Available `@yuta/ui` components
 
 ```
-Button       â€” variants: primary | secondary | accent | ghost | destructive | link | kitchen | success
-              sizes: default | sm | lg | icon | touch | tile
-Badge        â€” variants: active | inactive | neutral | destructive | outline | info | warning | success
-              sizes: default | sm | lg
-Card         â€” container with border + shadow-card
-              variants: default | mist | paper | dark
+Button       — variants: primary | secondary | outline | ghost | danger | success
+              sizes: sm | md | lg
+              props: loading | fullWidth | asChild
+Badge        — tones: neutral | brand | success | warning | danger | info
+              variants: soft | outline | solid
+              sizes: sm | md
+Card         — container with border + shadow-sm
+              variants: default | muted | canvas | inverse
               padding: default | none | sm | lg
               radius: default | sm | lg
-Input        â€” styled text/number/email/etc input
-              inputSize: default | touch | compact
+Input        — styled text/number/email/etc input
+              sizes: sm | md | lg
               align: left | center | right
-Label        â€” form label
-Textarea     â€” styled textarea
-Select       â€” SelectTrigger, SelectContent, SelectItem, SelectValue, SelectGroup
-Dialog       â€” DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
-Checkbox     â€” Radix UI, use Controller from react-hook-form
-Separator    â€” horizontal/vertical divider
-MetricCard   â€” compact label/value metric block
-StatCard     â€” metric card with optional icon, helper, and sparkline
-ActionPanel  â€” framed action block with optional icon, title, description
-PageHeader   â€” standard page header with optional media/actions
-Panel        â€” card section with optional header, action, description, and body
-PanelHeader  â€” reusable panel header
-ListRow      â€” standard row with media, title, description, meta, and action
-IconTile     â€” tokenized icon container for repeated icon affordances
-EmptyState   â€” centered empty-state block with icon, title, description, action
-AppShell     â€” fixed-height app shell with sidebar slot
-AppSidebar   â€” fixed app sidebar with independent nav scroll
+Label        — form label
+Textarea     — styled textarea
+Select       — SelectTrigger, SelectContent, SelectItem, SelectValue, SelectGroup
+Dialog       — DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
+Checkbox     — Radix UI, use Controller from react-hook-form
+Separator    — horizontal/vertical divider
+MetricCard   — compact label/value metric block
+StatCard     — metric card with optional icon, helper, and sparkline
+ActionPanel  — framed action block with optional icon, title, description
+PageHeader   — standard page header with optional media/actions
+Panel        — card section with optional header, action, description, and body
+PanelHeader  — reusable panel header
+ListRow      — standard row with media, title, description, meta, and action
+IconTile     — tones: neutral | brand | success | warning | info | danger | inverse
+EmptyState   — centered empty-state block with icon, title, description, action
+AppShell     — fixed-height app shell with sidebar slot
+AppSidebar   — fixed app sidebar with independent nav scroll
               includes AppSidebarHeader and AppSidebarFooter
-AppTopbar    â€” top application bar with search/actions slots
-AppMain      â€” independently scrolling main content region
-AppFooter    â€” compact fixed footer bar
-SegmentedNav â€” horizontal segmented navigation container
-Toaster      â€” toast via sonner
-cn()         â€” utility: clsx + tailwind-merge
+AppTopbar    — top application bar with search/actions slots
+AppMain      — independently scrolling main content region
+AppFooter    — compact fixed footer bar
+SegmentedNav — horizontal segmented navigation container
+Toaster      — toast via sonner
+cn()         — utility: clsx + tailwind-merge
 ```
-
 ### Icons
 
 Use `lucide-react` only. Never `@mui/icons-material`.
