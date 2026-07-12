@@ -2,21 +2,21 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-type AdminPosPageProps = {
+type AdminPageProps = {
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
 };
 
-export function AdminPosPage({
+export function AdminPage({
   title,
   description,
   actions,
   children,
-}: AdminPosPageProps) {
+}: AdminPageProps) {
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border-default pb-5">
         <div>
           <Link

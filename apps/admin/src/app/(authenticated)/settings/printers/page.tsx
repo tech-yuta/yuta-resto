@@ -3,7 +3,7 @@ import { db } from '@yuta/db/client';
 import { Badge, Button, Card, EmptyState, Input, Separator, StatCard } from '@yuta/ui';
 import { BarChart3, CheckCircle2, Printer, RefreshCw, XCircle } from 'lucide-react';
 import Link from 'next/link';
-import { AdminPosPage } from '../../../../components/admin-pos-page';
+import { AdminPage } from '../../../../components/admin-page';
 import {
   markPrintJobFailedAction,
   markPrintJobPrintedAction,
@@ -28,7 +28,7 @@ export default async function PosPrintsPage() {
   };
 
   return (
-    <AdminPosPage
+    <AdminPage
       title="POS impressions"
       description="File mock des tickets cuisine"
       actions={
@@ -132,7 +132,7 @@ export default async function PosPrintsPage() {
             </div>
           )}
         </Card>
-    </AdminPosPage>
+    </AdminPage>
   );
 }
 

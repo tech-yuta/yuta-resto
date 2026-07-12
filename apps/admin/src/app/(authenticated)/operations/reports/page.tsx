@@ -5,7 +5,7 @@ import { Badge, Button, DataTable, StatCard } from '@yuta/ui';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { BarChart3, CreditCard, ReceiptText, Utensils } from 'lucide-react';
 import Link from 'next/link';
-import { AdminPosPage } from '../../../../components/admin-pos-page';
+import { AdminPage } from '../../../../components/admin-page';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +38,7 @@ export default async function PosReportsPage() {
   const openOrders = Number(openOrderRows[0]?.count ?? 0);
 
   return (
-    <AdminPosPage
+    <AdminPage
       title="POS rapports"
       description="Commandes et revenus du jour"
       actions={
@@ -130,7 +130,7 @@ export default async function PosReportsPage() {
             ]}
           />
         </section>
-    </AdminPosPage>
+    </AdminPage>
   );
 }
 

@@ -17,7 +17,7 @@ import {
 import { asc } from 'drizzle-orm';
 import { Layers3, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { AdminPosPage } from '../../../../components/admin-pos-page';
+import { AdminPage } from '../../../../components/admin-page';
 import {
   addComboGroupItemAction,
   createComboRuleAction,
@@ -50,7 +50,7 @@ export default async function PosCombosPage() {
   ]);
 
   return (
-    <AdminPosPage
+    <AdminPage
       title="POS combos"
       description="Regles automatiques appliquees au paiement"
       actions={
@@ -172,7 +172,7 @@ export default async function PosCombosPage() {
             ))}
           </div>
         </section>
-    </AdminPosPage>
+    </AdminPage>
   );
 }
 

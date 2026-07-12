@@ -16,7 +16,7 @@ import {
 } from '@yuta/ui';
 import { asc } from 'drizzle-orm';
 import { Plus, Utensils } from 'lucide-react';
-import { AdminPosPage } from '../../../../components/admin-pos-page';
+import { AdminPage } from '../../../../components/admin-page';
 import {
   createCategoryAction,
   createMenuItemAction,
@@ -40,7 +40,7 @@ export default async function PosMenuPage() {
   ]);
 
   return (
-    <AdminPosPage
+    <AdminPage
       title="POS menu"
       description="Categories, articles, prix et postes cuisine"
       actions={<Badge tone="neutral" variant="soft">{items.length} article(s)</Badge>}
@@ -133,7 +133,7 @@ export default async function PosMenuPage() {
             </div>
           </Card>
         </section>
-    </AdminPosPage>
+    </AdminPage>
   );
 }
 

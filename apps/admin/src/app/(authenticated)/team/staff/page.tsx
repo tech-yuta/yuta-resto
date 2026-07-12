@@ -15,7 +15,7 @@ import {
 } from '@yuta/ui';
 import { asc } from 'drizzle-orm';
 import { Plus, Users } from 'lucide-react';
-import { AdminPosPage } from '../../../../components/admin-pos-page';
+import { AdminPage } from '../../../../components/admin-page';
 import {
   createStaffUserAction,
   toggleStaffUserAction,
@@ -37,7 +37,7 @@ export default async function PosStaffPage() {
   });
 
   return (
-    <AdminPosPage
+    <AdminPage
       title="POS equipe"
       description="Employes, roles et acces POS"
       actions={<Badge tone="neutral" variant="soft">{staffUsers.length} employe(s)</Badge>}
@@ -100,7 +100,7 @@ export default async function PosStaffPage() {
             </div>
           </Card>
         </section>
-    </AdminPosPage>
+    </AdminPage>
   );
 }
 
