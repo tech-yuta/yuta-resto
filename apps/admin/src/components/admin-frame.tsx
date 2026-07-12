@@ -71,76 +71,76 @@ type NavSection = {
 
 const navSections: NavSection[] = [
   {
-    items: [{ label: "Aujourd'hui", icon: LayoutDashboard, href: '/' }],
+    items: [{ label: "Aujourd'hui", icon: LayoutDashboard, href: '/today' }],
   },
   {
     title: 'Operations',
     items: [
-      { label: 'Commandes', icon: ShoppingCart, href: '#' },
-      { label: 'Tables & salle', icon: LayoutGrid, href: '#' },
-      { label: 'Reservations', icon: CalendarCheck, href: '#' },
-      { label: 'Paiements', icon: CreditCard, href: '#' },
-      { label: 'Rapports POS', icon: BarChart3, href: '/pos/reports' },
+      { label: 'Commandes', icon: ShoppingCart, href: '/operations/orders' },
+      { label: 'Tables & salle', icon: LayoutGrid, href: '/operations/tables' },
+      { label: 'Reservations', icon: CalendarCheck, href: '/operations/reservations' },
+      { label: 'Paiements', icon: CreditCard, href: '/operations/payments' },
+      { label: 'Rapports POS', icon: BarChart3, href: '/operations/reports' },
     ],
   },
   {
     title: 'Menu',
     items: [
-      { label: 'Menus & options', icon: ListChecks, href: '/pos/menu' },
-      { label: 'Combos', icon: Layers, href: '/pos/combos' },
-      { label: 'Produits', icon: Package, href: '#' },
-      { label: 'Categories', icon: Folder, href: '#' },
+      { label: 'Menus & options', icon: ListChecks, href: '/menu/menus' },
+      { label: 'Combos', icon: Layers, href: '/menu/combos' },
+      { label: 'Produits', icon: Package, href: '/menu/products' },
+      { label: 'Categories', icon: Folder, href: '/menu/categories' },
     ],
   },
   {
     title: 'Stock',
     items: [
-      { label: 'Inventaire', icon: Archive, href: '#' },
-      { label: 'Fournisseurs', icon: Truck, href: '#' },
-      { label: 'Entrees / sorties', icon: ArrowLeftRight, href: '#' },
+      { label: 'Inventaire', icon: Archive, href: '/stock/inventory' },
+      { label: 'Fournisseurs', icon: Truck, href: '/stock/suppliers' },
+      { label: 'Entrees / sorties', icon: ArrowLeftRight, href: '/stock/movements' },
     ],
   },
   {
     title: 'Equipe',
     items: [
-      { label: 'Employes', icon: Users, href: '/pos/staff' },
-      { label: 'Planning', icon: CalendarDays, href: '#' },
-      { label: 'Pointage', icon: Clock, href: '#' },
-      { label: 'Taches du jour', icon: ClipboardCheck, href: '#' },
-      { label: 'Roles & acces', icon: Shield, href: '#' },
+      { label: 'Employes', icon: Users, href: '/team/staff' },
+      { label: 'Planning', icon: CalendarDays, href: '/team/planning' },
+      { label: 'Pointage', icon: Clock, href: '/team/time-tracking' },
+      { label: 'Taches du jour', icon: ClipboardCheck, href: '/team/daily-tasks' },
+      { label: 'Roles & acces', icon: Shield, href: '/team/roles' },
     ],
   },
   {
     title: 'Conformite & veille',
     items: [
-      { label: 'Veille & Conformite', icon: Scale, href: '#' },
+      { label: 'Veille & Conformite', icon: Scale, href: '/compliance/monitoring' },
     ],
   },
   {
     title: 'Clients',
     items: [
-      { label: 'Clients', icon: Users, href: '#' },
-      { label: 'Fidelite', icon: Heart, href: '#' },
-      { label: 'Avis & commentaires', icon: MessageSquare, href: '#' },
-      { label: 'Emails', icon: Mail, href: '#' },
+      { label: 'Clients', icon: Users, href: '/customers/directory' },
+      { label: 'Fidelite', icon: Heart, href: '/customers/loyalty' },
+      { label: 'Avis & commentaires', icon: MessageSquare, href: '/customers/reviews' },
+      { label: 'Emails', icon: Mail, href: '/customers/emails' },
     ],
   },
   {
     title: 'Marketing & contenu',
     items: [
-      { label: 'Reseaux sociaux', icon: Send, href: '#' },
-      { label: 'Medias', icon: ImageIcon, href: '#' },
-      { label: 'Pages & contenus', icon: FileText, href: '#' },
+      { label: 'Reseaux sociaux', icon: Send, href: '/marketing/social-media' },
+      { label: 'Medias', icon: ImageIcon, href: '/marketing/media-library' },
+      { label: 'Pages & contenus', icon: FileText, href: '/marketing/content' },
       { label: 'Promotions', icon: Tag, href: '#' },
-      { label: 'Campagnes', icon: Megaphone, href: '#' },
+      { label: 'Campagnes', icon: Megaphone, href: '/marketing/campaigns' },
     ],
   },
   {
     title: 'Parametres',
     items: [
-      { label: 'Restaurant', icon: Store, href: '#' },
-      { label: 'Modules & abonnement', icon: PackageCheck, href: '#' },
-      { label: 'POS', icon: Settings, href: '#' },
+      { label: 'Restaurant', icon: Store, href: '/settings/restaurant' },
+      { label: 'Modules & abonnement', icon: PackageCheck, href: '/settings/billing' },
+      { label: 'POS', icon: Settings, href: '/settings/printers' },
     ],
   },
 ];

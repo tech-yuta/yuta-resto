@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { AdminFrame } from '../components/admin-frame';
 import './globals.css';
 
 const inter = Inter({
@@ -17,9 +16,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body className={inter.className}>
-        <AdminFrame>{children}</AdminFrame>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
