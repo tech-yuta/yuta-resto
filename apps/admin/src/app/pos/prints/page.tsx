@@ -1,6 +1,6 @@
 import { createPrintService } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { Badge, Button, Card, Input, Separator, StatCard } from '@yuta/ui';
+import { Badge, Button, Card, EmptyState, Input, Separator, StatCard } from '@yuta/ui';
 import { BarChart3, CheckCircle2, Printer, RefreshCw, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { AdminPosPage } from '../../../components/admin-pos-page';
@@ -62,13 +62,11 @@ export default async function PosPrintsPage() {
           </div>
           <Separator />
           {jobs.length === 0 ? (
-            <div className="grid min-h-64 place-items-center p-8 text-center">
-              <div>
-                <Printer className="mx-auto h-10 w-10 text-primary/35" />
-                <h3 className="mt-4 font-bold">Aucun ticket</h3>
-                <p className="mt-1 text-sm text-primary/55">Les tickets cuisine apparaitront apres un envoi cuisine.</p>
-              </div>
-            </div>
+            <EmptyState
+              icon={<Printer className="h-10 w-10" />}
+              title="Aucun ticket"
+              description="Les tickets cuisine apparaitront apres un envoi cuisine."
+            />
           ) : (
             <div>
               {jobs.map((job, index) => {

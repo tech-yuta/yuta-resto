@@ -1,7 +1,7 @@
 import { formatEuros, startOfToday } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orders, payments } from '@yuta/db/schema';
-import { Badge, Button, Card, Separator, StatCard } from '@yuta/ui';
+import { Badge, Button, DataTable, StatCard } from '@yuta/ui';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { BarChart3, CreditCard, ReceiptText, Utensils } from 'lucide-react';
 import Link from 'next/link';
@@ -65,51 +65,71 @@ export default async function PosReportsPage() {
           <StatCard icon={<ReceiptText className="h-4 w-4" />} label="Commandes ouvertes" value={String(openOrders)} />
         </section>
 
-        <Card className="overflow-hidden p-0">
-          <div className="px-5 py-4">
+        <section className="grid gap-3">
+          <div>
             <h2 className="text-lg font-bold">Commandes aujourd hui</h2>
             <p className="mt-1 text-sm text-primary/55">{orderRows.length} commande(s)</p>
           </div>
-          <Separator />
-          {orderRows.length === 0 ? (
-            <div className="grid min-h-64 place-items-center p-8 text-center">
-              <div>
-                <ReceiptText className="mx-auto h-10 w-10 text-primary/35" />
-                <h3 className="mt-4 font-bold">Aucune commande</h3>
-                <p className="mt-1 text-sm text-primary/55">Les commandes du jour apparaitront ici.</p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              {orderRows.map((order, index) => {
-                const paidCents = order.payments
-                  .filter((payment) => payment.status === 'paid')
-                  .reduce((total, payment) => total + payment.amountCents, 0);
-
-                return (
-                  <div key={order.id}>
-                    <div className="grid gap-3 px-5 py-4 md:grid-cols-[1.1fr_1fr_0.7fr_0.7fr_auto] md:items-center">
-                      <div>
-                        <p className="font-black">{order.tableLabel}</p>
-                        <p className="mt-1 text-sm text-primary/55">{formatTime(order.createdAt)}</p>
-                      </div>
-                      <p className="text-sm font-semibold">{order.orderNumber}</p>
-                      <Badge {...statusBadgeProps(order.status)}>{statusLabel(order.status)}</Badge>
-                      <div>
-                        <p className="font-black">{formatEuros(order.totalCents)}</p>
-                        {paidCents > 0 && <p className="text-xs font-semibold text-primary/45">Paye {formatEuros(paidCents)}</p>}
-                      </div>
-                      <Button asChild variant="secondary" size="sm">
-                        <Link href={`${posBaseUrl}/orders/${order.id}`}>Ouvrir POS</Link>
-                      </Button>
-                    </div>
-                    {index < orderRows.length - 1 && <Separator />}
+          <DataTable
+            rows={orderRows}
+            getRowId={(order) => order.id}
+            emptyTitle="Aucune commande"
+            emptyDescription="Les commandes du jour apparaitront ici."
+            columns={[
+              {
+                id: 'table',
+                header: 'Table',
+                cell: (order) => (
+                  <div>
+                    <p className="font-black">{order.tableLabel}</p>
+                    <p className="mt-1 text-sm text-primary/55">{formatTime(order.createdAt)}</p>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
+                ),
+              },
+              {
+                id: 'number',
+                header: 'Commande',
+                cell: (order) => <p className="text-sm font-semibold">{order.orderNumber}</p>,
+              },
+              {
+                id: 'status',
+                header: 'Statut',
+                cell: (order) => (
+                  <Badge {...statusBadgeProps(order.status)}>{statusLabel(order.status)}</Badge>
+                ),
+              },
+              {
+                id: 'total',
+                header: 'Total',
+                cell: (order) => {
+                  const paidCents = order.payments
+                    .filter((payment) => payment.status === 'paid')
+                    .reduce((total, payment) => total + payment.amountCents, 0);
+
+                  return (
+                    <div>
+                      <p className="font-black">{formatEuros(order.totalCents)}</p>
+                      {paidCents > 0 && (
+                        <p className="text-xs font-semibold text-primary/45">
+                          Paye {formatEuros(paidCents)}
+                        </p>
+                      )}
+                    </div>
+                  );
+                },
+              },
+              {
+                id: 'action',
+                header: '',
+                cell: (order) => (
+                  <Button asChild variant="secondary" size="sm">
+                    <Link href={`${posBaseUrl}/orders/${order.id}`}>Ouvrir POS</Link>
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </section>
     </AdminPosPage>
   );
 }

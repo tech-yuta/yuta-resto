@@ -100,6 +100,12 @@ Pagination   - previous/next pagination control
 FilterBar    - search/filter/action toolbar
 SearchInput  - tokenized search input
 BulkActionBar - selected-row action toolbar
+OrderCard    - POS order summary card
+OrderItemRow - POS order item row
+PaymentSummary - payment/totals summary panel
+KitchenTicket - grouped kitchen ticket
+KitchenItemStatus - kitchen item status badge
+TableCard    - restaurant table status card
 Separator    - horizontal/vertical divider
 MetricCard   - compact label/value metric block
 StatCard     - metric card with optional icon, helper, and sparkline

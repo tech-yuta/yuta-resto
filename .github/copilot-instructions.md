@@ -84,6 +84,9 @@ Available components:
 - `Pagination` - previous/next pagination control
 - `FilterBar`, `SearchInput` - search/filter/action toolbar
 - `BulkActionBar` - selected-row action toolbar
+- `OrderCard`, `OrderItemRow`, `PaymentSummary`, `EmptyOrderState` - POS order patterns
+- `KitchenTicket`, `KitchenItemStatus` - kitchen display patterns
+- `TableCard` - restaurant table status card
 - `Separator` - horizontal or vertical divider
 - `MetricCard` - compact label/value metric block
 - `StatCard` - metric card with optional icon, helper, and sparkline

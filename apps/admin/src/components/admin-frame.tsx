@@ -8,7 +8,11 @@ import {
   AppSidebarFooter,
   AppSidebarHeader,
   AppTopbar,
+  Avatar,
+  Button,
   IconTile,
+  IconButton,
+  SearchInput,
   cn,
 } from '@yuta/ui';
 import {
@@ -38,7 +42,6 @@ import {
   Package,
   PackageCheck,
   Scale,
-  Search,
   Send,
   Settings,
   Shield,
@@ -164,10 +167,10 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           }
           footer={
             <AppSidebarFooter>
-              <button className="flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm font-semibold text-primary/50 hover:bg-surface-muted hover:text-primary">
+              <Button variant="ghost" size="sm" fullWidth className="justify-start text-primary/50">
                 <ChevronLeft className="h-4 w-4" />
                 Reduire le menu
-              </button>
+              </Button>
             </AppSidebarFooter>
           }
         >
@@ -191,32 +194,28 @@ export function AdminFrame({ children }: { children: ReactNode }) {
       <div className="flex h-screen min-w-0 flex-col overflow-hidden">
         <AppTopbar
           search={
-            <label className="flex h-10 min-w-0 max-w-md flex-1 items-center gap-2 rounded-lg border border-border-default bg-canvas px-3 shadow-sm">
-              <Search className="h-4 w-4 shrink-0 text-primary/40" />
-              <input
-                type="text"
+            <div className="relative min-w-0 max-w-md flex-1">
+              <SearchInput
                 placeholder="Rechercher (ex : commande, produit, employe...)"
-                className="min-w-0 flex-1 bg-transparent text-sm text-primary placeholder:text-primary/40 focus:outline-none"
+                className="pr-14"
               />
-              <span className="hidden shrink-0 rounded-md border border-border-default bg-white px-1.5 py-0.5 text-[11px] font-semibold text-primary/40 sm:block">
+              <span className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-border-default bg-white px-1.5 py-0.5 text-[11px] font-semibold text-primary/40 sm:block">
                 &#8984; K
               </span>
-            </label>
+            </div>
           }
           actions={
             <>
-              <button className="relative grid h-10 w-10 place-items-center rounded-lg text-primary/60 hover:bg-surface-muted">
+              <IconButton className="relative text-primary/60" aria-label="Notifications">
                 <Bell className="h-5 w-5" />
                 <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-action-danger text-[10px] font-black text-white">
                   3
                 </span>
-              </button>
-              <button className="flex items-center gap-1.5 rounded-lg p-1 hover:bg-surface-muted">
-                <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-bold text-white">
-                  YT
-                </div>
+              </IconButton>
+              <Button variant="ghost" size="sm" className="gap-1.5 p-1">
+                <Avatar fallback="YT" size="sm" className="bg-primary text-white" />
                 <ChevronRight className="hidden h-3.5 w-3.5 rotate-90 text-primary/40 sm:block" />
-              </button>
+              </Button>
             </>
           }
         />

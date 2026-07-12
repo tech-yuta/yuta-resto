@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Avatar,
   Badge,
   Button,
   Card,
@@ -27,7 +28,7 @@ const metrics = [
     label: "Réservations aujourd'hui",
     value: '18',
     delta: 'À venir',
-    iconBg: 'bg-status-success/10 text-status-success',
+    iconTone: 'success' as const,
     icon: CalendarCheck,
     linkText: 'Voir le planning',
   },
@@ -35,7 +36,7 @@ const metrics = [
     label: 'Tâches à faire',
     value: '7',
     delta: 'À compléter',
-    iconBg: 'bg-status-warning/15 text-status-warning',
+    iconTone: 'warning' as const,
     icon: CheckSquare,
     linkText: 'Voir les tâches',
   },
@@ -43,7 +44,7 @@ const metrics = [
     label: 'Avis à répondre',
     value: '5',
     delta: 'Nouveaux',
-    iconBg: 'bg-amber-50 text-amber-500',
+    iconTone: 'warning' as const,
     icon: Star,
     linkText: 'Voir les avis',
   },
@@ -51,7 +52,7 @@ const metrics = [
     label: 'Emails non lus',
     value: '6',
     delta: 'À traiter',
-    iconBg: 'bg-status-info-soft text-primary',
+    iconTone: 'info' as const,
     icon: Mail,
     linkText: 'Voir les emails',
   },
@@ -59,7 +60,7 @@ const metrics = [
     label: 'Contenus à valider',
     value: '3',
     delta: 'En attente',
-    iconBg: 'bg-purple-50 text-purple-500',
+    iconTone: 'brand' as const,
     icon: ImageIcon,
     linkText: 'Voir les contenus',
   },
@@ -101,9 +102,9 @@ const unreadEmails = [
 ];
 
 const contentsToApprove = [
-  { channel: 'Facebook',   title: "Nouvelle carte d'été",  bg: 'bg-green-100',  time: '10:20' },
-  { channel: 'Instagram',  title: 'Atelier Petit Chef ✨', bg: 'bg-orange-100', time: 'Hier'  },
-  { channel: 'Facebook',   title: 'Bánh mì du jour',       bg: 'bg-amber-100',  time: '20/06' },
+  { channel: 'Facebook',   title: "Nouvelle carte d'été",  bg: 'bg-status-success-soft',  time: '10:20' },
+  { channel: 'Instagram',  title: 'Atelier Petit Chef ✨', bg: 'bg-status-warning-soft', time: 'Hier'  },
+  { channel: 'Facebook',   title: 'Bánh mì du jour',       bg: 'bg-surface-selected',  time: '20/06' },
 ];
 
 const dailyPlan = [
@@ -196,13 +197,14 @@ export function AdminShell() {
                   </div>
                   <p className="mt-0.5 truncate text-xs text-primary/50">&ldquo;{r.text}&rdquo;</p>
                 </div>
-                <button
+                <Button
                   type="button"
-                  style={{ backgroundColor: 'white', color: '#16211d' }}
-                  className="mt-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border-default px-3 py-1.5 text-xs font-semibold transition-colors"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-0.5 shrink-0"
                 >
                   Répondre
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -247,7 +249,7 @@ export function AdminShell() {
                   <p className="truncate text-sm font-semibold text-primary">{c.title}</p>
                   <p className="text-xs text-primary/50">{c.channel}</p>
                 </div>
-                <Badge size="sm" className="shrink-0 bg-orange-100 text-orange-700">En attente</Badge>
+                <Badge tone="warning" variant="soft" size="sm" className="shrink-0">En attente</Badge>
                 <span className="shrink-0 text-xs tabular-nums text-primary/40">{c.time}</span>
               </div>
             ))}
@@ -285,9 +287,9 @@ function SummaryCard({ metric }: { metric: (typeof metrics)[number] }) {
     <Card padding="none" className="flex flex-col">
       <div className="flex flex-col gap-3 p-5">
         <div className="flex items-center gap-2.5">
-          <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg', metric.iconBg)}>
+          <IconTile tone={metric.iconTone} size="sm">
             <Icon className="h-4 w-4" />
-          </div>
+          </IconTile>
           <p className="text-sm font-medium leading-snug text-primary/70">{metric.label}</p>
         </div>
         <div>
@@ -297,10 +299,10 @@ function SummaryCard({ metric }: { metric: (typeof metrics)[number] }) {
       </div>
       <Separator />
       <div className="px-5 py-3">
-        <button className="flex items-center gap-1 text-sm font-semibold text-status-success transition-colors hover:text-status-success/80">
+        <Button variant="ghost" size="sm" className="h-auto p-0 text-status-success hover:bg-transparent hover:text-status-success/80">
           {metric.linkText}
           <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
     </Card>
   );
@@ -328,15 +330,13 @@ function StarRating({ value, max = 5 }: { value: number; max?: number }) {
 /** Circular review source avatar (G / f / T) */
 function ReviewAvatar({ source }: { source: string }) {
   const palette: Record<string, string> = {
-    G: 'bg-red-100 text-red-600',
-    f: 'bg-blue-100 text-blue-600',
-    T: 'bg-green-100 text-green-600',
+    G: 'bg-status-danger-soft text-status-danger',
+    f: 'bg-status-info-soft text-status-info',
+    T: 'bg-status-success-soft text-status-success',
   };
   const cls = palette[source] ?? 'bg-surface-muted text-primary';
   return (
-    <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold', cls)}>
-      {source}
-    </div>
+    <Avatar fallback={source} size="sm" className={cls} />
   );
 }
 
@@ -347,7 +347,7 @@ function PlatformBadge({ channel }: { channel: string }) {
     <div
       className={cn(
         'absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-full text-[9px] font-black text-white',
-        isFb ? 'bg-blue-600' : 'bg-pink-500',
+        isFb ? 'bg-status-info' : 'bg-action-danger',
       )}
     >
       {isFb ? 'f' : 'ig'}
@@ -358,9 +358,9 @@ function PlatformBadge({ channel }: { channel: string }) {
 /** Header action link */
 function PanelLink({ children }: { children: React.ReactNode }) {
   return (
-    <button className="text-sm font-semibold text-primary/50 hover:text-primary">
+    <Button variant="ghost" size="sm" className="h-auto p-0 text-primary/50 hover:bg-transparent hover:text-primary">
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -368,22 +368,22 @@ function PanelLink({ children }: { children: React.ReactNode }) {
 function PanelFooterLink({ children }: { children: React.ReactNode }) {
   return (
     <div className="border-t border-border-default py-3 text-center">
-      <p className="cursor-pointer text-sm font-medium text-primary/50 transition-colors hover:text-primary">
+      <Button variant="ghost" size="sm" className="h-auto p-0 text-primary/50 hover:bg-transparent hover:text-primary">
         {children}
-      </p>
+      </Button>
     </div>
   );
 }
 
 /** Soft-color badge for task priority — uses core Badge */
 function TaskPriorityBadge({ priority }: { priority: string }) {
-  const cls: Record<string, string> = {
-    Haute:   'bg-red-100 text-red-700',
-    Moyenne: 'bg-orange-100 text-orange-700',
-    Basse:   'bg-sky-100 text-sky-700',
+  const tone: Record<string, 'danger' | 'warning' | 'info'> = {
+    Haute: 'danger',
+    Moyenne: 'warning',
+    Basse: 'info',
   };
   return (
-    <Badge size="sm" className={cls[priority] ?? 'bg-surface-muted text-primary'}>
+    <Badge tone={tone[priority] ?? 'neutral'} variant="soft" size="sm">
       {priority}
     </Badge>
   );
@@ -391,11 +391,9 @@ function TaskPriorityBadge({ priority }: { priority: string }) {
 
 /** Soft reservation status badge — uses core Badge */
 function ReservationStatusBadge({ status }: { status: string }) {
-  const cls = status === 'Confirmée'
-    ? 'bg-green-100 text-green-700'
-    : 'bg-orange-100 text-orange-700';
+  const tone = status.startsWith('Confirm') ? 'success' : 'warning';
   return (
-    <Badge size="sm" className={cls}>
+    <Badge tone={tone} variant="soft" size="sm">
       {status}
     </Badge>
   );
