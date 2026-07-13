@@ -94,7 +94,10 @@ export default async function PosCombosPage() {
                     </div>
                     <RuleFields
                       defaultName={rule.name}
+                      defaultPricingMode={rule.pricingMode}
                       defaultPrice={rule.comboPriceCents}
+                      defaultPriceDelta={rule.priceDeltaCents}
+                      defaultBasePricingGroupName={rule.basePricingGroupName ?? undefined}
                       defaultPriority={rule.priority}
                       defaultMaxApplications={rule.maxApplications ?? undefined}
                       defaultIsActive={String(rule.isActive)}
@@ -178,13 +181,19 @@ export default async function PosCombosPage() {
 
 function RuleFields({
   defaultName,
+  defaultPricingMode = 'fixed',
   defaultPrice,
+  defaultPriceDelta,
+  defaultBasePricingGroupName,
   defaultPriority,
   defaultMaxApplications,
   defaultIsActive = 'true',
 }: {
   defaultName?: string;
+  defaultPricingMode?: 'fixed' | 'base_item_plus_delta';
   defaultPrice?: number;
+  defaultPriceDelta?: number;
+  defaultBasePricingGroupName?: string;
   defaultPriority?: number;
   defaultMaxApplications?: number;
   defaultIsActive?: string;
@@ -195,8 +204,32 @@ function RuleFields({
         <Label htmlFor={`name-${defaultName ?? 'new'}`}>Nom</Label>
         <Input id={`name-${defaultName ?? 'new'}`} name="name" defaultValue={defaultName} required />
       </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`pricing-${defaultName ?? 'new'}`}>Mode prix</Label>
+        <Select name="pricingMode" defaultValue={defaultPricingMode}>
+          <SelectTrigger id={`pricing-${defaultName ?? 'new'}`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="fixed">Prix fixe</SelectItem>
+            <SelectItem value="base_item_plus_delta">Plat + supplement</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div className="grid grid-cols-2 gap-3">
-        <NumberField id={`price-${defaultName ?? 'new'}`} name="comboPriceCents" label="Prix" defaultValue={defaultPrice ?? 0} />
+        <NumberField id={`price-${defaultName ?? 'new'}`} name="comboPriceCents" label="Prix fixe" defaultValue={defaultPrice ?? 0} />
+        <NumberField id={`delta-${defaultName ?? 'new'}`} name="priceDeltaCents" label="Supplement formule" defaultValue={defaultPriceDelta ?? 0} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-2">
+          <Label htmlFor={`base-group-${defaultName ?? 'new'}`}>Groupe base</Label>
+          <Input
+            id={`base-group-${defaultName ?? 'new'}`}
+            name="basePricingGroupName"
+            defaultValue={defaultBasePricingGroupName}
+            placeholder="Plat"
+          />
+        </div>
         <NumberField id={`priority-${defaultName ?? 'new'}`} name="priority" label="Priorite" defaultValue={defaultPriority ?? 0} />
       </div>
       <div className="grid grid-cols-2 gap-3">

@@ -41,6 +41,10 @@ export const paymentStatusEnum = pgEnum('payment_status', ['pending', 'paid', 'f
 export const printJobSourceEnum = pgEnum('print_job_source', ['pos', 'kitchen', 'delivery', 'manual']);
 export const printJobTypeEnum = pgEnum('print_job_type', ['kitchen_ticket', 'customer_receipt', 'test']);
 export const printJobStatusEnum = pgEnum('print_job_status', ['pending', 'printing', 'printed', 'failed']);
+export const comboPricingModeEnum = pgEnum('combo_pricing_mode', [
+  'fixed',
+  'base_item_plus_delta',
+]);
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
 const updatedAt = () =>
@@ -175,7 +179,10 @@ export const comboRules = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
+    pricingMode: comboPricingModeEnum('pricing_mode').default('fixed').notNull(),
     comboPriceCents: integer('combo_price_cents').notNull(),
+    priceDeltaCents: integer('price_delta_cents').default(0).notNull(),
+    basePricingGroupName: varchar('base_pricing_group_name', { length: 255 }),
     priority: integer('priority').default(0).notNull(),
     maxApplications: integer('max_applications'),
     isActive: boolean('is_active').default(true).notNull(),

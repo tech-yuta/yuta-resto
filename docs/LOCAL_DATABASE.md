@@ -30,6 +30,16 @@ Run migrations:
 corepack pnpm --filter @yuta/db db:migrate
 ```
 
+When menu pricing schema changes, run migrations before re-importing Luna menu
+data. Dynamic Luna formulas such as `Menu Express`, `Menu Gourmand`, and
+`Combo Ete` require the combo pricing columns added after the initial POS
+schema:
+
+```bash
+corepack pnpm --filter @yuta/db db:migrate
+corepack pnpm --filter @yuta/db tsx src/import-luna-menu.ts
+```
+
 Seed development data:
 
 ```bash

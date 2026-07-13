@@ -56,6 +56,16 @@ Reouvrir
 
 Code, comments, types, commit messages, and documentation stay in English.
 
+## App Metadata
+
+`apps/yuta-pos` defines internal-app SEO/PWA metadata in `src/app/layout.tsx`
+and `public/site.webmanifest`. The POS is an internal tool and must stay
+`noindex,nofollow`.
+
+Set `NEXT_PUBLIC_POS_URL` in production when the deployed POS URL differs from
+the local default `http://localhost:3003`; this value is used as the metadata
+base for Open Graph, Twitter, manifest, and icon URLs.
+
 ## Architecture
 
 Use:
@@ -79,6 +89,21 @@ Combo rules
 Daily orders
 Daily revenue
 ```
+
+Combo rules support two pricing modes:
+
+```txt
+fixed
+  Final combo price = comboPriceCents + eligible item extras.
+
+base_item_plus_delta
+  Final combo price = selected item price from basePricingGroupName + priceDeltaCents + eligible item extras.
+```
+
+Use `base_item_plus_delta` for Luna-style formulas such as `Menu Express`
+(`Plat + 4 EUR`), `Menu Gourmand` (`Plat + 8 EUR`), and `Combo Ete`
+(`Plat du jour + 2.50 EUR`). The base pricing group name must match a combo
+group name, usually `Plat`.
 
 ## UX Principles
 
@@ -107,6 +132,12 @@ Keep payment totals clear
 Order cancellation is allowed only before payment. Cancelling an order marks active articles as cancelled, voids unpaid split checks, and marks the order cancelled. Paid orders or partially paid orders are not cancellable in the MVP because refund handling is out of scope.
 
 The kitchen screen uses lightweight 10-second client polling with `router.refresh()` while the browser tab is visible. This avoids WebSocket/SSE infrastructure for the MVP while still reflecting cancellations and kitchen status changes quickly enough during service.
+
+Kitchen station tabs show unfinished items per station across `sent` and
+`preparing`; items in `ready` are intentionally excluded from station badge
+counts. Switching station keeps the selected status only when that station has
+matching items; otherwise the tab routes to the first unfinished queue for that
+station, preferring `sent`, then `preparing`.
 
 Do not:
 

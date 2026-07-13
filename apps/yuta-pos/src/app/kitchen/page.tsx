@@ -59,7 +59,7 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
   const selectedStation = parseStation(station);
   const selectedStatus = parseStatusFilter(status);
   const serviceDay = getServiceDayWindow(new Date());
-  const [itemRows, stationItemRows] = await Promise.all([
+  const [itemRows, stationItemRows, allStationItemRows] = await Promise.all([
     db
       .select({
         item: orderItems,
@@ -95,11 +95,28 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
           lt(orders.createdAt, serviceDay.end),
         ),
       ),
+    db
+      .select({
+        item: orderItems,
+      })
+      .from(orderItems)
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(
+        and(
+          inArray(orderItems.status, ['sent', 'preparing', 'ready']),
+          inArray(orderItems.kitchenStationSnapshot, ['kitchen', 'bar', 'dessert']),
+          gte(orders.createdAt, serviceDay.start),
+          lt(orders.createdAt, serviceDay.end),
+        ),
+      ),
   ]);
   const items = itemRows.map((row) => ({ ...row.item, order: row.order }));
   const stationItems = stationItemRows.map((row) => row.item);
+  const allStationItems = allStationItemRows.map((row) => row.item);
   const groups = groupItemsByOrder(items);
   const counts = countItemsByStatus(stationItems);
+  const stationStatusCounts = countItemsByStationAndStatus(allStationItems);
+  const stationCounts = countOpenWorkItemsByStation(stationStatusCounts);
 
   return (
     <PosPageShell
@@ -135,9 +152,18 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                 size="sm"
                 className="shrink-0 rounded-lg"
               >
-                <Link href={kitchenUrl(value, selectedStatus)}>
+                <Link
+                  href={stationKitchenUrl(
+                    value,
+                    selectedStatus,
+                    stationStatusCounts,
+                  )}
+                >
                   <Icon className="h-4 w-4" />
                   {label}
+                  <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-black text-primary">
+                    {stationCounts[value]}
+                  </span>
                 </Link>
               </Button>
             ))}
@@ -150,7 +176,10 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                 asChild
                 variant={value === selectedStatus ? 'primary' : 'secondary'}
                 size="sm"
-                className="shrink-0 rounded-lg"
+                className={`shrink-0 rounded-lg ${statusFilterButtonClass(
+                  value,
+                  selectedStatus,
+                )}`}
               >
                 <Link href={kitchenUrl(selectedStation, value)}>
                   <Icon className="h-4 w-4" />
@@ -283,6 +312,36 @@ function kitchenUrl(station: Station, status: KitchenStatusFilter): string {
   return `/kitchen?station=${station}&status=${status}`;
 }
 
+function stationKitchenUrl(
+  station: Station,
+  selectedStatus: KitchenStatusFilter,
+  counts: Record<Station, Record<KitchenStatusFilter, number>>,
+): string {
+  return kitchenUrl(station, nextStatusForStation(station, selectedStatus, counts));
+}
+
+function nextStatusForStation(
+  station: Station,
+  selectedStatus: KitchenStatusFilter,
+  counts: Record<Station, Record<KitchenStatusFilter, number>>,
+): KitchenStatusFilter {
+  const stationCounts = counts[station];
+
+  if (stationCounts[selectedStatus] > 0) {
+    return selectedStatus;
+  }
+
+  if (stationCounts.sent > 0) {
+    return 'sent';
+  }
+
+  if (stationCounts.preparing > 0) {
+    return 'preparing';
+  }
+
+  return selectedStatus;
+}
+
 function groupItemsByOrder<T extends { order: typeof orders.$inferSelect }>(
   items: T[],
 ) {
@@ -311,6 +370,46 @@ function countItemsByStatus(items: Array<typeof orderItems.$inferSelect>) {
   };
 }
 
+function countOpenWorkItemsByStation(
+  counts: Record<Station, Record<KitchenStatusFilter, number>>,
+) {
+  return {
+    kitchen: counts.kitchen.sent + counts.kitchen.preparing,
+    bar: counts.bar.sent + counts.bar.preparing,
+    dessert: counts.dessert.sent + counts.dessert.preparing,
+  } satisfies Record<Station, number>;
+}
+
+function countItemsByStationAndStatus(
+  items: Array<typeof orderItems.$inferSelect>,
+) {
+  const counts = {
+    kitchen: { sent: 0, preparing: 0, ready: 0 },
+    bar: { sent: 0, preparing: 0, ready: 0 },
+    dessert: { sent: 0, preparing: 0, ready: 0 },
+  } satisfies Record<Station, Record<KitchenStatusFilter, number>>;
+
+  for (const item of items) {
+    const station = item.kitchenStationSnapshot;
+
+    if (station !== 'kitchen' && station !== 'bar' && station !== 'dessert') {
+      continue;
+    }
+
+    if (
+      item.status !== 'sent' &&
+      item.status !== 'preparing' &&
+      item.status !== 'ready'
+    ) {
+      continue;
+    }
+
+    counts[station][item.status] += 1;
+  }
+
+  return counts;
+}
+
 function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
   if (status === 'preparing') {
     return <Badge tone="warning" variant="soft">En preparation</Badge>;
@@ -320,7 +419,26 @@ function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
     return <Badge tone="success" variant="solid">Pret</Badge>;
   }
 
-  return <Badge variant="outline">A preparer</Badge>;
+  return <Badge tone="warning" variant="soft">A preparer</Badge>;
+}
+
+function statusFilterButtonClass(
+  status: KitchenStatusFilter,
+  selectedStatus: KitchenStatusFilter,
+): string {
+  if (status !== selectedStatus) {
+    return '';
+  }
+
+  if (status === 'sent') {
+    return 'bg-status-warning text-inverse hover:bg-status-warning/90';
+  }
+
+  if (status === 'preparing') {
+    return 'bg-status-info text-inverse hover:bg-status-info/90';
+  }
+
+  return 'bg-status-success text-inverse hover:bg-status-success/90';
 }
 
 function renderOrderStatusBadge(status: OrderStatus) {
@@ -377,7 +495,11 @@ function renderKitchenActions(
         }
       >
         <input type="hidden" name="orderItemId" value={item.id} />
-        <Button type="submit" variant="primary" className="w-full">
+        <Button
+          type="submit"
+          variant={item.status === 'preparing' ? 'secondary' : 'primary'}
+          className={`w-full ${prepareActionButtonClass(item.status)}`}
+        >
           {item.status === 'preparing' ? (
             <RotateCcw className="h-4 w-4" />
           ) : (
@@ -394,6 +516,16 @@ function renderKitchenActions(
       </form>
     </div>
   );
+}
+
+function prepareActionButtonClass(
+  status: typeof orderItems.$inferSelect.status,
+): string {
+  if (status === 'preparing') {
+    return 'border-status-info-border bg-status-info-soft text-status-info hover:bg-status-info-soft/80';
+  }
+
+  return 'bg-status-warning text-inverse hover:bg-status-warning/90';
 }
 
 function groupTimeLabel(items: Array<typeof orderItems.$inferSelect>): string {
@@ -434,4 +566,3 @@ function formatTime(date: Date): string {
     second: '2-digit',
   }).format(date);
 }
-

@@ -357,7 +357,10 @@ orderItems {
 comboRules {
   id: string;
   name: string;
+  pricingMode: 'fixed' | 'base_item_plus_delta';
   comboPriceCents: number;
+  priceDeltaCents: number;
+  basePricingGroupName?: string;
   priority: number;
   maxApplications?: number;
   isActive: boolean;
@@ -588,6 +591,8 @@ Rules:
 - Do not replace order items with combo items.
 - Only create a discount if `discountCents > 0`.
 - Store discount-to-item mapping.
+- For `fixed`, combo total is `comboPriceCents + eligible item extras`.
+- For `base_item_plus_delta`, combo total is selected base-group item price plus `priceDeltaCents` plus eligible item extras. The base group is identified by `basePricingGroupName`, usually `Plat`.
 
 Tie-breaker for deterministic results:
 

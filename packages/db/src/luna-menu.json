@@ -1,5 +1,5 @@
 {
-  "_note": "Menu LUNA — priceCents = centimes EUR. kitchenStation: kitchen | bar | dessert | none. Combos a prix dynamique (Menu Express, Menu Gourmand, Combo Ete) sont exclus car le schema ne supporte pas surchargeOnBaseCents pour l instant.",
+  "_note": "Menu LUNA — priceCents = centimes EUR. kitchenStation: kitchen | bar | dessert | none. Dynamic combos use pricingMode=base_item_plus_delta, basePricingGroupName=Plat, priceDeltaCents=supplement.",
 
   "categories": [
     { "name": "Entrees",                 "sortOrder": 10 },
@@ -122,8 +122,141 @@
           ]
         }
       ]
+    },
+    {
+      "name":                 "Menu Express",
+      "pricingMode":          "base_item_plus_delta",
+      "comboPriceCents":      0,
+      "priceDeltaCents":      400,
+      "basePricingGroupName": "Plat",
+      "priority":             30,
+      "groups": [
+        {
+          "name":        "Plat",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   10,
+          "items": [
+            { "name": "Bun Thit Nuong",             "extraPriceCents": 0 },
+            { "name": "Bun Ga",                     "extraPriceCents": 0 },
+            { "name": "Bun Chay (vege)",            "extraPriceCents": 0 },
+            { "name": "Bo Bun",                     "extraPriceCents": 0 },
+            { "name": "Bun Tom",                    "extraPriceCents": 0 },
+            { "name": "Gua Bao Porc laque",         "extraPriceCents": 0 },
+            { "name": "Gua Bao Poulet croustillant","extraPriceCents": 0 },
+            { "name": "Gua Bao Boeuf saute",        "extraPriceCents": 0 },
+            { "name": "Gua Bao Tofu pane (vege)",   "extraPriceCents": 0 },
+            { "name": "Pho Boeuf",                  "extraPriceCents": 0 },
+            { "name": "Mi Quang poulet",            "extraPriceCents": 0 },
+            { "name": "Plat du jour Lun-Ven",       "extraPriceCents": 0 }
+          ]
+        },
+        {
+          "name":        "Entree ou dessert",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   20,
+          "items": [
+            { "name": "Nems porc (3 pcs)",                    "extraPriceCents": 0 },
+            { "name": "Xiu Mai (4 pcs)",                       "extraPriceCents": 0 },
+            { "name": "Banh Bao pate fruit de dragon (1 pce)", "extraPriceCents": 0 },
+            { "name": "Nems vegan (3 pcs)",                    "extraPriceCents": 0 },
+            { "name": "Rouleaux de printemps",                 "extraPriceCents": 0 },
+            { "name": "Poulet croustillant entree",            "extraPriceCents": 0 },
+            { "name": "Gateau banane glace coco",              "extraPriceCents": 0 },
+            { "name": "Mochi glace (2 pcs)",                   "extraPriceCents": 0 },
+            { "name": "Cheesecake matcha",                     "extraPriceCents": 0 },
+            { "name": "Cheesecake mangue",                     "extraPriceCents": 0 },
+            { "name": "Le trio Glaces",                        "extraPriceCents": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "name":                 "Menu Gourmand",
+      "pricingMode":          "base_item_plus_delta",
+      "comboPriceCents":      0,
+      "priceDeltaCents":      800,
+      "basePricingGroupName": "Plat",
+      "priority":             40,
+      "groups": [
+        {
+          "name":        "Plat",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   10,
+          "items": [
+            { "name": "Bun Thit Nuong",             "extraPriceCents": 0 },
+            { "name": "Bun Ga",                     "extraPriceCents": 0 },
+            { "name": "Bun Chay (vege)",            "extraPriceCents": 0 },
+            { "name": "Bo Bun",                     "extraPriceCents": 0 },
+            { "name": "Bun Tom",                    "extraPriceCents": 0 },
+            { "name": "Gua Bao Porc laque",         "extraPriceCents": 0 },
+            { "name": "Gua Bao Poulet croustillant","extraPriceCents": 0 },
+            { "name": "Gua Bao Boeuf saute",        "extraPriceCents": 0 },
+            { "name": "Gua Bao Tofu pane (vege)",   "extraPriceCents": 0 },
+            { "name": "Pho Boeuf",                  "extraPriceCents": 0 },
+            { "name": "Mi Quang poulet",            "extraPriceCents": 0 },
+            { "name": "Plat du jour Lun-Ven",       "extraPriceCents": 0 }
+          ]
+        },
+        {
+          "name":        "Entree",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   20,
+          "items": [
+            { "name": "Nems porc (3 pcs)",                    "extraPriceCents": 0 },
+            { "name": "Xiu Mai (4 pcs)",                       "extraPriceCents": 0 },
+            { "name": "Banh Bao pate fruit de dragon (1 pce)", "extraPriceCents": 0 },
+            { "name": "Nems vegan (3 pcs)",                    "extraPriceCents": 0 },
+            { "name": "Rouleaux de printemps",                 "extraPriceCents": 0 },
+            { "name": "Poulet croustillant entree",            "extraPriceCents": 0 }
+          ]
+        },
+        {
+          "name":        "Dessert",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   30,
+          "items": [
+            { "name": "Gateau banane glace coco", "extraPriceCents": 0 },
+            { "name": "Mochi glace (2 pcs)",      "extraPriceCents": 0 },
+            { "name": "Cheesecake matcha",        "extraPriceCents": 0 },
+            { "name": "Cheesecake mangue",        "extraPriceCents": 0 },
+            { "name": "Le trio Glaces",           "extraPriceCents": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "name":                 "Combo Ete",
+      "pricingMode":          "base_item_plus_delta",
+      "comboPriceCents":      0,
+      "priceDeltaCents":      250,
+      "basePricingGroupName": "Plat",
+      "priority":             50,
+      "groups": [
+        {
+          "name":        "Plat",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   10,
+          "items": [
+            { "name": "Plat du jour Lun-Ven", "extraPriceCents": 0 }
+          ]
+        },
+        {
+          "name":        "The glace maison",
+          "minQuantity": 1,
+          "maxQuantity": 1,
+          "sortOrder":   20,
+          "items": [
+            { "name": "The glace citron citronnelle 250ml", "extraPriceCents": 0 },
+            { "name": "The glace citron citronnelle 500ml", "extraPriceCents": 200 }
+          ]
+        }
+      ]
     }
-  ],
-
-  "_excluded_combos_note": "Menu Express (+4EUR), Menu Gourmand (+8EUR) et Combo Ete (+2.50EUR) utilisent prix = prix_plat + supplement. Le schema comboRules.comboPriceCents est fixe — ces formules necessitent une evolution du schema avant import."
+  ]
 }

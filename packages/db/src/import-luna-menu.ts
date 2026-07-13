@@ -7,7 +7,7 @@
  * Script dùng upsert (insert or update) theo name nên chạy nhiều lần vẫn an toàn.
  */
 import { config } from 'dotenv';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -83,7 +83,10 @@ type JsonComboGroup = {
 
 type JsonCombo = {
   name: string;
+  pricingMode?: 'fixed' | 'base_item_plus_delta';
   comboPriceCents: number;
+  priceDeltaCents?: number;
+  basePricingGroupName?: string | null;
   priority: number;
   groups: JsonComboGroup[];
 };
@@ -202,23 +205,41 @@ async function main() {
     if (existingRule) {
       const [updated] = await db
         .update(comboRules)
-        .set({ comboPriceCents: combo.comboPriceCents, priority: combo.priority, isActive: true })
+        .set({
+          pricingMode: combo.pricingMode ?? 'fixed',
+          comboPriceCents: combo.comboPriceCents,
+          priceDeltaCents: combo.priceDeltaCents ?? 0,
+          basePricingGroupName: combo.basePricingGroupName ?? null,
+          priority: combo.priority,
+          isActive: true,
+        })
         .where(eq(comboRules.id, existingRule.id))
         .returning();
       rule = updated;
     } else {
       const [created] = await db
         .insert(comboRules)
-        .values({ name: combo.name, comboPriceCents: combo.comboPriceCents, priority: combo.priority })
+        .values({
+          name: combo.name,
+          pricingMode: combo.pricingMode ?? 'fixed',
+          comboPriceCents: combo.comboPriceCents,
+          priceDeltaCents: combo.priceDeltaCents ?? 0,
+          basePricingGroupName: combo.basePricingGroupName ?? null,
+          priority: combo.priority,
+        })
         .returning();
       rule = created;
     }
-    console.log(`  ✓ ${combo.name} (${(combo.comboPriceCents / 100).toFixed(2)} €)`);
+    const priceLabel =
+      combo.pricingMode === 'base_item_plus_delta'
+        ? `plat + ${((combo.priceDeltaCents ?? 0) / 100).toFixed(2)} €`
+        : `${(combo.comboPriceCents / 100).toFixed(2)} €`;
+    console.log(`  ✓ ${combo.name} (${priceLabel})`);
 
     // Groups + items
     for (const group of combo.groups) {
       const existingGroup = await db.query.comboRuleGroups.findFirst({
-        where: eq(comboRuleGroups.name, group.name),
+        where: and(eq(comboRuleGroups.comboRuleId, rule.id), eq(comboRuleGroups.name, group.name)),
       });
       let ruleGroup;
       if (existingGroup) {
@@ -253,7 +274,10 @@ async function main() {
           continue;
         }
         const existingGI = await db.query.comboRuleGroupItems.findFirst({
-          where: eq(comboRuleGroupItems.menuItemId, menuItem.id),
+          where: and(
+            eq(comboRuleGroupItems.comboRuleGroupId, ruleGroup.id),
+            eq(comboRuleGroupItems.menuItemId, menuItem.id),
+          ),
         });
         if (existingGI) {
           await db

@@ -66,6 +66,7 @@ describe('YuTa core services', () => {
   });
 
   beforeEach(async () => {
+    await cleanupDynamicComboRule();
     await cleanupRuntimeData();
     await resetMenuPrices(context);
   });
@@ -335,6 +336,37 @@ describe('YuTa core services', () => {
     expect(updatedOrder.discountCents).toBe(200);
     expect(updatedOrder.totalCents).toBe(1400);
   });
+
+  it('applies a base item plus delta combo discount', async () => {
+    await createComboRule(
+      'Test Dynamic Combo',
+      0,
+      0,
+      [
+        { name: 'Plat', items: [{ item: context.items.comGa, extraPriceCents: 0 }] },
+        { name: 'Boisson', items: [{ item: context.items.coca, extraPriceCents: 0 }] },
+      ],
+      {
+        pricingMode: 'base_item_plus_delta',
+        priceDeltaCents: 200,
+        basePricingGroupName: 'Plat',
+      },
+    );
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.comGa.id, quantity: 1 },
+      { menuItemId: context.items.coca.id, quantity: 1 },
+    ]);
+    const comboService = createComboService(db);
+
+    const discounts = await comboService.optimizeOrderCombos(order.id);
+    const updatedOrder = await getOrder(order.id);
+
+    expect(discounts).toHaveLength(1);
+    expect(discounts[0].nameSnapshot).toBe('Test Dynamic Combo');
+    expect(discounts[0].discountCents).toBe(100);
+    expect(updatedOrder.totalCents).toBe(1400);
+  });
+
 
   it('does not reuse the same item quantity twice', async () => {
     const order = await createOrderWithItems([
@@ -699,8 +731,23 @@ async function createComboRule(
   comboPriceCents: number,
   priority: number,
   groups: Array<{ name: string; items: Array<{ item: MenuItem; extraPriceCents: number }> }>,
+  options: {
+    pricingMode?: 'fixed' | 'base_item_plus_delta';
+    priceDeltaCents?: number;
+    basePricingGroupName?: string;
+  } = {},
 ) {
-  const [rule] = await db.insert(comboRules).values({ name, comboPriceCents, priority }).returning();
+  const [rule] = await db
+    .insert(comboRules)
+    .values({
+      name,
+      pricingMode: options.pricingMode ?? 'fixed',
+      comboPriceCents,
+      priceDeltaCents: options.priceDeltaCents ?? 0,
+      basePricingGroupName: options.basePricingGroupName ?? null,
+      priority,
+    })
+    .returning();
 
   for (const [index, group] of groups.entries()) {
     const [createdGroup] = await db
@@ -771,7 +818,7 @@ async function cleanupRuntimeData(): Promise<void> {
 async function cleanupTestData(): Promise<void> {
   await cleanupRuntimeData();
 
-  const rules = await db.query.comboRules.findMany({ where: inArray(comboRules.name, ['Test Combo A', 'Test Combo B']) });
+  const rules = await db.query.comboRules.findMany({ where: inArray(comboRules.name, ['Test Combo A', 'Test Combo B', 'Test Dynamic Combo']) });
   if (rules.length > 0) {
     const ruleIds = rules.map((rule) => rule.id);
     const groups = await db.query.comboRuleGroups.findMany({ where: inArray(comboRuleGroups.comboRuleId, ruleIds) });
@@ -785,4 +832,22 @@ async function cleanupTestData(): Promise<void> {
   await db.delete(menuItems).where(inArray(menuItems.name, ['Test Bun bo', 'Changed Bun bo', 'Test Com ga', 'Test Pho', 'Test Coca', 'Test Iced Tea', 'Test Che']));
   await db.delete(menuCategories).where(inArray(menuCategories.name, ['Core Test Plats', 'Core Test Drinks', 'Core Test Desserts']));
   await db.delete(users).where(eq(users.name, 'Core Test Staff'));
+}
+
+async function cleanupDynamicComboRule(): Promise<void> {
+  const rules = await db.query.comboRules.findMany({ where: eq(comboRules.name, 'Test Dynamic Combo') });
+
+  if (rules.length === 0) {
+    return;
+  }
+
+  const ruleIds = rules.map((rule) => rule.id);
+  const groups = await db.query.comboRuleGroups.findMany({ where: inArray(comboRuleGroups.comboRuleId, ruleIds) });
+
+  if (groups.length > 0) {
+    await db.delete(comboRuleGroupItems).where(inArray(comboRuleGroupItems.comboRuleGroupId, groups.map((group) => group.id)));
+    await db.delete(comboRuleGroups).where(inArray(comboRuleGroups.id, groups.map((group) => group.id)));
+  }
+
+  await db.delete(comboRules).where(inArray(comboRules.id, ruleIds));
 }

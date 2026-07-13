@@ -8,7 +8,15 @@ import { z } from 'zod';
 
 const createComboRuleSchema = z.object({
   name: z.string().trim().min(1).max(255),
+  pricingMode: z.enum(['fixed', 'base_item_plus_delta']).default('fixed'),
   comboPriceCents: z.coerce.number().int().nonnegative(),
+  priceDeltaCents: z.coerce.number().int().nonnegative().default(0),
+  basePricingGroupName: z
+    .string()
+    .trim()
+    .max(255)
+    .optional()
+    .transform((value) => value || null),
   priority: z.coerce.number().int().default(0),
   maxApplications: z.coerce.number().int().positive().optional(),
 });
@@ -35,7 +43,10 @@ const addComboGroupItemSchema = z.object({
 export async function createComboRuleAction(formData: FormData): Promise<void> {
   const values = createComboRuleSchema.parse({
     name: formData.get('name'),
+    pricingMode: formData.get('pricingMode') || 'fixed',
     comboPriceCents: formData.get('comboPriceCents'),
+    priceDeltaCents: formData.get('priceDeltaCents') || 0,
+    basePricingGroupName: formData.get('basePricingGroupName') || undefined,
     priority: formData.get('priority'),
     maxApplications: formData.get('maxApplications') || undefined,
   });
@@ -49,7 +60,10 @@ export async function updateComboRuleAction(formData: FormData): Promise<void> {
   const values = updateComboRuleSchema.parse({
     comboRuleId: formData.get('comboRuleId'),
     name: formData.get('name'),
+    pricingMode: formData.get('pricingMode') || 'fixed',
     comboPriceCents: formData.get('comboPriceCents'),
+    priceDeltaCents: formData.get('priceDeltaCents') || 0,
+    basePricingGroupName: formData.get('basePricingGroupName') || undefined,
     priority: formData.get('priority'),
     maxApplications: formData.get('maxApplications') || undefined,
     isActive: formData.get('isActive'),
@@ -59,7 +73,10 @@ export async function updateComboRuleAction(formData: FormData): Promise<void> {
     .update(comboRules)
     .set({
       name: values.name,
+      pricingMode: values.pricingMode,
       comboPriceCents: values.comboPriceCents,
+      priceDeltaCents: values.priceDeltaCents,
+      basePricingGroupName: values.basePricingGroupName,
       priority: values.priority,
       maxApplications: values.maxApplications,
       isActive: values.isActive,

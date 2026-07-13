@@ -18,7 +18,10 @@ type SplitItem = {
 type ComboRule = {
   id: string;
   name: string;
+  pricingMode: 'fixed' | 'base_item_plus_delta';
   comboPriceCents: number;
+  priceDeltaCents: number;
+  basePricingGroupName: string | null;
   priority: number;
   maxApplications: number | null;
   isActive: boolean;
@@ -384,6 +387,7 @@ type UnitItem = {
 
 type MatchedUnit = UnitItem & {
   groupId: string;
+  groupName: string;
   extraPriceCents: number;
 };
 
@@ -421,7 +425,13 @@ function calculateComboDiscountsForItems(
         (total, item) => total + item.extraPriceCents,
         0,
       );
-      const discountCents = originalTotal - (rule.comboPriceCents + extraTotal);
+      const comboTotal = calculateComboTotal(rule, match, extraTotal);
+
+      if (comboTotal === null) {
+        break;
+      }
+
+      const discountCents = originalTotal - comboTotal;
 
       if (discountCents <= 0) {
         break;
@@ -483,7 +493,7 @@ function findBestMatch(
     }
   }
 
-  return candidates.toSorted(compareMatchesForBestDiscount)[0] ?? null;
+  return candidates.toSorted((left, right) => compareMatchesForBestDiscount(rule, left, right))[0] ?? null;
 }
 
 function findGroupMatches(
@@ -503,6 +513,7 @@ function findGroupMatches(
       return {
         ...unit,
         groupId: group.id,
+        groupName: group.name,
         extraPriceCents: groupItem.extraPriceCents,
       };
     })
@@ -515,7 +526,7 @@ function findGroupMatches(
     matches.push(...combinations(eligibleUnits, size));
   }
 
-  return matches.toSorted(compareMatchesForBestDiscount);
+  return matches.toSorted(compareMatchesForBestDiscountWithoutRule);
 }
 
 function combinations<T>(items: T[], size: number): T[][] {
@@ -547,10 +558,60 @@ function combinations<T>(items: T[], size: number): T[][] {
   return result;
 }
 
+function calculateComboTotal(
+  rule: ComboRule,
+  match: MatchedUnit[],
+  extraTotal: number,
+): number | null {
+  if (rule.pricingMode === 'fixed') {
+    return rule.comboPriceCents + extraTotal;
+  }
+
+  const baseGroupName = rule.basePricingGroupName;
+
+  if (!baseGroupName) {
+    return null;
+  }
+
+  const baseTotal = match
+    .filter((item) => item.groupName === baseGroupName)
+    .reduce((total, item) => total + item.unitPriceCents, 0);
+
+  if (baseTotal <= 0) {
+    return null;
+  }
+
+  return baseTotal + rule.priceDeltaCents + extraTotal;
+}
+
 function compareMatchesForBestDiscount(
+  rule: ComboRule,
   left: MatchedUnit[],
   right: MatchedUnit[],
 ): number {
+  const leftDiscount = matchDiscountValue(rule, left);
+  const rightDiscount = matchDiscountValue(rule, right);
+
+  if (leftDiscount !== rightDiscount) {
+    return rightDiscount - leftDiscount;
+  }
+
+  return compareUnitArrays(left, right);
+}
+
+function matchDiscountValue(rule: ComboRule, match: MatchedUnit[]): number {
+  const originalTotal = match.reduce((total, item) => total + item.unitPriceCents, 0);
+  const extraTotal = match.reduce((total, item) => total + item.extraPriceCents, 0);
+  const comboTotal = calculateComboTotal(rule, match, extraTotal);
+
+  if (comboTotal === null) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  return originalTotal - comboTotal;
+}
+
+function compareMatchesForBestDiscountWithoutRule(left: MatchedUnit[], right: MatchedUnit[]): number {
   const leftNetValue = matchNetValue(left);
   const rightNetValue = matchNetValue(right);
 

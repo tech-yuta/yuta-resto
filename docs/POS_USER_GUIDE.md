@@ -193,6 +193,12 @@ Bar
 Dessert
 ```
 
+Station tabs show the unfinished item count for that station across
+`A preparer` and `En preparation`. Items already in `Pret` are not included in
+the station badge count. When staff switch station, the POS keeps the current
+status if that station has matching items; otherwise it opens the first
+unfinished queue for that station, starting with `A preparer`.
+
 The kitchen screen is a production queue, not a full order-history screen.
 By default it opens `A preparer` and only loads the selected station/status
 queue.
@@ -450,12 +456,24 @@ Combos are payment discounts, not kitchen production rules.
 Combo behavior:
 
 ```txt
-Rules define a fixed combo price
+Rules can define a fixed combo price
+Rules can also define "plat + supplement" pricing
 Groups define required choices
 Eligible menu items can have extra price
 Higher-priority rules are applied first
 The same item quantity cannot be reused twice
 ```
+
+For Luna-style formulas, use the `Plat + supplement` pricing mode:
+
+```txt
+Menu Express   = selected plat price + 4 EUR
+Menu Gourmand  = selected plat price + 8 EUR
+Combo Ete      = selected plat price + 2.50 EUR
+```
+
+The `Groupe base` field must match the combo group that contains the priced
+main dish, usually `Plat`.
 
 Combos are applied during payment optimization.
 

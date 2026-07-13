@@ -29,7 +29,15 @@ export type ComboCalculationItem = {
 
 export type ComboCalculationRule = Pick<
   ComboRule,
-  'id' | 'name' | 'comboPriceCents' | 'priority' | 'maxApplications' | 'isActive'
+  | 'id'
+  | 'name'
+  | 'pricingMode'
+  | 'comboPriceCents'
+  | 'priceDeltaCents'
+  | 'basePricingGroupName'
+  | 'priority'
+  | 'maxApplications'
+  | 'isActive'
 > & {
   groups: Array<
     Pick<ComboRuleGroup, 'id' | 'comboRuleId' | 'name' | 'minQuantity' | 'maxQuantity' | 'sortOrder'> & {
@@ -58,6 +66,7 @@ type UnitItem = {
 
 type MatchedUnit = UnitItem & {
   groupId: string;
+  groupName: string;
   extraPriceCents: number;
 };
 
@@ -101,7 +110,12 @@ export function calculateComboDiscountsForItems(
 
       const originalTotal = match.reduce((total, item) => total + item.unitPriceCentsSnapshot, 0);
       const extraTotal = match.reduce((total, item) => total + item.extraPriceCents, 0);
-      const comboTotal = rule.comboPriceCents + extraTotal;
+      const comboTotal = calculateComboTotal(rule, match, extraTotal);
+
+      if (comboTotal === null) {
+        break;
+      }
+
       const discountCents = originalTotal - comboTotal;
 
       if (discountCents <= 0) {
@@ -486,7 +500,7 @@ function findBestMatch(rule: ComboCalculationRule, remainingUnits: UnitItem[]): 
     }
   }
 
-  return candidates.toSorted(compareMatchesForBestDiscount)[0] ?? null;
+  return candidates.toSorted((left, right) => compareMatchesForBestDiscount(rule, left, right))[0] ?? null;
 }
 
 function findGroupMatches(
@@ -504,6 +518,7 @@ function findGroupMatches(
       return {
         ...unit,
         groupId: group.id,
+        groupName: group.name,
         extraPriceCents: groupItem.extraPriceCents,
       };
     })
@@ -517,7 +532,7 @@ function findGroupMatches(
     matches.push(...combinations(eligibleUnits, size));
   }
 
-  return matches.toSorted(compareMatchesForBestDiscount);
+  return matches.toSorted(compareMatchesForBestDiscountWithoutRule);
 }
 
 function combinations<T>(items: T[], size: number): T[][] {
@@ -549,7 +564,60 @@ function combinations<T>(items: T[], size: number): T[][] {
   return result;
 }
 
-function compareMatchesForBestDiscount(left: MatchedUnit[], right: MatchedUnit[]): number {
+function calculateComboTotal(
+  rule: ComboCalculationRule,
+  match: MatchedUnit[],
+  extraTotal: number,
+): number | null {
+  if (rule.pricingMode === 'fixed') {
+    return rule.comboPriceCents + extraTotal;
+  }
+
+  const baseGroupName = rule.basePricingGroupName;
+
+  if (!baseGroupName) {
+    return null;
+  }
+
+  const baseTotal = match
+    .filter((item) => item.groupName === baseGroupName)
+    .reduce((total, item) => total + item.unitPriceCentsSnapshot, 0);
+
+  if (baseTotal <= 0) {
+    return null;
+  }
+
+  return baseTotal + rule.priceDeltaCents + extraTotal;
+}
+
+function compareMatchesForBestDiscount(
+  rule: ComboCalculationRule,
+  left: MatchedUnit[],
+  right: MatchedUnit[],
+): number {
+  const leftDiscount = matchDiscountValue(rule, left);
+  const rightDiscount = matchDiscountValue(rule, right);
+
+  if (leftDiscount !== rightDiscount) {
+    return rightDiscount - leftDiscount;
+  }
+
+  return compareUnitArrays(left, right);
+}
+
+function matchDiscountValue(rule: ComboCalculationRule, match: MatchedUnit[]): number {
+  const originalTotal = match.reduce((total, item) => total + item.unitPriceCentsSnapshot, 0);
+  const extraTotal = match.reduce((total, item) => total + item.extraPriceCents, 0);
+  const comboTotal = calculateComboTotal(rule, match, extraTotal);
+
+  if (comboTotal === null) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  return originalTotal - comboTotal;
+}
+
+function compareMatchesForBestDiscountWithoutRule(left: MatchedUnit[], right: MatchedUnit[]): number {
   const leftNetValue = matchNetValue(left);
   const rightNetValue = matchNetValue(right);
 

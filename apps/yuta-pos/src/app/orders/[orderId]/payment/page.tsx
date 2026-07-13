@@ -93,7 +93,10 @@ export default async function PaymentPage({
         comboRules={activeComboRules.map((rule) => ({
           id: rule.id,
           name: rule.name,
+          pricingMode: rule.pricingMode,
           comboPriceCents: rule.comboPriceCents,
+          priceDeltaCents: rule.priceDeltaCents,
+          basePricingGroupName: rule.basePricingGroupName,
           priority: rule.priority,
           maxApplications: rule.maxApplications,
           isActive: rule.isActive,
