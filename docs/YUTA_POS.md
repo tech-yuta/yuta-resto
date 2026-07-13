@@ -66,6 +66,16 @@ Set `NEXT_PUBLIC_POS_URL` in production when the deployed POS URL differs from
 the local default `http://localhost:3003`; this value is used as the metadata
 base for Open Graph, Twitter, manifest, and icon URLs.
 
+## Production Deployment
+
+Production deployment uses `apps/yuta-pos/Dockerfile` and
+`apps/yuta-pos/docker-compose.yml`. The runtime service is `pos`; database
+migrations run through the compose `migrate` profile and execute
+`packages/db` migrations against the shared `yuta_resto` database.
+
+Follow `docs/DEPLOYMENT.md` for the exact Luna server commands and required
+`apps/yuta-pos/.env.production` values.
+
 ## Architecture
 
 Use:

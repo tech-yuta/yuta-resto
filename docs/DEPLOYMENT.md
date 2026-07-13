@@ -128,3 +128,39 @@ git pull
 docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml --profile migrate run --rm --build migrate
 docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml up -d --build <service>
 ```
+
+## YuTa POS
+
+`apps/yuta-pos` deploys as a standalone Next.js container and uses the shared
+`packages/db` migrations.
+
+Production env file:
+
+```txt
+apps/yuta-pos/.env.production
+```
+
+Required values:
+
+```env
+DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
+POSTGRES_NETWORK=postgres_default
+POS_PORT=3003
+NEXT_PUBLIC_POS_URL=https://pos.example.com
+```
+
+Deploy or update POS:
+
+```bash
+cd /opt/luna/source/yuta-resto
+git pull
+docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml --profile migrate run --rm --build migrate
+docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml up -d --build pos
+```
+
+Check status:
+
+```bash
+docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml ps
+docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml logs --tail=100 pos
+```
