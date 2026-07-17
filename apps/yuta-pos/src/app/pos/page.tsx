@@ -23,6 +23,8 @@ import { selectedStaffCookieName, staffSelectableRoles } from '../_pos-helpers';
 import { createOrderAction } from '../actions';
 import { PosPageShell } from '../components/PosPageShell';
 
+export const dynamic = 'force-dynamic';
+
 const orderTypes = [
   { value: 'dine_in', label: 'Sur place' },
   { value: 'takeaway', label: 'A emporter' },
@@ -182,7 +184,7 @@ function getDefaultStaffUserId(
   }
 
   return (
-    staffUsers.find((staffUser) => staffUser.email === 'staff@yuta.local')?.id ??
-    staffUsers[0]?.id
+    staffUsers.find((staffUser) => staffUser.email === 'staff@yuta.local')
+      ?.id ?? staffUsers[0]?.id
   );
 }

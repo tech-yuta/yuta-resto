@@ -83,6 +83,9 @@ Production deployment uses `apps/yuta-pos/Dockerfile` and
 migrations run through the compose `migrate` profile and execute
 `packages/db` migrations against the shared `yuta_resto` database.
 
+Routes that read POS data directly, including `/pos`, must remain dynamically
+rendered so Docker image builds never require a live database connection.
+
 Follow `docs/DEPLOYMENT.md` for the exact Luna server commands and required
 `apps/yuta-pos/.env.production` values.
 
