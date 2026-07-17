@@ -17,13 +17,13 @@ import {
 import { asc } from 'drizzle-orm';
 import { Layers3, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { AdminPage } from '../../../../components/admin-page';
+import { AdminPage } from '../../../../../components/admin-page';
 import {
   addComboGroupItemAction,
   createComboRuleAction,
   createComboRuleGroupAction,
   updateComboRuleAction,
-} from './actions';
+} from '../../combos/actions';
 
 export const dynamic = 'force-dynamic';
 

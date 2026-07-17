@@ -2,23 +2,52 @@
   "name": "YuTa POS",
   "short_name": "YuTa POS",
   "description": "Point de vente interne YuTa.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
+  "lang": "fr-FR",
+  "categories": ["business", "food"],
   "icons": [
     {
       "src": "/images/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/images/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "theme_color": "#3a9c7c",
   "background_color": "#f6f8f7",
-  "display": "standalone"
+  "display": "standalone",
+  "shortcuts": [
+    {
+      "name": "Nouvelle commande",
+      "short_name": "Nouvelle",
+      "url": "/pos",
+      "icons": [
+        {
+          "src": "/images/web-app-manifest-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Cuisine",
+      "short_name": "Cuisine",
+      "url": "/kitchen",
+      "icons": [
+        {
+          "src": "/images/web-app-manifest-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
 }

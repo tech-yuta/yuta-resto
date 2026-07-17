@@ -56,6 +56,20 @@ The QA checklist lives in:
 docs/POS_QA_CHECKLIST.md
 ```
 
+## Install As An App
+
+The production POS can be installed as a PWA on a supported browser. Open the
+POS over HTTPS and use the `Installer` action when the installation proposal
+appears. The installed POS opens in a standalone window and may expose quick
+shortcuts for `Nouvelle commande` and `Cuisine` from the device app launcher.
+
+On iPhone or iPad, use Safari's Share menu and choose `Sur l'ecran d'accueil`.
+Safari does not expose the same in-page install proposal as Chromium browsers.
+
+This first PWA level does not make POS operations available offline. The app
+shell assets may be cached, but creating orders, sending items to the kitchen,
+and taking payments still require a working network connection.
+
 ## POS Home / Orders
 
 Open:
@@ -84,16 +98,20 @@ http://localhost:3003/pos
 
 To create an order:
 
-1. Enter a table or reference in `Table / Repere`.
-2. Choose the order type:
+1. Choose the employee in `Employe`.
+2. Enter a table or reference in `Table / Repere`.
+3. Choose the order type:
    - `Sur place`
    - `A emporter`
    - `Livraison`
-3. Add an optional note when needed.
-4. Submit the form.
-5. The app opens the item-entry screen so staff can add menu items.
+4. Add an optional note when needed.
+5. Submit the form.
+6. The app opens the item-entry screen so staff can add menu items.
 
-The POS uses the saved/default staff session user for internal order and payment tracking. It is not a login system.
+The POS stores the selected employee on the order as `createdBy`. The employee
+selector shows active users with `admin`, `manager`, or `staff` roles. If no
+active employee exists, order creation is disabled until an employee is created
+or reactivated in admin.
 
 ## Order Detail
 

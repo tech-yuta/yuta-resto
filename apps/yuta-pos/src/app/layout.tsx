@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Sans } from 'next/font/google';
 import './globals.css';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin', 'vietnamese'],
@@ -84,7 +85,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
-      <body className={ibmPlexSans.className}>{children}</body>
+      <body className={ibmPlexSans.className}>
+        {children}
+        <PwaInstallPrompt />
+      </body>
     </html>
   );
 }

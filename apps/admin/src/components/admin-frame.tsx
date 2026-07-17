@@ -17,7 +17,6 @@ import {
 import {
   Archive,
   ArrowLeftRight,
-  BarChart3,
   Bell,
   CalendarCheck,
   CalendarDays,
@@ -26,23 +25,17 @@ import {
   ChevronRight,
   Clock,
   ClipboardCheck,
-  CreditCard,
   FileText,
-  Folder,
   Heart,
-  ImageIcon,
   LayoutDashboard,
   LayoutGrid,
-  Layers,
-  ListChecks,
   Mail,
   Menu,
   Megaphone,
   MessageSquare,
-  Package,
   PackageCheck,
+  Palette,
   Scale,
-  Send,
   Settings,
   Shield,
   ShoppingCart,
@@ -80,18 +73,11 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Commandes', icon: ShoppingCart, href: '/operations/orders' },
       { label: 'Tables & salle', icon: LayoutGrid, href: '/operations/tables' },
-      { label: 'Reservations', icon: CalendarCheck, href: '/operations/reservations' },
-      { label: 'Paiements', icon: CreditCard, href: '/operations/payments' },
-      { label: 'Rapports POS', icon: BarChart3, href: '/operations/reports' },
-    ],
-  },
-  {
-    title: 'Menu',
-    items: [
-      { label: 'Menus & options', icon: ListChecks, href: '/menu/menus' },
-      { label: 'Combos', icon: Layers, href: '/menu/combos' },
-      { label: 'Produits', icon: Package, href: '/menu/products' },
-      { label: 'Categories', icon: Folder, href: '/menu/categories' },
+      {
+        label: 'Reservations',
+        icon: CalendarCheck,
+        href: '/operations/reservations',
+      },
     ],
   },
   {
@@ -99,7 +85,11 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Inventaire', icon: Archive, href: '/stock/inventory' },
       { label: 'Fournisseurs', icon: Truck, href: '/stock/suppliers' },
-      { label: 'Entrees / sorties', icon: ArrowLeftRight, href: '/stock/movements' },
+      {
+        label: 'Entrees / sorties',
+        icon: ArrowLeftRight,
+        href: '/stock/movements',
+      },
     ],
   },
   {
@@ -108,14 +98,22 @@ const navSections: NavSection[] = [
       { label: 'Employes', icon: Users, href: '/team/staff' },
       { label: 'Planning', icon: CalendarDays, href: '/team/planning' },
       { label: 'Pointage', icon: Clock, href: '/team/time-tracking' },
-      { label: 'Taches du jour', icon: ClipboardCheck, href: '/team/daily-tasks' },
+      {
+        label: 'Taches du jour',
+        icon: ClipboardCheck,
+        href: '/team/daily-tasks',
+      },
       { label: 'Roles & acces', icon: Shield, href: '/team/roles' },
     ],
   },
   {
     title: 'Conformite & veille',
     items: [
-      { label: 'Veille & Conformite', icon: Scale, href: '/compliance/monitoring' },
+      {
+        label: 'Veille & Conformite',
+        icon: Scale,
+        href: '/compliance/monitoring',
+      },
     ],
   },
   {
@@ -123,15 +121,22 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Clients', icon: Users, href: '/customers/directory' },
       { label: 'Fidelite', icon: Heart, href: '/customers/loyalty' },
-      { label: 'Avis & commentaires', icon: MessageSquare, href: '/customers/reviews' },
+      {
+        label: 'Avis & commentaires',
+        icon: MessageSquare,
+        href: '/customers/reviews',
+      },
       { label: 'Emails', icon: Mail, href: '/customers/emails' },
     ],
   },
   {
     title: 'Marketing & contenu',
     items: [
-      { label: 'Reseaux sociaux', icon: Send, href: '/marketing/social-media' },
-      { label: 'Medias', icon: ImageIcon, href: '/marketing/media-library' },
+      {
+        label: 'Création visuelle',
+        icon: Palette,
+        href: '/marketing/creative-studio',
+      },
       { label: 'Pages & contenus', icon: FileText, href: '/marketing/content' },
       { label: 'Promotions', icon: Tag, href: '#' },
       { label: 'Campagnes', icon: Megaphone, href: '/marketing/campaigns' },
@@ -141,7 +146,11 @@ const navSections: NavSection[] = [
     title: 'Parametres',
     items: [
       { label: 'Restaurant', icon: Store, href: '/settings/restaurant' },
-      { label: 'Modules & abonnement', icon: PackageCheck, href: '/settings/billing' },
+      {
+        label: 'Modules & abonnement',
+        icon: PackageCheck,
+        href: '/settings/billing',
+      },
       { label: 'POS', icon: Settings, href: '/settings/printers' },
     ],
   },
@@ -177,7 +186,12 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           }
           footer={
             <AppSidebarFooter>
-              <Button variant="ghost" size="sm" fullWidth className="justify-start text-primary/50">
+              <Button
+                variant="ghost"
+                size="sm"
+                fullWidth
+                className="justify-start text-primary/50"
+              >
                 <ChevronLeft className="h-4 w-4" />
                 Reduire le menu
               </Button>
@@ -215,26 +229,32 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           }
           actions={
             <>
-              <IconButton className="relative text-primary/60" aria-label="Notifications">
+              <IconButton
+                className="relative text-primary/60"
+                aria-label="Notifications"
+              >
                 <Bell className="h-5 w-5" />
                 <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-action-danger text-[10px] font-black text-white">
                   3
                 </span>
               </IconButton>
               <Button variant="ghost" size="sm" className="gap-1.5 p-1">
-                <Avatar fallback="YT" size="sm" className="bg-primary text-white" />
+                <Avatar
+                  fallback="YT"
+                  size="sm"
+                  className="bg-primary text-white"
+                />
                 <ChevronRight className="hidden h-3.5 w-3.5 rotate-90 text-primary/40 sm:block" />
               </Button>
             </>
           }
         />
 
-        <AppMain>
-          {children}
-        </AppMain>
+        <AppMain>{children}</AppMain>
 
         <AppFooter>
-          YuTa Admin v1.0.0&nbsp;&nbsp; &copy; 2025 YuTa Solutions. Tous droits reserves.
+          YuTa Admin v1.0.0&nbsp;&nbsp; &copy; 2025 YuTa Solutions. Tous droits
+          reserves.
         </AppFooter>
       </div>
 
@@ -282,7 +302,10 @@ function AdminNavigation({
   return (
     <>
       {navSections.map((section, sectionIndex) => (
-        <div key={section.title ?? 'main'} className={sectionIndex > 0 ? 'mt-4' : ''}>
+        <div
+          key={section.title ?? 'main'}
+          className={sectionIndex > 0 ? 'mt-4' : ''}
+        >
           {section.title && (
             <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary/40">
               {section.title}

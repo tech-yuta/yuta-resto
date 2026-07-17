@@ -16,13 +16,13 @@ import {
 } from '@yuta/ui';
 import { asc } from 'drizzle-orm';
 import { Plus, Utensils } from 'lucide-react';
-import { AdminPage } from '../../../../components/admin-page';
+import { AdminPage } from '../../../../../components/admin-page';
 import {
   createCategoryAction,
   createMenuItemAction,
   toggleMenuItemAvailabilityAction,
   updateMenuItemAction,
-} from './actions';
+} from '../../menus/actions';
 
 export const dynamic = 'force-dynamic';
 

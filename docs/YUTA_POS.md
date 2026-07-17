@@ -62,6 +62,16 @@ Code, comments, types, commit messages, and documentation stay in English.
 and `public/site.webmanifest`. The POS is an internal tool and must stay
 `noindex,nofollow`.
 
+The level-one PWA implementation registers `public/sw.js` in production and
+offers an install action when the browser exposes its native install prompt.
+Installed instances launch in standalone mode and provide shortcuts to new
+order entry and the kitchen screen.
+
+The service worker caches only the manifest, app icons, and immutable Next.js
+static build assets. It deliberately does not cache page navigations, database
+data, Server Actions, order operations, or payments. Offline order entry and
+background synchronization are not supported at this level.
+
 Set `NEXT_PUBLIC_POS_URL` in production when the deployed POS URL differs from
 the local default `http://localhost:3003`; this value is used as the metadata
 base for Open Graph, Twitter, manifest, and icon URLs.

@@ -1,6 +1,25 @@
-import { Badge, Button, Card, Input, Label, Textarea } from '@yuta/ui';
+import { db } from '@yuta/db/client';
+import { users } from '@yuta/db/schema';
+import {
+  Alert,
+  AlertDescription,
+  Badge,
+  Button,
+  Card,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@yuta/ui';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { ChefHat, ClipboardList } from 'lucide-react';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
+import { selectedStaffCookieName, staffSelectableRoles } from '../_pos-helpers';
 import { createOrderAction } from '../actions';
 import { PosPageShell } from '../components/PosPageShell';
 
@@ -10,7 +29,22 @@ const orderTypes = [
   { value: 'delivery', label: 'Livraison' },
 ] as const;
 
-export default function PosHome() {
+export default async function PosHome() {
+  const staffUsers = await db.query.users.findMany({
+    where: and(
+      eq(users.isActive, true),
+      inArray(users.role, [...staffSelectableRoles]),
+    ),
+    orderBy: [asc(users.name)],
+  });
+  const cookieStore = await cookies();
+  const selectedStaffUserId = cookieStore.get(selectedStaffCookieName)?.value;
+  const defaultStaffUserId = getDefaultStaffUserId(
+    staffUsers,
+    selectedStaffUserId,
+  );
+  const hasStaffUsers = staffUsers.length > 0;
+
   return (
     <PosPageShell
       title="Nouvelle commande"
@@ -46,6 +80,35 @@ export default function PosHome() {
           </div>
 
           <form action={createOrderAction} className="grid gap-5 p-5 sm:p-6">
+            {!hasStaffUsers && (
+              <Alert tone="danger">
+                <AlertDescription>
+                  Aucun employe actif disponible pour creer une commande.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="staffUserId">Employe</Label>
+              <Select
+                name="staffUserId"
+                defaultValue={defaultStaffUserId}
+                required
+                disabled={!hasStaffUsers}
+              >
+                <SelectTrigger id="staffUserId" className="h-12 rounded-lg">
+                  <SelectValue placeholder="Choisir employe" />
+                </SelectTrigger>
+                <SelectContent>
+                  {staffUsers.map((staffUser) => (
+                    <SelectItem key={staffUser.id} value={staffUser.id}>
+                      {staffUser.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="tableLabel">Table / Repere</Label>
               <Input
@@ -96,6 +159,7 @@ export default function PosHome() {
               variant="primary"
               size="lg"
               className="min-h-14 justify-center bg-primary text-white hover:bg-primary/90"
+              disabled={!hasStaffUsers}
             >
               Creer la commande
             </Button>
@@ -103,5 +167,22 @@ export default function PosHome() {
         </Card>
       </section>
     </PosPageShell>
+  );
+}
+
+function getDefaultStaffUserId(
+  staffUsers: Array<typeof users.$inferSelect>,
+  selectedStaffUserId: string | undefined,
+): string | undefined {
+  if (
+    selectedStaffUserId &&
+    staffUsers.some((staffUser) => staffUser.id === selectedStaffUserId)
+  ) {
+    return selectedStaffUserId;
+  }
+
+  return (
+    staffUsers.find((staffUser) => staffUser.email === 'staff@yuta.local')?.id ??
+    staffUsers[0]?.id
   );
 }
