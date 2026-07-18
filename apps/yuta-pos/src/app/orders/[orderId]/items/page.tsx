@@ -1,18 +1,18 @@
 import { createOrderService, formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { menuCategories, menuItems } from '@yuta/db/schema';
-import { Badge, Button, Input, Separator, cn } from '@yuta/ui';
+import { menuCategories, menuItems, payments } from '@yuta/db/schema';
+import { Button, IconButton, cn } from '@yuta/ui';
 import { and, asc, eq } from 'drizzle-orm';
-import {
-  ChefHat,
-  CreditCard,
-  List,
-  Search,
-  SlidersHorizontal,
-} from 'lucide-react';
+import { ChefHat, CreditCard, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { addOrderItemAction, sendOrderToKitchenAction } from '../../../actions';
+import {
+  removePendingOrderItemAction,
+  sendOrderToKitchenAction,
+  updateOrderItemQuantityAction,
+} from '../../../actions';
 import { PosPageShell } from '../../../components/PosPageShell';
+import { MenuItemBrowser } from './MenuItemBrowser';
+import { MobileOrderDialog } from './MobileOrderDialog';
 
 type OrderItemsPageProps = {
   params: Promise<{
@@ -20,7 +20,6 @@ type OrderItemsPageProps = {
   }>;
   searchParams: Promise<{
     category?: string;
-    q?: string;
   }>;
 };
 
@@ -34,13 +33,16 @@ export default async function OrderItemsPage({
   searchParams,
 }: OrderItemsPageProps) {
   const { orderId } = await params;
-  const { category, q } = await searchParams;
+  const { category } = await searchParams;
   const orderService = createOrderService(db);
-  const [order, categories] = await Promise.all([
+  const [order, categories, paidPayment] = await Promise.all([
     orderService.getOrderDetail(orderId),
     db.query.menuCategories.findMany({
       where: eq(menuCategories.isActive, true),
       orderBy: [asc(menuCategories.sortOrder), asc(menuCategories.name)],
+    }),
+    db.query.payments.findFirst({
+      where: and(eq(payments.orderId, orderId), eq(payments.status, 'paid')),
     }),
   ]);
   const selectedCategoryId = category ?? 'all';
@@ -64,26 +66,21 @@ export default async function OrderItemsPage({
           ),
           orderBy: [asc(menuItems.sortOrder), asc(menuItems.name)],
         });
-  const searchQuery = q?.trim() ?? '';
-  const visibleItems =
-    searchQuery.length > 0
-      ? items.filter((item) => {
-          const normalizedQuery = searchQuery.toLocaleLowerCase('fr-FR');
-
-          return (
-            item.name.toLocaleLowerCase('fr-FR').includes(normalizedQuery) ||
-            (item.description
-              ?.toLocaleLowerCase('fr-FR')
-              .includes(normalizedQuery) ??
-              false)
-          );
-        })
-      : items;
   const pendingItemCount = order.items.filter(
     (item) => item.status === 'pending',
   ).length;
-  const canEditItems = order.status !== 'paid' && order.status !== 'cancelled';
-  const canSendToKitchen = canEditItems && pendingItemCount > 0;
+  const canEditItems =
+    order.status !== 'paid' &&
+    order.status !== 'cancelled' &&
+    order.paymentMode === 'single' &&
+    !paidPayment;
+  const canSendToKitchen =
+    order.status !== 'paid' &&
+    order.status !== 'cancelled' &&
+    pendingItemCount > 0;
+  const activeOrderItems = order.items.filter(
+    (item) => item.status !== 'cancelled',
+  );
 
   return (
     <PosPageShell
@@ -113,19 +110,19 @@ export default async function OrderItemsPage({
           </Button>
         </>
       }
-      contentClassName="p-0"
+      contentClassName="p-0 lg:overflow-hidden"
       maxWidthClassName="max-w-7xl"
     >
-      <div className="grid min-h-full min-w-0 overflow-x-hidden lg:grid-cols-[190px_minmax(0,1fr)_360px]">
-        <aside className="min-w-0 overflow-hidden border-b border-border-default bg-white lg:border-b-0 lg:border-r">
+      <div className="grid min-h-full min-w-0 overflow-x-hidden lg:h-full lg:min-h-0 lg:grid-cols-[190px_minmax(0,1fr)_360px] lg:grid-rows-[minmax(0,1fr)]">
+        <aside className="min-w-0 overflow-hidden border-b border-border-default bg-white lg:flex lg:min-h-0 lg:flex-col lg:border-b-0 lg:border-r">
           <div className="hidden px-5 pb-3 pt-6 lg:block">
             <h2 className="text-sm font-black text-primary/55">Categories</h2>
           </div>
-          <nav className="flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] lg:grid lg:gap-3 lg:overflow-visible lg:px-4 lg:pb-6 lg:pt-0 [&::-webkit-scrollbar]:hidden">
+          <nav className="flex gap-2 overflow-x-auto px-4 py-3 max-lg:[scrollbar-width:none] max-lg:[&::-webkit-scrollbar]:hidden lg:grid lg:min-h-0 lg:flex-1 lg:content-start lg:gap-3 lg:overflow-x-hidden lg:overflow-y-scroll lg:overscroll-contain lg:px-4 lg:pb-6 lg:pt-0">
             {categoryTabs.map((categoryItem) => (
               <Link
                 key={categoryItem.id}
-                href={categoryHref(order.id, categoryItem.id, searchQuery)}
+                href={categoryHref(order.id, categoryItem.id)}
                 className={cn(
                   'shrink-0 rounded-lg px-3 py-2 text-xs font-black transition-colors sm:px-4 sm:text-sm lg:w-full lg:py-3',
                   categoryItem.id === selectedCategoryId
@@ -139,108 +136,56 @@ export default async function OrderItemsPage({
           </nav>
         </aside>
 
-        <section className="min-w-0 overflow-hidden border-b border-border-default bg-white lg:border-b-0 lg:border-r">
-          <div className="border-b border-border-default px-4 py-3 lg:px-5 lg:py-5">
-            <form
-              action={`/orders/${order.id}/items`}
-              className="flex max-w-xl gap-2"
-            >
-              {selectedCategoryId !== 'all' && (
-                <input
-                  type="hidden"
-                  name="category"
-                  value={selectedCategoryId}
-                />
-              )}
-              <div className="relative min-w-0 flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/35 lg:left-4 lg:h-5 lg:w-5" />
-                <Input
-                  name="q"
-                  defaultValue={searchQuery}
-                  placeholder="Rechercher un article..."
-                  size="lg"
-                  className="h-11 pl-10 text-sm lg:h-12 lg:pl-12"
-                />
-              </div>
-              <Button
-                type="submit"
-                variant="secondary"
-                size="sm"
-                className="h-11 w-11 shrink-0 lg:h-12 lg:w-12"
-                aria-label="Filtrer"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-              </Button>
-            </form>
-          </div>
+        <section className="min-w-0 overflow-hidden border-b border-border-default bg-white lg:flex lg:min-h-0 lg:flex-col lg:border-b-0 lg:border-r">
+          <MenuItemBrowser
+            orderId={order.id}
+            canEditItems={canEditItems}
+            items={items.map((item) => ({
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              priceLabel: formatEuros(item.priceCents),
+              selectedQuantity: activeOrderItems
+                .filter((orderItem) => orderItem.menuItemId === item.id)
+                .reduce((total, orderItem) => total + orderItem.quantity, 0),
+            }))}
+          />
 
-          {visibleItems.length === 0 ? (
-            <div className="grid min-h-96 place-items-center p-6 text-center">
-              <div>
-                <Search className="mx-auto h-9 w-9 text-primary/30" />
-                <h3 className="mt-3 font-black">Aucun article</h3>
-                <p className="mt-1 text-sm font-semibold text-primary/55">
-                  Essayez une autre categorie ou une autre recherche.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 p-4 pb-24 sm:gap-4 md:grid-cols-3 lg:p-5 lg:pb-5 xl:grid-cols-4">
-              {visibleItems.map((item) => (
-                <form key={item.id} action={addOrderItemAction}>
-                  <input type="hidden" name="orderId" value={order.id} />
-                  <input type="hidden" name="menuItemId" value={item.id} />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    className="relative h-32 w-full flex-col gap-0 overflow-hidden rounded-lg p-0 text-center sm:h-40"
-                    disabled={!canEditItems}
-                  >
-                    <MenuItemArtwork name={item.name} />
-                    <span className="grid w-full gap-1 px-3 pb-3 pt-2">
-                      <span className="line-clamp-2 min-h-7 text-xs font-black leading-tight sm:min-h-9 sm:text-sm">
-                        {item.name}
-                      </span>
-                      <span className="text-xs font-black sm:text-sm">
-                        {formatEuros(item.priceCents)}
-                      </span>
-                    </span>
-                  </Button>
-                </form>
-              ))}
-            </div>
-          )}
-
-          <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-7xl -translate-x-1/2 border-t border-border-default bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
-            <Button
-              asChild
-              variant="secondary"
-              className="h-12 w-full justify-between rounded-lg px-4"
-            >
-              <Link href={`/orders/${order.id}`}>
-                <span className="inline-flex items-center gap-2 font-black">
-                  <List className="h-4 w-4" />
-                  Voir commande ({order.items.length})
-                </span>
-                <span className="font-black">
-                  {formatEuros(order.totalCents)}
-                </span>
-              </Link>
-            </Button>
-          </div>
+          <MobileOrderDialog
+            orderId={order.id}
+            canEditItems={canEditItems}
+            items={activeOrderItems.map((item) => ({
+              id: item.id,
+              quantity: item.quantity,
+              name: item.itemNameSnapshot,
+              note: item.note,
+              totalLabel: formatEuros(
+                item.unitPriceCentsSnapshot * item.quantity,
+              ),
+              isPending: item.status === 'pending',
+              statusLabel: orderItemStatusLabel(item.status),
+            }))}
+            subtotalLabel={formatEuros(order.subtotalCents)}
+            discountLabel={
+              order.discountCents > 0
+                ? `-${formatEuros(order.discountCents)}`
+                : formatEuros(0)
+            }
+            totalLabel={formatEuros(order.totalCents)}
+          />
         </section>
 
-        <aside className="hidden bg-white lg:block">
+        <aside className="hidden min-h-0 overflow-hidden bg-white lg:flex lg:flex-col">
           <div className="px-6 py-6">
             <h2 className="text-lg font-black">Commande actuelle</h2>
           </div>
-          <div className="grid max-h-[430px] overflow-y-auto px-6">
-            {order.items.length === 0 ? (
+          <div className="grid min-h-0 flex-1 content-start overflow-y-auto px-6">
+            {activeOrderItems.length === 0 ? (
               <p className="rounded-lg border border-border-default bg-canvas p-3 text-sm font-semibold text-primary/55">
                 Aucun article pour le moment.
               </p>
             ) : (
-              order.items.map((item) => (
+              activeOrderItems.map((item) => (
                 <div
                   key={item.id}
                   className={cn(
@@ -248,10 +193,13 @@ export default async function OrderItemsPage({
                     item.status === 'cancelled' && 'opacity-60',
                   )}
                 >
-                  <div className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-3">
-                    <span className="text-base font-black">
-                      {item.quantity}
-                    </span>
+                  <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2">
+                    <OrderItemQuantityControls
+                      orderId={order.id}
+                      orderItemId={item.id}
+                      quantity={item.quantity}
+                      canEdit={canEditItems && item.status === 'pending'}
+                    />
                     <div className="min-w-0">
                       <p className="truncate text-base font-black">
                         {item.itemNameSnapshot}
@@ -261,6 +209,9 @@ export default async function OrderItemsPage({
                           Note: {item.note}
                         </p>
                       )}
+                      <p className="mt-1 text-xs font-semibold text-primary/45">
+                        {orderItemStatusLabel(item.status)}
+                      </p>
                     </div>
                     <p className="font-black">
                       {formatEuros(item.unitPriceCentsSnapshot * item.quantity)}
@@ -305,67 +256,79 @@ function AmountRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function categoryHref(
-  orderId: string,
-  categoryId: string,
-  searchQuery: string,
-): string {
-  const params = new URLSearchParams();
-
-  if (categoryId !== 'all') {
-    params.set('category', categoryId);
+function OrderItemQuantityControls({
+  orderId,
+  orderItemId,
+  quantity,
+  canEdit,
+}: {
+  orderId: string;
+  orderItemId: string;
+  quantity: number;
+  canEdit: boolean;
+}) {
+  if (!canEdit) {
+    return <span className="min-w-6 text-center font-black">{quantity}</span>;
   }
 
-  if (searchQuery.length > 0) {
-    params.set('q', searchQuery);
-  }
-
-  const queryString = params.toString();
-
-  return queryString.length > 0
-    ? `/orders/${orderId}/items?${queryString}`
-    : `/orders/${orderId}/items`;
-}
-
-function MenuItemArtwork({ name }: { name: string }) {
   return (
-    <span className="relative grid h-16 w-full place-items-center overflow-hidden bg-canvas sm:h-24">
-      <span
-        className={cn(
-          'grid h-14 w-14 place-items-center rounded-full border border-border-default text-sm font-black shadow-sm sm:h-20 sm:w-20 sm:text-lg',
-          menuItemArtworkClass(name),
-        )}
+    <div className="flex items-center gap-1">
+      <form
+        action={
+          quantity === 1
+            ? removePendingOrderItemAction
+            : updateOrderItemQuantityAction
+        }
       >
-        {menuItemInitials(name)}
-      </span>
-      <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-action-primary text-[11px] font-black text-primary shadow-sm">
-        0
-      </span>
-    </span>
+        <input type="hidden" name="orderId" value={orderId} />
+        <input type="hidden" name="orderItemId" value={orderItemId} />
+        {quantity > 1 && (
+          <input type="hidden" name="quantity" value={quantity - 1} />
+        )}
+        <IconButton
+          type="submit"
+          variant="outline"
+          size="sm"
+          aria-label="Retirer un article"
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </IconButton>
+      </form>
+      <span className="min-w-5 text-center font-black">{quantity}</span>
+      <form action={updateOrderItemQuantityAction}>
+        <input type="hidden" name="orderId" value={orderId} />
+        <input type="hidden" name="orderItemId" value={orderItemId} />
+        <input type="hidden" name="quantity" value={quantity + 1} />
+        <IconButton
+          type="submit"
+          variant="outline"
+          size="sm"
+          aria-label="Ajouter un article"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </IconButton>
+      </form>
+    </div>
   );
 }
 
-function menuItemArtworkClass(name: string): string {
-  const classes = [
-    'bg-surface-muted text-primary',
-    'bg-action-primary text-primary',
-    'bg-status-info-soft text-primary',
-    'bg-status-warning text-primary',
-    'bg-canvas text-primary',
-  ];
-  const index = Array.from(name).reduce(
-    (total, char) => total + char.charCodeAt(0),
-    0,
-  );
-
-  return classes[index % classes.length] ?? classes[0];
+function categoryHref(orderId: string, categoryId: string): string {
+  return categoryId === 'all'
+    ? `/orders/${orderId}/items`
+    : `/orders/${orderId}/items?category=${encodeURIComponent(categoryId)}`;
 }
 
-function menuItemInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.slice(0, 1).toLocaleUpperCase('fr-FR'))
-    .join('');
+function orderItemStatusLabel(
+  status: 'pending' | 'sent' | 'preparing' | 'ready' | 'served' | 'cancelled',
+): string {
+  const labels = {
+    pending: 'À envoyer',
+    sent: 'Envoyé',
+    preparing: 'En préparation',
+    ready: 'Prêt',
+    served: 'Servi',
+    cancelled: 'Annulé',
+  } satisfies Record<typeof status, string>;
+
+  return labels[status];
 }

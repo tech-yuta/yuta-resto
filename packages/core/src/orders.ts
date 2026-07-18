@@ -1,4 +1,4 @@
-import { and, desc, eq, ne, notInArray } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, ne, notInArray } from 'drizzle-orm';
 import {
   checks,
   menuItems,
@@ -120,7 +120,7 @@ export function createOrderService(db: DbClient) {
     const values = addOrderItemSchema.parse(input);
 
     const order = await getRequiredOrder(values.orderId);
-    assertOrderCanChangeItems(order);
+    await assertOrderCanChangeItems(db, order);
 
     const menuItem = await getRequiredMenuItem(values.menuItemId);
     if (!menuItem.isAvailable) {
@@ -128,6 +128,27 @@ export function createOrderService(db: DbClient) {
         'Menu item is not available.',
         'menu_item_unavailable',
       );
+    }
+
+    const existingPendingItem = await db.query.orderItems.findFirst({
+      where: and(
+        eq(orderItems.orderId, order.id),
+        eq(orderItems.menuItemId, menuItem.id),
+        eq(orderItems.status, 'pending'),
+        isNull(orderItems.note),
+      ),
+    });
+
+    if (existingPendingItem && !values.note) {
+      const [updatedItem] = await db
+        .update(orderItems)
+        .set({ quantity: existingPendingItem.quantity + values.quantity })
+        .where(eq(orderItems.id, existingPendingItem.id))
+        .returning();
+
+      await recalculateOrderTotals(order.id);
+
+      return updatedItem;
     }
 
     const [createdItem] = await db
@@ -153,6 +174,9 @@ export function createOrderService(db: DbClient) {
   ): Promise<OrderItem> {
     const values = updateOrderItemQuantitySchema.parse(input);
     const item = await getRequiredOrderItem(values.orderItemId);
+    const order = await getRequiredOrder(item.orderId);
+
+    await assertOrderCanChangeItems(db, order);
 
     if (item.status !== 'pending') {
       throw new OrderServiceError(
@@ -172,6 +196,38 @@ export function createOrderService(db: DbClient) {
     return updatedItem;
   }
 
+  async function removePendingOrderItem(
+    orderItemId: string,
+  ): Promise<OrderItem> {
+    const values = orderItemIdSchema.parse({ orderItemId });
+    const item = await getRequiredOrderItem(values.orderItemId);
+    const order = await getRequiredOrder(item.orderId);
+
+    await assertOrderCanChangeItems(db, order);
+
+    if (item.status !== 'pending') {
+      throw new OrderServiceError(
+        'Only pending order items can be removed.',
+        'invalid_status',
+      );
+    }
+
+    const [cancelledItem] = await db
+      .update(orderItems)
+      .set({
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        cancelledReason: 'Removed before kitchen send',
+      })
+      .where(eq(orderItems.id, item.id))
+      .returning();
+
+    await recalculateOrderTotals(item.orderId);
+    await refreshOrderStatus(item.orderId);
+
+    return cancelledItem;
+  }
+
   async function cancelOrderItem(
     input: CancelOrderItemInput,
   ): Promise<OrderItem> {
@@ -181,6 +237,9 @@ export function createOrderService(db: DbClient) {
     if (item.status === 'cancelled') {
       return item;
     }
+
+    const order = await getRequiredOrder(item.orderId);
+    await assertOrderCanChangeItems(db, order);
 
     const [cancelledItem] = await db
       .update(orderItems)
@@ -270,7 +329,7 @@ export function createOrderService(db: DbClient) {
     }
 
     const order = await getRequiredOrder(item.orderId);
-    assertOrderCanChangeItems(order);
+    await assertOrderCanChangeItems(db, order);
 
     const restoredStatus: Extract<OrderItemStatus, 'pending' | 'sent'> =
       item.sentAt ? 'sent' : 'pending';
@@ -353,7 +412,9 @@ export function createOrderService(db: DbClient) {
     return db.query.orders.findMany({
       where: notInArray(orders.status, ['paid', 'cancelled']),
       with: {
-        items: true,
+        items: {
+          orderBy: [asc(orderItems.createdAt), asc(orderItems.id)],
+        },
       },
       orderBy: [desc(orders.createdAt)],
     });
@@ -365,7 +426,9 @@ export function createOrderService(db: DbClient) {
     const order = await db.query.orders.findFirst({
       where: eq(orders.id, parsedOrderId),
       with: {
-        items: true,
+        items: {
+          orderBy: [asc(orderItems.createdAt), asc(orderItems.id)],
+        },
       },
     });
 
@@ -503,6 +566,7 @@ export function createOrderService(db: DbClient) {
     createOrder,
     addOrderItem,
     updateOrderItemQuantity,
+    removePendingOrderItem,
     cancelOrder,
     cancelOrderItem,
     restoreOrderItem,
@@ -516,10 +580,31 @@ export function createOrderService(db: DbClient) {
   };
 }
 
-function assertOrderCanChangeItems(order: Order): void {
+async function assertOrderCanChangeItems(
+  db: DbClient,
+  order: Order,
+): Promise<void> {
   if (order.status === 'paid' || order.status === 'cancelled') {
     throw new OrderServiceError(
       'Paid or cancelled orders cannot be changed.',
+      'invalid_status',
+    );
+  }
+
+  if (order.paymentMode !== 'single') {
+    throw new OrderServiceError(
+      'Orders with an active payment split cannot be changed.',
+      'invalid_status',
+    );
+  }
+
+  const paidPayment = await db.query.payments.findFirst({
+    where: and(eq(payments.orderId, order.id), eq(payments.status, 'paid')),
+  });
+
+  if (paidPayment) {
+    throw new OrderServiceError(
+      'Orders with a recorded payment cannot be changed.',
       'invalid_status',
     );
   }

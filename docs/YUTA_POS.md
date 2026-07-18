@@ -154,6 +154,13 @@ Keep payment totals clear
 
 Order cancellation is allowed only before payment. Cancelling an order marks active articles as cancelled, voids unpaid split checks, and marks the order cancelled. Paid orders or partially paid orders are not cancellable in the MVP because refund handling is out of scope.
 
+Order item quantity changes are allowed only for `pending` rows before payment
+starts. Repeated additions merge into the matching pending row; additions after
+a kitchen send create a separate pending row so kitchen tickets remain
+batch-accurate. Sent or later kitchen states are immutable from the quantity
+controls. Any recorded payment or active split locks all item mutations. A
+pending row reduced below one is status-cancelled rather than deleted.
+
 The kitchen screen uses lightweight 10-second client polling with `router.refresh()` while the browser tab is visible. This avoids WebSocket/SSE infrastructure for the MVP while still reflecting cancellations and kitchen status changes quickly enough during service.
 
 Kitchen station tabs show unfinished items per station across `sent` and

@@ -1,6 +1,10 @@
 'use server';
 
-import { createOrderService, createPrintService, OrderServiceError } from '@yuta/core';
+import {
+  createOrderService,
+  createPrintService,
+  OrderServiceError,
+} from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orderItems } from '@yuta/db/schema';
 import { and, eq } from 'drizzle-orm';
@@ -146,6 +150,24 @@ export async function updateOrderItemQuantityAction(
   });
 
   revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath(`/orders/${values.orderId}/items`);
+  revalidatePath(`/orders/${values.orderId}/payment`);
+}
+
+export async function removePendingOrderItemAction(
+  formData: FormData,
+): Promise<void> {
+  const values = cancelOrderItemFormSchema.parse({
+    orderId: formData.get('orderId'),
+    orderItemId: formData.get('orderItemId'),
+  });
+  const orderService = createOrderService(db);
+
+  await orderService.removePendingOrderItem(values.orderItemId);
+
+  revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath(`/orders/${values.orderId}/items`);
+  revalidatePath(`/orders/${values.orderId}/payment`);
 }
 
 export async function cancelOrderItemAction(formData: FormData): Promise<void> {
@@ -161,6 +183,8 @@ export async function cancelOrderItemAction(formData: FormData): Promise<void> {
   });
 
   revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath(`/orders/${values.orderId}/items`);
+  revalidatePath(`/orders/${values.orderId}/payment`);
   revalidatePath('/kitchen');
 }
 
@@ -178,5 +202,7 @@ export async function restoreOrderItemAction(
   });
 
   revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath(`/orders/${values.orderId}/items`);
+  revalidatePath(`/orders/${values.orderId}/payment`);
   revalidatePath('/kitchen');
 }

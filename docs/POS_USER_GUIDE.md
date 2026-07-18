@@ -173,6 +173,26 @@ Use it during service to add menu items to the current order.
 
 Item name, price, and kitchen station are snapshotted when the item is added. Later menu changes do not rewrite old orders.
 
+Quantity controls follow the kitchen and payment lifecycle:
+
+```txt
+pending item                 + and - are available
+pending quantity reduced to 0
+                             the row is cancelled, never hard-deleted
+sent/preparing/ready/served  quantity is locked
+same item added after send   creates a new pending kitchen batch
+paid or cancelled order      all item changes are locked
+recorded partial payment     all item changes are locked
+active split checks          all item changes are locked
+```
+
+Repeated taps on the same menu item merge into its existing pending row. They
+never change the quantity of an item already sent to the kitchen. If an unpaid
+split is cancelled and the order returns to single-payment mode, item editing
+is available again as long as no payment has been recorded. Quantity changes
+keep the row in its original display position; order items are displayed by
+creation time with the item ID as a deterministic tie-breaker.
+
 ### Send To Kitchen
 
 Use `Envoyer`.
@@ -458,6 +478,13 @@ Aucune
 ```
 
 Availability controls whether an item appears in the POS item grid.
+
+On the order item screen, the search field filters the items in the selected
+category immediately as staff type. It does not require submitting the search
+or reloading the page. Changing category loads that category's available items.
+On mobile, `Voir commande` opens the current order summary over the item grid
+without navigating away or reloading the page. Closing it preserves the current
+category, search, and grid position.
 
 Do not delete old menu items for historical correction. Toggle availability instead.
 

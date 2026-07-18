@@ -36,7 +36,8 @@ import { processPendingPrintJobs } from '../src/print-worker';
 import { createPrintService } from '../src/prints';
 
 const databaseUrl =
-  process.env.DATABASE_TEST_URL ?? 'postgres://yuta:yuta@localhost:55433/yuta_resto_test';
+  process.env.DATABASE_TEST_URL ??
+  'postgres://yuta:yuta@localhost:55433/yuta_resto_test';
 
 const client = postgres(databaseUrl, { max: 1 });
 const db = drizzle(client, { schema });
@@ -66,8 +67,8 @@ describe('YuTa core services', () => {
   });
 
   beforeEach(async () => {
-    await cleanupDynamicComboRule();
     await cleanupRuntimeData();
+    await cleanupDynamicComboRule();
     await resetMenuPrices(context);
   });
 
@@ -93,14 +94,26 @@ describe('YuTa core services', () => {
   it('sends pending order items to kitchen', async () => {
     const orderService = createOrderService(db);
     const order = await createTestOrder(context.user.id);
-    await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
-    await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.coca.id, quantity: 1 });
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.coca.id,
+      quantity: 1,
+    });
 
     const detail = await orderService.sendOrderToKitchen(order.id);
 
     expect(detail.status).toBe('sent');
     expect(detail.items).toHaveLength(2);
-    expect(detail.items.every((item) => item.status === 'sent' && item.sentAt !== null)).toBe(true);
+    expect(
+      detail.items.every(
+        (item) => item.status === 'sent' && item.sentAt !== null,
+      ),
+    ).toBe(true);
   });
 
   it('allows kitchen staff to reopen an item after a mistaken status change', async () => {
@@ -139,7 +152,11 @@ describe('YuTa core services', () => {
       quantity: 1,
     });
     await orderService.sendOrderToKitchen(order.id);
-    await paymentService.payFullOrder({ orderId: order.id, method: 'card', amountCents: 1300 });
+    await paymentService.payFullOrder({
+      orderId: order.id,
+      method: 'card',
+      amountCents: 1300,
+    });
 
     const readyItem = await orderService.markOrderItemReady(item.id);
     const paidOrder = await orderService.getOrderDetail(order.id);
@@ -152,7 +169,11 @@ describe('YuTa core services', () => {
     const orderService = createOrderService(db);
     const printService = createPrintService(db);
     const order = await createTestOrder(context.user.id);
-    await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 2 });
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 2,
+    });
     await orderService.sendOrderToKitchen(order.id);
 
     const job = await printService.createKitchenTicketPrintJob(order.id);
@@ -220,9 +241,15 @@ describe('YuTa core services', () => {
       { menuItemId: context.items.bunBo.id, quantity: 1 },
       { menuItemId: context.items.coca.id, quantity: 1 },
     ]);
-    await paymentService.payFullOrder({ orderId: order.id, method: 'card', amountCents: 1400 });
+    await paymentService.payFullOrder({
+      orderId: order.id,
+      method: 'card',
+      amountCents: 1400,
+    });
 
-    const job = await printService.createCustomerReceiptPrintJob({ orderId: order.id });
+    const job = await printService.createCustomerReceiptPrintJob({
+      orderId: order.id,
+    });
 
     expect(job.jobType).toBe('customer_receipt');
     expect(job.printerName).toBe('mock-receipt');
@@ -257,7 +284,11 @@ describe('YuTa core services', () => {
         },
       ],
     });
-    await paymentService.payCheck({ checkId: check.id, method: 'cash', amountCents: 1400 });
+    await paymentService.payCheck({
+      checkId: check.id,
+      method: 'cash',
+      amountCents: 1400,
+    });
 
     const job = await printService.createCustomerReceiptPrintJob({
       orderId: order.id,
@@ -281,8 +312,15 @@ describe('YuTa core services', () => {
       { menuItemId: context.items.bunBo.id, quantity: 1 },
       { menuItemId: context.items.coca.id, quantity: 1 },
     ]);
-    const [check] = await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
-    await paymentService.payCheck({ checkId: check.id, method: 'card', amountCents: check.totalCents });
+    const [check] = await paymentService.splitOrderEqually({
+      orderId: order.id,
+      parts: 2,
+    });
+    await paymentService.payCheck({
+      checkId: check.id,
+      method: 'card',
+      amountCents: check.totalCents,
+    });
 
     const job = await printService.createCustomerReceiptPrintJob({
       orderId: order.id,
@@ -305,16 +343,29 @@ describe('YuTa core services', () => {
     const printService = createPrintService(db);
     const outputDir = await mkdtemp(path.join(tmpdir(), 'yuta-print-worker-'));
     const order = await createTestOrder(context.user.id);
-    await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
     await orderService.sendOrderToKitchen(order.id);
     const job = await printService.createKitchenTicketPrintJob(order.id);
 
     try {
       const result = await processPendingPrintJobs(db, { outputDir });
 
-      expect(result).toMatchObject({ scanned: 1, printed: 1, failed: 0, skipped: 0 });
-      await expect(readFile(path.join(outputDir, `${job.id}.txt`), 'utf8')).resolves.toContain('Test Bun bo');
-      await expect(printService.getPrintJob(job.id)).resolves.toMatchObject({ status: 'printed' });
+      expect(result).toMatchObject({
+        scanned: 1,
+        printed: 1,
+        failed: 0,
+        skipped: 0,
+      });
+      await expect(
+        readFile(path.join(outputDir, `${job.id}.txt`), 'utf8'),
+      ).resolves.toContain('Test Bun bo');
+      await expect(printService.getPrintJob(job.id)).resolves.toMatchObject({
+        status: 'printed',
+      });
     } finally {
       await rm(outputDir, { recursive: true, force: true });
     }
@@ -343,8 +394,14 @@ describe('YuTa core services', () => {
       0,
       0,
       [
-        { name: 'Plat', items: [{ item: context.items.comGa, extraPriceCents: 0 }] },
-        { name: 'Boisson', items: [{ item: context.items.coca, extraPriceCents: 0 }] },
+        {
+          name: 'Plat',
+          items: [{ item: context.items.comGa, extraPriceCents: 0 }],
+        },
+        {
+          name: 'Boisson',
+          items: [{ item: context.items.coca, extraPriceCents: 0 }],
+        },
       ],
       {
         pricingMode: 'base_item_plus_delta',
@@ -367,7 +424,6 @@ describe('YuTa core services', () => {
     expect(updatedOrder.totalCents).toBe(1400);
   });
 
-
   it('does not reuse the same item quantity twice', async () => {
     const order = await createOrderWithItems([
       { menuItemId: context.items.bunBo.id, quantity: 1 },
@@ -378,7 +434,12 @@ describe('YuTa core services', () => {
     const discounts = await comboService.optimizeOrderCombos(order.id);
 
     expect(discounts).toHaveLength(1);
-    expect(discounts[0].itemApplications.reduce((total, item) => total + item.quantityApplied, 0)).toBe(2);
+    expect(
+      discounts[0].itemApplications.reduce(
+        (total, item) => total + item.quantityApplied,
+        0,
+      ),
+    ).toBe(2);
   });
 
   it('applies the higher-priority rule first', async () => {
@@ -422,8 +483,12 @@ describe('YuTa core services', () => {
       ],
     });
 
-    expect(createdChecks.map((check) => check.discountCents)).toEqual([200, 200]);
-    expect(createdChecks.map((check) => check.totalCents)).toEqual([1400, 1400]);
+    expect(createdChecks.map((check) => check.discountCents)).toEqual([
+      200, 200,
+    ]);
+    expect(createdChecks.map((check) => check.totalCents)).toEqual([
+      1400, 1400,
+    ]);
   });
 
   it('clears order-level combo discounts when switching to split by items', async () => {
@@ -463,10 +528,17 @@ describe('YuTa core services', () => {
     ]);
     const paymentService = createPaymentService(db);
 
-    const createdChecks = await paymentService.splitOrderEqually({ orderId: order.id, parts: 3 });
+    const createdChecks = await paymentService.splitOrderEqually({
+      orderId: order.id,
+      parts: 3,
+    });
 
-    expect(createdChecks.map((check) => check.totalCents)).toEqual([934, 933, 933]);
-    expect(createdChecks.reduce((total, check) => total + check.totalCents, 0)).toBe(2800);
+    expect(createdChecks.map((check) => check.totalCents)).toEqual([
+      934, 933, 933,
+    ]);
+    expect(
+      createdChecks.reduce((total, check) => total + check.totalCents, 0),
+    ).toBe(2800);
   });
 
   it('voids unpaid checks when replacing a split mode', async () => {
@@ -489,9 +561,15 @@ describe('YuTa core services', () => {
       ],
     });
 
-    const equalChecks = await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
+    const equalChecks = await paymentService.splitOrderEqually({
+      orderId: order.id,
+      parts: 2,
+    });
     const replacedChecks = await db.query.checks.findMany({
-      where: inArray(checks.id, itemChecks.map((check) => check.id)),
+      where: inArray(
+        checks.id,
+        itemChecks.map((check) => check.id),
+      ),
     });
 
     expect(replacedChecks.every((check) => check.status === 'void')).toBe(true);
@@ -525,7 +603,9 @@ describe('YuTa core services', () => {
       amountCents: check.totalCents,
     });
 
-    await expect(paymentService.splitOrderEqually({ orderId: order.id, parts: 2 })).rejects.toMatchObject({
+    await expect(
+      paymentService.splitOrderEqually({ orderId: order.id, parts: 2 }),
+    ).rejects.toMatchObject({
       code: 'invalid_status',
     });
   });
@@ -536,17 +616,25 @@ describe('YuTa core services', () => {
       { menuItemId: context.items.coca.id, quantity: 1 },
     ]);
     const paymentService = createPaymentService(db);
-    const splitChecks = await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
+    const splitChecks = await paymentService.splitOrderEqually({
+      orderId: order.id,
+      parts: 2,
+    });
 
     const updatedOrder = await paymentService.cancelOrderSplit(order.id);
     const cancelledChecks = await db.query.checks.findMany({
-      where: inArray(checks.id, splitChecks.map((check) => check.id)),
+      where: inArray(
+        checks.id,
+        splitChecks.map((check) => check.id),
+      ),
     });
 
     expect(updatedOrder.paymentMode).toBe('single');
     expect(updatedOrder.discountCents).toBe(200);
     expect(updatedOrder.totalCents).toBe(1400);
-    expect(cancelledChecks.every((check) => check.status === 'void')).toBe(true);
+    expect(cancelledChecks.every((check) => check.status === 'void')).toBe(
+      true,
+    );
   });
 
   it('prevents cancelling a split after a check is paid', async () => {
@@ -555,10 +643,19 @@ describe('YuTa core services', () => {
       { menuItemId: context.items.coca.id, quantity: 1 },
     ]);
     const paymentService = createPaymentService(db);
-    const [check] = await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
-    await paymentService.payCheck({ checkId: check.id, method: 'card', amountCents: check.totalCents });
+    const [check] = await paymentService.splitOrderEqually({
+      orderId: order.id,
+      parts: 2,
+    });
+    await paymentService.payCheck({
+      checkId: check.id,
+      method: 'card',
+      amountCents: check.totalCents,
+    });
 
-    await expect(paymentService.cancelOrderSplit(order.id)).rejects.toMatchObject({
+    await expect(
+      paymentService.cancelOrderSplit(order.id),
+    ).rejects.toMatchObject({
       code: 'invalid_status',
     });
   });
@@ -570,20 +667,183 @@ describe('YuTa core services', () => {
     ]);
     const paymentService = createPaymentService(db);
 
-    await paymentService.payFullOrder({ orderId: order.id, method: 'card', amountCents: 500 });
+    await paymentService.payFullOrder({
+      orderId: order.id,
+      method: 'card',
+      amountCents: 500,
+    });
     expect((await getOrder(order.id)).status).not.toBe('paid');
 
-    await paymentService.payFullOrder({ orderId: order.id, method: 'card', amountCents: 900 });
+    await paymentService.payFullOrder({
+      orderId: order.id,
+      method: 'card',
+      amountCents: 900,
+    });
     expect((await getOrder(order.id)).status).toBe('paid');
+  });
+
+  it('merges repeated additions only within the pending kitchen batch', async () => {
+    const orderService = createOrderService(db);
+    const order = await createTestOrder(context.user.id);
+
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+
+    const pendingDetail = await orderService.getOrderDetail(order.id);
+    expect(pendingDetail.items).toHaveLength(1);
+    expect(pendingDetail.items[0]?.quantity).toBe(2);
+
+    await orderService.sendOrderToKitchen(order.id);
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+
+    const nextBatchDetail = await orderService.getOrderDetail(order.id);
+    expect(nextBatchDetail.items).toHaveLength(2);
+    expect(nextBatchDetail.items.map((item) => item.status).sort()).toEqual([
+      'pending',
+      'sent',
+    ]);
+
+    const sentItem = nextBatchDetail.items.find(
+      (item) => item.status === 'sent',
+    );
+    expect(sentItem).toBeDefined();
+    await expect(
+      orderService.updateOrderItemQuantity({
+        orderItemId: sentItem!.id,
+        quantity: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_status' });
+    await expect(
+      orderService.removePendingOrderItem(sentItem!.id),
+    ).rejects.toMatchObject({ code: 'invalid_status' });
+  });
+
+  it('keeps item display order stable after a quantity update', async () => {
+    const orderService = createOrderService(db);
+    const order = await createTestOrder(context.user.id);
+    const firstItem = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    const secondItem = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.coca.id,
+      quantity: 1,
+    });
+
+    expect(
+      (await orderService.getOrderDetail(order.id)).items.map(
+        (item) => item.id,
+      ),
+    ).toEqual([firstItem.id, secondItem.id]);
+
+    await orderService.updateOrderItemQuantity({
+      orderItemId: firstItem.id,
+      quantity: 2,
+    });
+
+    expect(
+      (await orderService.getOrderDetail(order.id)).items.map(
+        (item) => item.id,
+      ),
+    ).toEqual([firstItem.id, secondItem.id]);
+  });
+
+  it('blocks item changes after a payment has been recorded', async () => {
+    const orderService = createOrderService(db);
+    const paymentService = createPaymentService(db);
+    const order = await createTestOrder(context.user.id);
+    const item = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 2,
+    });
+
+    await paymentService.payFullOrder({
+      orderId: order.id,
+      method: 'card',
+      amountCents: 500,
+    });
+
+    await expect(
+      orderService.addOrderItem({
+        orderId: order.id,
+        menuItemId: context.items.coca.id,
+        quantity: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_status' });
+    await expect(
+      orderService.updateOrderItemQuantity({
+        orderItemId: item.id,
+        quantity: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_status' });
+    await expect(
+      orderService.removePendingOrderItem(item.id),
+    ).rejects.toMatchObject({ code: 'invalid_status' });
+  });
+
+  it('blocks item changes while a payment split is active', async () => {
+    const orderService = createOrderService(db);
+    const paymentService = createPaymentService(db);
+    const order = await createTestOrder(context.user.id);
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+
+    await paymentService.splitOrderEqually({ orderId: order.id, parts: 2 });
+
+    await expect(
+      orderService.addOrderItem({
+        orderId: order.id,
+        menuItemId: context.items.coca.id,
+        quantity: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_status' });
+
+    await paymentService.cancelOrderSplit(order.id);
+    await expect(
+      orderService.addOrderItem({
+        orderId: order.id,
+        menuItemId: context.items.coca.id,
+        quantity: 1,
+      }),
+    ).resolves.toMatchObject({ status: 'pending' });
   });
 
   it('excludes cancelled items from totals', async () => {
     const orderService = createOrderService(db);
     const order = await createTestOrder(context.user.id);
-    const bunBo = await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
-    await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.coca.id, quantity: 1 });
+    const bunBo = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.coca.id,
+      quantity: 1,
+    });
 
-    await orderService.cancelOrderItem({ orderItemId: bunBo.id, reason: 'Test cancellation' });
+    await orderService.cancelOrderItem({
+      orderItemId: bunBo.id,
+      reason: 'Test cancellation',
+    });
 
     expect((await getOrder(order.id)).totalCents).toBe(300);
   });
@@ -591,10 +851,19 @@ describe('YuTa core services', () => {
   it('restores a cancelled pending item', async () => {
     const orderService = createOrderService(db);
     const order = await createTestOrder(context.user.id);
-    const bunBo = await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
+    const bunBo = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
 
-    await orderService.cancelOrderItem({ orderItemId: bunBo.id, reason: 'Test cancellation' });
-    const restoredItem = await orderService.restoreOrderItem({ orderItemId: bunBo.id });
+    await orderService.cancelOrderItem({
+      orderItemId: bunBo.id,
+      reason: 'Test cancellation',
+    });
+    const restoredItem = await orderService.restoreOrderItem({
+      orderItemId: bunBo.id,
+    });
 
     expect(restoredItem.status).toBe('pending');
     expect((await getOrder(order.id)).totalCents).toBe(1300);
@@ -603,11 +872,20 @@ describe('YuTa core services', () => {
   it('restores a cancelled sent item back to kitchen queue', async () => {
     const orderService = createOrderService(db);
     const order = await createTestOrder(context.user.id);
-    const bunBo = await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
+    const bunBo = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
     await orderService.sendOrderToKitchen(order.id);
 
-    await orderService.cancelOrderItem({ orderItemId: bunBo.id, reason: 'Test cancellation' });
-    const restoredItem = await orderService.restoreOrderItem({ orderItemId: bunBo.id });
+    await orderService.cancelOrderItem({
+      orderItemId: bunBo.id,
+      reason: 'Test cancellation',
+    });
+    const restoredItem = await orderService.restoreOrderItem({
+      orderItemId: bunBo.id,
+    });
 
     expect(restoredItem.status).toBe('sent');
     expect((await getOrder(order.id)).status).toBe('sent');
@@ -616,11 +894,20 @@ describe('YuTa core services', () => {
   it('keeps historical order item snapshots after menu price changes', async () => {
     const orderService = createOrderService(db);
     const order = await createTestOrder(context.user.id);
-    const item = await orderService.addOrderItem({ orderId: order.id, menuItemId: context.items.bunBo.id, quantity: 1 });
+    const item = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
 
-    await db.update(menuItems).set({ priceCents: 9900, name: 'Changed Bun bo' }).where(eq(menuItems.id, context.items.bunBo.id));
+    await db
+      .update(menuItems)
+      .set({ priceCents: 9900, name: 'Changed Bun bo' })
+      .where(eq(menuItems.id, context.items.bunBo.id));
 
-    const savedItem = await db.query.orderItems.findFirst({ where: eq(orderItems.id, item.id) });
+    const savedItem = await db.query.orderItems.findFirst({
+      where: eq(orderItems.id, item.id),
+    });
     expect(savedItem?.itemNameSnapshot).toBe('Test Bun bo');
     expect(savedItem?.unitPriceCentsSnapshot).toBe(1300);
   });
@@ -639,20 +926,64 @@ async function createTestContext(): Promise<TestContext> {
   const plats = await createCategory('Core Test Plats', 10);
   const drinks = await createCategory('Core Test Drinks', 20);
   const desserts = await createCategory('Core Test Desserts', 30);
-  const bunBo = await createMenuItem(plats.id, 'Test Bun bo', 1300, 'kitchen', 10);
-  const comGa = await createMenuItem(plats.id, 'Test Com ga', 1200, 'kitchen', 20);
+  const bunBo = await createMenuItem(
+    plats.id,
+    'Test Bun bo',
+    1300,
+    'kitchen',
+    10,
+  );
+  const comGa = await createMenuItem(
+    plats.id,
+    'Test Com ga',
+    1200,
+    'kitchen',
+    20,
+  );
   const pho = await createMenuItem(plats.id, 'Test Pho', 1400, 'kitchen', 30);
   const coca = await createMenuItem(drinks.id, 'Test Coca', 300, 'bar', 10);
-  const icedTea = await createMenuItem(drinks.id, 'Test Iced Tea', 400, 'bar', 20);
+  const icedTea = await createMenuItem(
+    drinks.id,
+    'Test Iced Tea',
+    400,
+    'bar',
+    20,
+  );
   const che = await createMenuItem(desserts.id, 'Test Che', 500, 'dessert', 10);
 
   await createComboRule('Test Combo A', 1400, 10, [
-    { name: 'Plat', items: [{ item: bunBo, extraPriceCents: 0 }, { item: comGa, extraPriceCents: 0 }, { item: pho, extraPriceCents: 100 }] },
-    { name: 'Boisson', items: [{ item: coca, extraPriceCents: 0 }, { item: icedTea, extraPriceCents: 100 }] },
+    {
+      name: 'Plat',
+      items: [
+        { item: bunBo, extraPriceCents: 0 },
+        { item: comGa, extraPriceCents: 0 },
+        { item: pho, extraPriceCents: 100 },
+      ],
+    },
+    {
+      name: 'Boisson',
+      items: [
+        { item: coca, extraPriceCents: 0 },
+        { item: icedTea, extraPriceCents: 100 },
+      ],
+    },
   ]);
   await createComboRule('Test Combo B', 1700, 20, [
-    { name: 'Plat', items: [{ item: bunBo, extraPriceCents: 0 }, { item: comGa, extraPriceCents: 0 }, { item: pho, extraPriceCents: 100 }] },
-    { name: 'Boisson', items: [{ item: coca, extraPriceCents: 0 }, { item: icedTea, extraPriceCents: 100 }] },
+    {
+      name: 'Plat',
+      items: [
+        { item: bunBo, extraPriceCents: 0 },
+        { item: comGa, extraPriceCents: 0 },
+        { item: pho, extraPriceCents: 100 },
+      ],
+    },
+    {
+      name: 'Boisson',
+      items: [
+        { item: coca, extraPriceCents: 0 },
+        { item: icedTea, extraPriceCents: 100 },
+      ],
+    },
     { name: 'Dessert', items: [{ item: che, extraPriceCents: 0 }] },
   ]);
 
@@ -686,7 +1017,13 @@ async function createOrderWithItemRecords(
   const createdItems: OrderItem[] = [];
 
   for (const item of items) {
-    createdItems.push(await orderService.addOrderItem({ orderId: order.id, menuItemId: item.menuItemId, quantity: item.quantity }));
+    createdItems.push(
+      await orderService.addOrderItem({
+        orderId: order.id,
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+      }),
+    );
   }
 
   return { order, items: createdItems };
@@ -700,7 +1037,9 @@ async function getTestUser(): Promise<User> {
 }
 
 async function getOrder(orderId: string): Promise<Order> {
-  const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) });
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+  });
   if (!order) {
     throw new Error(`Order ${orderId} not found.`);
   }
@@ -708,7 +1047,10 @@ async function getOrder(orderId: string): Promise<Order> {
 }
 
 async function createCategory(name: string, sortOrder: number) {
-  const [category] = await db.insert(menuCategories).values({ name, sortOrder }).returning();
+  const [category] = await db
+    .insert(menuCategories)
+    .values({ name, sortOrder })
+    .returning();
   return category;
 }
 
@@ -730,7 +1072,10 @@ async function createComboRule(
   name: string,
   comboPriceCents: number,
   priority: number,
-  groups: Array<{ name: string; items: Array<{ item: MenuItem; extraPriceCents: number }> }>,
+  groups: Array<{
+    name: string;
+    items: Array<{ item: MenuItem; extraPriceCents: number }>;
+  }>,
   options: {
     pricingMode?: 'fixed' | 'base_item_plus_delta';
     priceDeltaCents?: number;
@@ -772,7 +1117,10 @@ async function createComboRule(
 }
 
 async function resetMenuPrices(testContext: TestContext): Promise<void> {
-  await db.update(menuItems).set({ name: 'Test Bun bo', priceCents: 1300 }).where(eq(menuItems.id, testContext.items.bunBo.id));
+  await db
+    .update(menuItems)
+    .set({ name: 'Test Bun bo', priceCents: 1300 })
+    .where(eq(menuItems.id, testContext.items.bunBo.id));
 }
 
 async function cleanupRuntimeData(): Promise<void> {
@@ -784,26 +1132,57 @@ async function cleanupRuntimeData(): Promise<void> {
   }
 
   const testOrders = await db.query.orders.findMany({
-    where: inArray(orders.createdBy, testUsers.map((user) => user.id)),
+    where: inArray(
+      orders.createdBy,
+      testUsers.map((user) => user.id),
+    ),
   });
   if (testOrders.length === 0) {
     return;
   }
 
   const orderIds = testOrders.map((order) => order.id);
-  const testChecks = await db.query.checks.findMany({ where: inArray(checks.orderId, orderIds) });
+  const testChecks = await db.query.checks.findMany({
+    where: inArray(checks.orderId, orderIds),
+  });
   const checkIds = testChecks.map((check) => check.id);
-  const orderDiscountRows = await db.query.orderDiscounts.findMany({ where: inArray(orderDiscounts.orderId, orderIds) });
+  const orderDiscountRows = await db.query.orderDiscounts.findMany({
+    where: inArray(orderDiscounts.orderId, orderIds),
+  });
   const checkDiscountRows =
-    checkIds.length > 0 ? await db.query.checkDiscounts.findMany({ where: inArray(checkDiscounts.checkId, checkIds) }) : [];
+    checkIds.length > 0
+      ? await db.query.checkDiscounts.findMany({
+          where: inArray(checkDiscounts.checkId, checkIds),
+        })
+      : [];
 
   if (checkDiscountRows.length > 0) {
-    await db.delete(checkDiscountItems).where(inArray(checkDiscountItems.checkDiscountId, checkDiscountRows.map((discount) => discount.id)));
-    await db.delete(checkDiscounts).where(inArray(checkDiscounts.id, checkDiscountRows.map((discount) => discount.id)));
+    await db.delete(checkDiscountItems).where(
+      inArray(
+        checkDiscountItems.checkDiscountId,
+        checkDiscountRows.map((discount) => discount.id),
+      ),
+    );
+    await db.delete(checkDiscounts).where(
+      inArray(
+        checkDiscounts.id,
+        checkDiscountRows.map((discount) => discount.id),
+      ),
+    );
   }
   if (orderDiscountRows.length > 0) {
-    await db.delete(orderDiscountItems).where(inArray(orderDiscountItems.orderDiscountId, orderDiscountRows.map((discount) => discount.id)));
-    await db.delete(orderDiscounts).where(inArray(orderDiscounts.id, orderDiscountRows.map((discount) => discount.id)));
+    await db.delete(orderDiscountItems).where(
+      inArray(
+        orderDiscountItems.orderDiscountId,
+        orderDiscountRows.map((discount) => discount.id),
+      ),
+    );
+    await db.delete(orderDiscounts).where(
+      inArray(
+        orderDiscounts.id,
+        orderDiscountRows.map((discount) => discount.id),
+      ),
+    );
   }
   await db.delete(payments).where(inArray(payments.orderId, orderIds));
   if (checkIds.length > 0) {
@@ -818,35 +1197,87 @@ async function cleanupRuntimeData(): Promise<void> {
 async function cleanupTestData(): Promise<void> {
   await cleanupRuntimeData();
 
-  const rules = await db.query.comboRules.findMany({ where: inArray(comboRules.name, ['Test Combo A', 'Test Combo B', 'Test Dynamic Combo']) });
+  const rules = await db.query.comboRules.findMany({
+    where: inArray(comboRules.name, [
+      'Test Combo A',
+      'Test Combo B',
+      'Test Dynamic Combo',
+    ]),
+  });
   if (rules.length > 0) {
     const ruleIds = rules.map((rule) => rule.id);
-    const groups = await db.query.comboRuleGroups.findMany({ where: inArray(comboRuleGroups.comboRuleId, ruleIds) });
+    const groups = await db.query.comboRuleGroups.findMany({
+      where: inArray(comboRuleGroups.comboRuleId, ruleIds),
+    });
     if (groups.length > 0) {
-      await db.delete(comboRuleGroupItems).where(inArray(comboRuleGroupItems.comboRuleGroupId, groups.map((group) => group.id)));
-      await db.delete(comboRuleGroups).where(inArray(comboRuleGroups.id, groups.map((group) => group.id)));
+      await db.delete(comboRuleGroupItems).where(
+        inArray(
+          comboRuleGroupItems.comboRuleGroupId,
+          groups.map((group) => group.id),
+        ),
+      );
+      await db.delete(comboRuleGroups).where(
+        inArray(
+          comboRuleGroups.id,
+          groups.map((group) => group.id),
+        ),
+      );
     }
     await db.delete(comboRules).where(inArray(comboRules.id, ruleIds));
   }
 
-  await db.delete(menuItems).where(inArray(menuItems.name, ['Test Bun bo', 'Changed Bun bo', 'Test Com ga', 'Test Pho', 'Test Coca', 'Test Iced Tea', 'Test Che']));
-  await db.delete(menuCategories).where(inArray(menuCategories.name, ['Core Test Plats', 'Core Test Drinks', 'Core Test Desserts']));
+  await db
+    .delete(menuItems)
+    .where(
+      inArray(menuItems.name, [
+        'Test Bun bo',
+        'Changed Bun bo',
+        'Test Com ga',
+        'Test Pho',
+        'Test Coca',
+        'Test Iced Tea',
+        'Test Che',
+      ]),
+    );
+  await db
+    .delete(menuCategories)
+    .where(
+      inArray(menuCategories.name, [
+        'Core Test Plats',
+        'Core Test Drinks',
+        'Core Test Desserts',
+      ]),
+    );
   await db.delete(users).where(eq(users.name, 'Core Test Staff'));
 }
 
 async function cleanupDynamicComboRule(): Promise<void> {
-  const rules = await db.query.comboRules.findMany({ where: eq(comboRules.name, 'Test Dynamic Combo') });
+  const rules = await db.query.comboRules.findMany({
+    where: eq(comboRules.name, 'Test Dynamic Combo'),
+  });
 
   if (rules.length === 0) {
     return;
   }
 
   const ruleIds = rules.map((rule) => rule.id);
-  const groups = await db.query.comboRuleGroups.findMany({ where: inArray(comboRuleGroups.comboRuleId, ruleIds) });
+  const groups = await db.query.comboRuleGroups.findMany({
+    where: inArray(comboRuleGroups.comboRuleId, ruleIds),
+  });
 
   if (groups.length > 0) {
-    await db.delete(comboRuleGroupItems).where(inArray(comboRuleGroupItems.comboRuleGroupId, groups.map((group) => group.id)));
-    await db.delete(comboRuleGroups).where(inArray(comboRuleGroups.id, groups.map((group) => group.id)));
+    await db.delete(comboRuleGroupItems).where(
+      inArray(
+        comboRuleGroupItems.comboRuleGroupId,
+        groups.map((group) => group.id),
+      ),
+    );
+    await db.delete(comboRuleGroups).where(
+      inArray(
+        comboRuleGroups.id,
+        groups.map((group) => group.id),
+      ),
+    );
   }
 
   await db.delete(comboRules).where(inArray(comboRules.id, ruleIds));

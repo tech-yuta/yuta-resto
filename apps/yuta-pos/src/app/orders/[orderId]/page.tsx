@@ -47,6 +47,8 @@ export default async function OrderPage({ params }: OrderPageProps) {
     order.status !== 'cancelled';
   const canPay = order.status !== 'paid' && order.status !== 'cancelled';
   const canCancel = canPay && paidPayments.length === 0;
+  const canEditItems =
+    canPay && paidPayments.length === 0 && order.paymentMode === 'single';
 
   return (
     <PosPageShell
@@ -79,7 +81,11 @@ export default async function OrderPage({ params }: OrderPageProps) {
         />
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)_minmax(260px,0.8fr)_minmax(300px,0.9fr)]">
-          <ArticlesPanel order={order} items={activeItems} canEdit={canPay} />
+          <ArticlesPanel
+            order={order}
+            items={activeItems}
+            canEdit={canEditItems}
+          />
           <TotalsPanel order={order} />
           <HistoryPanel order={order} />
           <InfoPanel order={order} />
@@ -402,9 +408,7 @@ function AmountRow({ label, value }: { label: string; value: number }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  return (
-    <Badge {...statusBadgeProps(status)}>{statusLabel(status)}</Badge>
-  );
+  return <Badge {...statusBadgeProps(status)}>{statusLabel(status)}</Badge>;
 }
 
 function buildHistoryEvents(order: OrderDetail) {
