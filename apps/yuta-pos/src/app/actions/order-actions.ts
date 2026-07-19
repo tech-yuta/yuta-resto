@@ -2,12 +2,10 @@
 
 import {
   createOrderService,
-  createPrintService,
+  createPosService,
   OrderServiceError,
 } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { orderItems } from '@yuta/db/schema';
-import { and, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -30,6 +28,10 @@ const addOrderItemFormSchema = z.object({
 
 const orderIdFormSchema = z.object({
   orderId: z.string().uuid(),
+});
+
+const sendToKitchenFormSchema = orderIdFormSchema.extend({
+  idempotencyKey: z.string().uuid(),
 });
 
 const orderItemIdFormSchema = z.object({
@@ -93,23 +95,12 @@ export async function addOrderItemAction(formData: FormData): Promise<void> {
 export async function sendOrderToKitchenAction(
   formData: FormData,
 ): Promise<void> {
-  const values = orderIdFormSchema.parse({
+  const values = sendToKitchenFormSchema.parse({
     orderId: formData.get('orderId'),
-  });
-  const orderService = createOrderService(db);
-  const printService = createPrintService(db);
-  const pendingItems = await db.query.orderItems.findMany({
-    where: and(
-      eq(orderItems.orderId, values.orderId),
-      eq(orderItems.status, 'pending'),
-    ),
+    idempotencyKey: formData.get('idempotencyKey'),
   });
 
-  await orderService.sendOrderToKitchen(values.orderId);
-  await printService.createKitchenTicketPrintJob({
-    orderId: values.orderId,
-    orderItemIds: pendingItems.map((item) => item.id),
-  });
+  await createPosService(db).sendToKitchen(values);
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath('/kitchen');
@@ -120,9 +111,7 @@ export async function cancelOrderAction(formData: FormData): Promise<void> {
   const values = orderIdFormSchema.parse({
     orderId: formData.get('orderId'),
   });
-  const orderService = createOrderService(db);
-
-  await orderService.cancelOrder({
+  await createPosService(db).cancelOrder({
     orderId: values.orderId,
     reason: 'POS order cancellation',
   });

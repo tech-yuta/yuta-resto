@@ -7,3 +7,4 @@ export * from './formatting';
 export * from './dates';
 export * from './menu';
 export * from './users';
+export * from './pos';

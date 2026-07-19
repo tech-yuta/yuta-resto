@@ -52,11 +52,14 @@ const orderIdSchema = z.object({
 const createKitchenTicketSchema = z.object({
   orderId: z.string().uuid(),
   orderItemIds: z.array(z.string().uuid()).optional(),
+  idempotencyKey: z.string().uuid().optional(),
 });
 
 const createCustomerReceiptSchema = z.object({
   orderId: z.string().uuid(),
   checkId: z.string().uuid().optional(),
+  paymentId: z.string().uuid().optional(),
+  idempotencyKey: z.string().uuid().optional(),
 });
 
 const printJobIdSchema = z.object({
@@ -93,7 +96,13 @@ export class PrintServiceError extends Error {
 
 export function createPrintService(db: DbClient) {
   async function createKitchenTicketPrintJob(
-    input: string | { orderId: string; orderItemIds?: string[] },
+    input:
+      | string
+      | {
+          orderId: string;
+          orderItemIds?: string[];
+          idempotencyKey?: string;
+        },
   ): Promise<PrintJob> {
     const values = createKitchenTicketSchema.parse(
       typeof input === 'string' ? { orderId: input } : input,
@@ -109,17 +118,28 @@ export function createPrintService(db: DbClient) {
       throw new PrintServiceError('Order not found.', 'not_found');
     }
 
-    const allowedItemIds = values.orderItemIds ? new Set(values.orderItemIds) : null;
+    const allowedItemIds = values.orderItemIds
+      ? new Set(values.orderItemIds)
+      : null;
     const printableItems = order.items
       .filter((item) => !allowedItemIds || allowedItemIds.has(item.id))
-      .filter((item) => item.status !== 'pending' && item.status !== 'cancelled')
+      .filter(
+        (item) => item.status !== 'pending' && item.status !== 'cancelled',
+      )
       .sort((left, right) => {
-        const stationOrder = left.kitchenStationSnapshot.localeCompare(right.kitchenStationSnapshot);
-        return stationOrder === 0 ? left.itemNameSnapshot.localeCompare(right.itemNameSnapshot) : stationOrder;
+        const stationOrder = left.kitchenStationSnapshot.localeCompare(
+          right.kitchenStationSnapshot,
+        );
+        return stationOrder === 0
+          ? left.itemNameSnapshot.localeCompare(right.itemNameSnapshot)
+          : stationOrder;
       });
 
     if (printableItems.length === 0) {
-      throw new PrintServiceError('Kitchen ticket has no printable items.', 'empty_ticket');
+      throw new PrintServiceError(
+        'Kitchen ticket has no printable items.',
+        'empty_ticket',
+      );
     }
 
     const payload: KitchenTicketPayload = {
@@ -140,11 +160,13 @@ export function createPrintService(db: DbClient) {
     const [createdJob] = await db
       .insert(printJobs)
       .values({
+        orderId: order.id,
         source: 'pos',
         printerName: 'mock-kitchen',
         jobType: 'kitchen_ticket',
         status: 'pending',
         payload,
+        idempotencyKey: values.idempotencyKey,
       })
       .returning();
 
@@ -154,6 +176,8 @@ export function createPrintService(db: DbClient) {
   async function createCustomerReceiptPrintJob(input: {
     orderId: string;
     checkId?: string;
+    paymentId?: string;
+    idempotencyKey?: string;
   }): Promise<PrintJob> {
     const values = createCustomerReceiptSchema.parse(input);
     const payload = values.checkId
@@ -163,18 +187,25 @@ export function createPrintService(db: DbClient) {
     const [createdJob] = await db
       .insert(printJobs)
       .values({
+        orderId: values.orderId,
+        checkId: values.checkId,
+        paymentId: values.paymentId,
         source: 'pos',
         printerName: 'mock-receipt',
         jobType: 'customer_receipt',
         status: 'pending',
         payload,
+        idempotencyKey: values.idempotencyKey,
       })
       .returning();
 
     return createdJob;
   }
 
-  async function listPrintJobs(input?: { status?: PrintJobStatus; limit?: number }): Promise<PrintJob[]> {
+  async function listPrintJobs(input?: {
+    status?: PrintJobStatus;
+    limit?: number;
+  }): Promise<PrintJob[]> {
     const values = listPrintJobsSchema.parse(input);
 
     if (values?.status) {
@@ -191,7 +222,9 @@ export function createPrintService(db: DbClient) {
     });
   }
 
-  async function listPendingPrintJobs(input?: { limit?: number }): Promise<PrintJob[]> {
+  async function listPendingPrintJobs(input?: {
+    limit?: number;
+  }): Promise<PrintJob[]> {
     const values = listPendingPrintJobsSchema.parse(input);
 
     return db.query.printJobs.findMany({
@@ -209,7 +242,12 @@ export function createPrintService(db: DbClient) {
         status: 'printing',
         errorMessage: null,
       })
-      .where(and(eq(printJobs.id, values.printJobId), eq(printJobs.status, 'pending')))
+      .where(
+        and(
+          eq(printJobs.id, values.printJobId),
+          eq(printJobs.status, 'pending'),
+        ),
+      )
       .returning();
 
     return requirePrintJob(updatedJob);
@@ -239,7 +277,10 @@ export function createPrintService(db: DbClient) {
     return requirePrintJob(updatedJob);
   }
 
-  async function markPrintJobFailed(input: { printJobId: string; errorMessage: string }): Promise<PrintJob> {
+  async function markPrintJobFailed(input: {
+    printJobId: string;
+    errorMessage: string;
+  }): Promise<PrintJob> {
     const values = failPrintJobSchema.parse(input);
     const [updatedJob] = await db
       .update(printJobs)
@@ -280,7 +321,9 @@ export function createPrintService(db: DbClient) {
     retryPrintJob,
   };
 
-  async function buildOrderReceiptPayload(orderId: string): Promise<CustomerReceiptPayload> {
+  async function buildOrderReceiptPayload(
+    orderId: string,
+  ): Promise<CustomerReceiptPayload> {
     const order = await db.query.orders.findFirst({
       where: (orders, { eq }) => eq(orders.id, orderId),
       with: {
@@ -293,8 +336,12 @@ export function createPrintService(db: DbClient) {
       throw new PrintServiceError('Order not found.', 'not_found');
     }
 
-    const activeItems = order.items.filter((item) => item.status !== 'cancelled');
-    const paidPayments = order.payments.filter((payment) => payment.status === 'paid');
+    const activeItems = order.items.filter(
+      (item) => item.status !== 'cancelled',
+    );
+    const paidPayments = order.payments.filter(
+      (payment) => payment.status === 'paid',
+    );
 
     return {
       orderId: order.id,
@@ -341,7 +388,9 @@ export function createPrintService(db: DbClient) {
       throw new PrintServiceError('Check not found.', 'not_found');
     }
 
-    const paidPayments = check.payments.filter((payment) => payment.status === 'paid');
+    const paidPayments = check.payments.filter(
+      (payment) => payment.status === 'paid',
+    );
     const receiptItems =
       check.items.length > 0
         ? check.items.map((item) => ({
@@ -389,7 +438,9 @@ function sumPayments(payments: Payment[]): number {
   return payments.reduce((total, payment) => total + payment.amountCents, 0);
 }
 
-function formatPayment(payment: Payment): CustomerReceiptPayload['payments'][number] {
+function formatPayment(
+  payment: Payment,
+): CustomerReceiptPayload['payments'][number] {
   return {
     method: payment.method,
     amountCents: payment.amountCents,

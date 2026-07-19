@@ -2,6 +2,7 @@ import { Button, cn } from '@yuta/ui';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { PosHeader } from './PosHeader';
+import { PosConnectivityStatus } from './PosConnectivityStatus';
 
 type PosPageShellProps = {
   title: ReactNode;
@@ -58,6 +59,7 @@ export function PosPageShell({
           backLabel={backLabel}
           className={headerClassName}
         />
+        <PosConnectivityStatus />
         {subHeader && (
           <div className="shrink-0 border-b border-border-default bg-white">
             {subHeader}

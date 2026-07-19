@@ -13,9 +13,23 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 
-export const userRoleEnum = pgEnum('user_role', ['admin', 'manager', 'staff', 'kitchen']);
-export const kitchenStationEnum = pgEnum('kitchen_station', ['kitchen', 'bar', 'dessert', 'none']);
-export const orderTypeEnum = pgEnum('order_type', ['dine_in', 'takeaway', 'delivery']);
+export const userRoleEnum = pgEnum('user_role', [
+  'admin',
+  'manager',
+  'staff',
+  'kitchen',
+]);
+export const kitchenStationEnum = pgEnum('kitchen_station', [
+  'kitchen',
+  'bar',
+  'dessert',
+  'none',
+]);
+export const orderTypeEnum = pgEnum('order_type', [
+  'dine_in',
+  'takeaway',
+  'delivery',
+]);
 export const orderStatusEnum = pgEnum('order_status', [
   'draft',
   'sent',
@@ -33,20 +47,52 @@ export const orderItemStatusEnum = pgEnum('order_item_status', [
   'served',
   'cancelled',
 ]);
-export const paymentModeEnum = pgEnum('payment_mode', ['single', 'split_by_items', 'split_equally']);
-export const checkSplitModeEnum = pgEnum('check_split_mode', ['items', 'equal']);
+export const paymentModeEnum = pgEnum('payment_mode', [
+  'single',
+  'split_by_items',
+  'split_equally',
+]);
+export const checkSplitModeEnum = pgEnum('check_split_mode', [
+  'items',
+  'equal',
+]);
 export const checkStatusEnum = pgEnum('check_status', ['open', 'paid', 'void']);
-export const paymentMethodEnum = pgEnum('payment_method', ['cash', 'card', 'ticket_resto', 'other']);
-export const paymentStatusEnum = pgEnum('payment_status', ['pending', 'paid', 'failed', 'refunded']);
-export const printJobSourceEnum = pgEnum('print_job_source', ['pos', 'kitchen', 'delivery', 'manual']);
-export const printJobTypeEnum = pgEnum('print_job_type', ['kitchen_ticket', 'customer_receipt', 'test']);
-export const printJobStatusEnum = pgEnum('print_job_status', ['pending', 'printing', 'printed', 'failed']);
+export const paymentMethodEnum = pgEnum('payment_method', [
+  'cash',
+  'card',
+  'ticket_resto',
+  'other',
+]);
+export const paymentStatusEnum = pgEnum('payment_status', [
+  'pending',
+  'paid',
+  'failed',
+  'refunded',
+]);
+export const printJobSourceEnum = pgEnum('print_job_source', [
+  'pos',
+  'kitchen',
+  'delivery',
+  'manual',
+]);
+export const printJobTypeEnum = pgEnum('print_job_type', [
+  'kitchen_ticket',
+  'customer_receipt',
+  'test',
+]);
+export const printJobStatusEnum = pgEnum('print_job_status', [
+  'pending',
+  'printing',
+  'printed',
+  'failed',
+]);
 export const comboPricingModeEnum = pgEnum('combo_pricing_mode', [
   'fixed',
   'base_item_plus_delta',
 ]);
 
-const createdAt = () => timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
+const createdAt = () =>
+  timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
 const updatedAt = () =>
   timestamp('updated_at', { withTimezone: true })
     .defaultNow()
@@ -154,7 +200,9 @@ export const orderItems = pgTable(
       .references(() => menuItems.id),
     itemNameSnapshot: varchar('item_name_snapshot', { length: 255 }).notNull(),
     unitPriceCentsSnapshot: integer('unit_price_cents_snapshot').notNull(),
-    kitchenStationSnapshot: kitchenStationEnum('kitchen_station_snapshot').notNull(),
+    kitchenStationSnapshot: kitchenStationEnum(
+      'kitchen_station_snapshot',
+    ).notNull(),
     quantity: integer('quantity').notNull(),
     note: text('note'),
     status: orderItemStatusEnum('status').default('pending').notNull(),
@@ -179,7 +227,9 @@ export const comboRules = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
-    pricingMode: comboPricingModeEnum('pricing_mode').default('fixed').notNull(),
+    pricingMode: comboPricingModeEnum('pricing_mode')
+      .default('fixed')
+      .notNull(),
     comboPriceCents: integer('combo_price_cents').notNull(),
     priceDeltaCents: integer('price_delta_cents').default(0).notNull(),
     basePricingGroupName: varchar('base_pricing_group_name', { length: 255 }),
@@ -230,7 +280,9 @@ export const comboRuleGroupItems = pgTable(
     updatedAt: updatedAt(),
   },
   (table) => [
-    index('combo_rule_group_items_combo_rule_group_id_idx').on(table.comboRuleGroupId),
+    index('combo_rule_group_items_combo_rule_group_id_idx').on(
+      table.comboRuleGroupId,
+    ),
     index('combo_rule_group_items_menu_item_id_idx').on(table.menuItemId),
   ],
 );
@@ -268,7 +320,9 @@ export const orderDiscountItems = pgTable(
     createdAt: createdAt(),
   },
   (table) => [
-    index('order_discount_items_order_discount_id_idx').on(table.orderDiscountId),
+    index('order_discount_items_order_discount_id_idx').on(
+      table.orderDiscountId,
+    ),
     index('order_discount_items_order_item_id_idx').on(table.orderItemId),
   ],
 );
@@ -349,7 +403,9 @@ export const checkDiscountItems = pgTable(
     createdAt: createdAt(),
   },
   (table) => [
-    index('check_discount_items_check_discount_id_idx').on(table.checkDiscountId),
+    index('check_discount_items_check_discount_id_idx').on(
+      table.checkDiscountId,
+    ),
     index('check_discount_items_check_item_id_idx').on(table.checkItemId),
   ],
 );
@@ -372,6 +428,7 @@ export const payments = pgTable(
     paidAt: timestamp('paid_at', { withTimezone: true }),
     refundedAt: timestamp('refunded_at', { withTimezone: true }),
     refundReason: text('refund_reason'),
+    idempotencyKey: uuid('idempotency_key'),
     createdAt: createdAt(),
   },
   (table) => [
@@ -379,6 +436,7 @@ export const payments = pgTable(
     index('payments_check_id_idx').on(table.checkId),
     index('payments_status_idx').on(table.status),
     index('payments_created_at_idx').on(table.createdAt),
+    uniqueIndex('payments_idempotency_key_unique_idx').on(table.idempotencyKey),
   ],
 );
 
@@ -386,18 +444,28 @@ export const printJobs = pgTable(
   'print_jobs',
   {
     id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id').references(() => orders.id),
+    checkId: uuid('check_id').references(() => checks.id),
+    paymentId: uuid('payment_id').references(() => payments.id),
     source: printJobSourceEnum('source').notNull(),
     printerName: varchar('printer_name', { length: 255 }).notNull(),
     jobType: printJobTypeEnum('job_type').notNull(),
     status: printJobStatusEnum('status').default('pending').notNull(),
     payload: jsonb('payload').notNull(),
     errorMessage: text('error_message'),
+    idempotencyKey: uuid('idempotency_key'),
     createdAt: createdAt(),
     printedAt: timestamp('printed_at', { withTimezone: true }),
   },
   (table) => [
     index('print_jobs_status_idx').on(table.status),
     index('print_jobs_created_at_idx').on(table.createdAt),
+    index('print_jobs_order_id_idx').on(table.orderId),
+    index('print_jobs_check_id_idx').on(table.checkId),
+    index('print_jobs_payment_id_idx').on(table.paymentId),
+    uniqueIndex('print_jobs_idempotency_key_unique_idx').on(
+      table.idempotencyKey,
+    ),
   ],
 );
 
@@ -405,9 +473,12 @@ export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
 }));
 
-export const menuCategoriesRelations = relations(menuCategories, ({ many }) => ({
-  items: many(menuItems),
-}));
+export const menuCategoriesRelations = relations(
+  menuCategories,
+  ({ many }) => ({
+    items: many(menuItems),
+  }),
+);
 
 export const menuItemsRelations = relations(menuItems, ({ one, many }) => ({
   category: one(menuCategories, {
@@ -448,47 +519,59 @@ export const comboRulesRelations = relations(comboRules, ({ many }) => ({
   checkDiscounts: many(checkDiscounts),
 }));
 
-export const comboRuleGroupsRelations = relations(comboRuleGroups, ({ one, many }) => ({
-  comboRule: one(comboRules, {
-    fields: [comboRuleGroups.comboRuleId],
-    references: [comboRules.id],
+export const comboRuleGroupsRelations = relations(
+  comboRuleGroups,
+  ({ one, many }) => ({
+    comboRule: one(comboRules, {
+      fields: [comboRuleGroups.comboRuleId],
+      references: [comboRules.id],
+    }),
+    items: many(comboRuleGroupItems),
   }),
-  items: many(comboRuleGroupItems),
-}));
+);
 
-export const comboRuleGroupItemsRelations = relations(comboRuleGroupItems, ({ one }) => ({
-  group: one(comboRuleGroups, {
-    fields: [comboRuleGroupItems.comboRuleGroupId],
-    references: [comboRuleGroups.id],
+export const comboRuleGroupItemsRelations = relations(
+  comboRuleGroupItems,
+  ({ one }) => ({
+    group: one(comboRuleGroups, {
+      fields: [comboRuleGroupItems.comboRuleGroupId],
+      references: [comboRuleGroups.id],
+    }),
+    menuItem: one(menuItems, {
+      fields: [comboRuleGroupItems.menuItemId],
+      references: [menuItems.id],
+    }),
   }),
-  menuItem: one(menuItems, {
-    fields: [comboRuleGroupItems.menuItemId],
-    references: [menuItems.id],
-  }),
-}));
+);
 
-export const orderDiscountsRelations = relations(orderDiscounts, ({ one, many }) => ({
-  order: one(orders, {
-    fields: [orderDiscounts.orderId],
-    references: [orders.id],
+export const orderDiscountsRelations = relations(
+  orderDiscounts,
+  ({ one, many }) => ({
+    order: one(orders, {
+      fields: [orderDiscounts.orderId],
+      references: [orders.id],
+    }),
+    comboRule: one(comboRules, {
+      fields: [orderDiscounts.comboRuleId],
+      references: [comboRules.id],
+    }),
+    items: many(orderDiscountItems),
   }),
-  comboRule: one(comboRules, {
-    fields: [orderDiscounts.comboRuleId],
-    references: [comboRules.id],
-  }),
-  items: many(orderDiscountItems),
-}));
+);
 
-export const orderDiscountItemsRelations = relations(orderDiscountItems, ({ one }) => ({
-  discount: one(orderDiscounts, {
-    fields: [orderDiscountItems.orderDiscountId],
-    references: [orderDiscounts.id],
+export const orderDiscountItemsRelations = relations(
+  orderDiscountItems,
+  ({ one }) => ({
+    discount: one(orderDiscounts, {
+      fields: [orderDiscountItems.orderDiscountId],
+      references: [orderDiscounts.id],
+    }),
+    orderItem: one(orderItems, {
+      fields: [orderDiscountItems.orderItemId],
+      references: [orderItems.id],
+    }),
   }),
-  orderItem: one(orderItems, {
-    fields: [orderDiscountItems.orderItemId],
-    references: [orderItems.id],
-  }),
-}));
+);
 
 export const checksRelations = relations(checks, ({ one, many }) => ({
   order: one(orders, {
@@ -512,28 +595,34 @@ export const checkItemsRelations = relations(checkItems, ({ one, many }) => ({
   discountItems: many(checkDiscountItems),
 }));
 
-export const checkDiscountsRelations = relations(checkDiscounts, ({ one, many }) => ({
-  check: one(checks, {
-    fields: [checkDiscounts.checkId],
-    references: [checks.id],
+export const checkDiscountsRelations = relations(
+  checkDiscounts,
+  ({ one, many }) => ({
+    check: one(checks, {
+      fields: [checkDiscounts.checkId],
+      references: [checks.id],
+    }),
+    comboRule: one(comboRules, {
+      fields: [checkDiscounts.comboRuleId],
+      references: [comboRules.id],
+    }),
+    items: many(checkDiscountItems),
   }),
-  comboRule: one(comboRules, {
-    fields: [checkDiscounts.comboRuleId],
-    references: [comboRules.id],
-  }),
-  items: many(checkDiscountItems),
-}));
+);
 
-export const checkDiscountItemsRelations = relations(checkDiscountItems, ({ one }) => ({
-  discount: one(checkDiscounts, {
-    fields: [checkDiscountItems.checkDiscountId],
-    references: [checkDiscounts.id],
+export const checkDiscountItemsRelations = relations(
+  checkDiscountItems,
+  ({ one }) => ({
+    discount: one(checkDiscounts, {
+      fields: [checkDiscountItems.checkDiscountId],
+      references: [checkDiscounts.id],
+    }),
+    checkItem: one(checkItems, {
+      fields: [checkDiscountItems.checkItemId],
+      references: [checkItems.id],
+    }),
   }),
-  checkItem: one(checkItems, {
-    fields: [checkDiscountItems.checkItemId],
-    references: [checkItems.id],
-  }),
-}));
+);
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
   order: one(orders, {

@@ -6,13 +6,50 @@ services:
       args:
         NEXT_PUBLIC_POS_URL: ${NEXT_PUBLIC_POS_URL:-http://localhost:3003}
     ports:
-      - "${POS_PORT:-3003}:3000"
+      - '${POS_PORT:-3003}:3000'
     environment:
       DATABASE_URL: ${DATABASE_URL}
       NEXT_PUBLIC_POS_URL: ${NEXT_PUBLIC_POS_URL:-http://localhost:3003}
     networks:
       - postgres
     restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+
+  print-worker:
+    build:
+      context: ../..
+      dockerfile: apps/yuta-pos/Dockerfile
+      target: worker
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PRINT_WORKER_OUTPUT_DIR: ${PRINT_WORKER_OUTPUT_DIR:-/app/.tmp/prints}
+      PRINT_WORKER_BATCH_SIZE: ${PRINT_WORKER_BATCH_SIZE:-10}
+      PRINT_WORKER_INTERVAL_MS: ${PRINT_WORKER_INTERVAL_MS:-3000}
+      PRINT_WORKER_FAIL_RATE: ${PRINT_WORKER_FAIL_RATE:-0}
+      PRINT_WORKER_HEALTH_FILE: /tmp/yuta-print-worker-health
+    volumes:
+      - ${PRINT_OUTPUT_DIR:-./.tmp/prints}:/app/.tmp/prints
+    networks:
+      - postgres
+    restart: unless-stopped
+    healthcheck:
+      test:
+        ['CMD', 'pnpm', '--filter', '@yuta/core', 'print:worker:healthcheck']
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
 
   migrate:
     build:

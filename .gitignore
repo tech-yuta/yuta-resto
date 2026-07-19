@@ -7,3 +7,5 @@ coverage
 .env.local
 .env.production
 vendor
+apps/yuta-pos/.tmp/prints/*
+!apps/yuta-pos/.tmp/prints/.gitkeep

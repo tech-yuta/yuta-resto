@@ -72,6 +72,13 @@ static build assets. It deliberately does not cache page navigations, database
 data, Server Actions, order operations, or payments. Offline order entry and
 background synchronization are not supported at this level.
 
+Every POS page includes a compact local-service status strip. It polls
+`/api/health` and distinguishes a reachable local service, an unavailable
+database, an unavailable POS server, and (when `POS_INTERNET_CHECK_URL` is
+configured) an Internet outage while local operation remains available. The
+Docker healthcheck uses the same endpoint but depends only on application and
+database readiness, not on Internet access.
+
 The accepted offline architecture and phased implementation roadmap live in
 `docs/POS_OFFLINE_STRATEGY.md`. Phases 1 and 2 (restaurant edge operation and
 data-integrity hardening) are approved for implementation. Cloud
@@ -108,6 +115,15 @@ packages/ui
 ```
 
 `packages/db` owns POS database schema, migrations, and shared database access for YuTa ecosystem apps. `apps/yuta-pos` should consume exported schema and service helpers instead of defining a private POS schema inside the app.
+
+`packages/core/src/pos.ts` owns transaction boundaries for service-time
+operations that combine business data and print jobs. Kitchen sends and
+payment capture use application-provided UUID idempotency keys. Replaying the
+same command returns the existing payment or print job; reusing a key with
+different input is rejected. The order row is locked while these operations
+run so competing payments for one order are serialized. Order cancellation,
+split creation, and split cancellation use the same order lock and transaction
+boundary, preventing them from interleaving with payment capture.
 
 `apps/admin` is the back-office surface for POS setup and reporting:
 
@@ -243,6 +259,12 @@ Run continuously:
 ```bash
 corepack pnpm --filter @yuta/core print:worker:watch
 ```
+
+Production Docker Compose runs the continuous worker as the `print-worker`
+service. The worker writes a heartbeat after every successful database poll;
+Docker marks it unhealthy when the heartbeat becomes stale. The current worker
+still produces mock text output. Physical printer transport remains pending a
+hardware and connection decision.
 
 Optional env values:
 

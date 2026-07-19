@@ -8,8 +8,19 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/core/package.json ./packages/core/
 COPY packages/db/package.json ./packages/db/
+COPY packages/contracts/package.json ./packages/contracts/
+COPY packages/tenant/package.json ./packages/tenant/
 COPY apps/yuta-pos/package.json ./apps/yuta-pos/
 RUN pnpm install --frozen-lockfile
+
+FROM deps AS worker
+WORKDIR /app
+ENV NODE_ENV=production
+COPY packages/contracts ./packages/contracts
+COPY packages/tenant ./packages/tenant
+COPY packages/db ./packages/db
+COPY packages/core ./packages/core
+CMD ["pnpm", "--filter", "@yuta/core", "print:worker:watch"]
 
 FROM base AS builder
 WORKDIR /app

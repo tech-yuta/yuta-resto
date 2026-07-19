@@ -26,6 +26,7 @@ const payFullOrderSchema = z.object({
   tenderedCents: z.number().int().positive().optional(),
   tipCents: z.number().int().nonnegative().optional(),
   paidBy: z.string().trim().max(255).optional(),
+  idempotencyKey: z.string().uuid().optional(),
 });
 
 const createChecksByItemsSchema = z.object({
@@ -59,6 +60,7 @@ const payCheckSchema = z.object({
   tenderedCents: z.number().int().positive().optional(),
   tipCents: z.number().int().nonnegative().optional(),
   paidBy: z.string().trim().max(255).optional(),
+  idempotencyKey: z.string().uuid().optional(),
 });
 
 const orderIdSchema = z.object({
@@ -66,7 +68,9 @@ const orderIdSchema = z.object({
 });
 
 export type PayFullOrderInput = z.infer<typeof payFullOrderSchema>;
-export type CreateChecksByItemsInput = z.infer<typeof createChecksByItemsSchema>;
+export type CreateChecksByItemsInput = z.infer<
+  typeof createChecksByItemsSchema
+>;
 export type SplitOrderEquallyInput = z.infer<typeof splitOrderEquallySchema>;
 export type PayCheckInput = z.infer<typeof payCheckSchema>;
 
@@ -109,11 +113,17 @@ export function createPaymentService(db: DbClient) {
 
     if (remainingCents === 0) {
       await markOrderPaid(order.id);
-      throw new PaymentServiceError('Order is already fully paid.', 'invalid_status');
+      throw new PaymentServiceError(
+        'Order is already fully paid.',
+        'invalid_status',
+      );
     }
 
     if (values.amountCents > remainingCents) {
-      throw new PaymentServiceError('Payment amount exceeds remaining order total.', 'overpayment');
+      throw new PaymentServiceError(
+        'Payment amount exceeds remaining order total.',
+        'overpayment',
+      );
     }
 
     const payment = await createPaidPayment({
@@ -123,6 +133,7 @@ export function createPaymentService(db: DbClient) {
       tenderedCents: values.tenderedCents,
       tipCents: values.tipCents,
       paidBy: values.paidBy,
+      idempotencyKey: values.idempotencyKey,
     });
 
     const paidCents = existingPaidCents + values.amountCents;
@@ -133,7 +144,9 @@ export function createPaymentService(db: DbClient) {
     return payment;
   }
 
-  async function createChecksByItems(input: CreateChecksByItemsInput): Promise<Check[]> {
+  async function createChecksByItems(
+    input: CreateChecksByItemsInput,
+  ): Promise<Check[]> {
     const values = createChecksByItemsSchema.parse(input);
     const order = await getRequiredOrder(values.orderId);
 
@@ -143,7 +156,10 @@ export function createPaymentService(db: DbClient) {
     await voidOpenChecks(order.id);
 
     const activeItems = await db.query.orderItems.findMany({
-      where: and(eq(orderItems.orderId, order.id), ne(orderItems.status, 'cancelled')),
+      where: and(
+        eq(orderItems.orderId, order.id),
+        ne(orderItems.status, 'cancelled'),
+      ),
     });
     const activeItemsById = new Map(activeItems.map((item) => [item.id, item]));
     const assignedQuantities = new Map<string, number>();
@@ -152,7 +168,10 @@ export function createPaymentService(db: DbClient) {
       for (const itemInput of checkInput.items) {
         const item = activeItemsById.get(itemInput.orderItemId);
         if (!item) {
-          throw new PaymentServiceError('Check includes an invalid order item.', 'invalid_split');
+          throw new PaymentServiceError(
+            'Check includes an invalid order item.',
+            'invalid_split',
+          );
         }
 
         assignedQuantities.set(
@@ -162,10 +181,16 @@ export function createPaymentService(db: DbClient) {
       }
     }
 
-    for (const [orderItemId, assignedQuantity] of assignedQuantities.entries()) {
+    for (const [
+      orderItemId,
+      assignedQuantity,
+    ] of assignedQuantities.entries()) {
       const item = activeItemsById.get(orderItemId);
       if (!item || assignedQuantity > item.quantity) {
-        throw new PaymentServiceError('Assigned check quantity exceeds order item quantity.', 'invalid_split');
+        throw new PaymentServiceError(
+          'Assigned check quantity exceeds order item quantity.',
+          'invalid_split',
+        );
       }
     }
 
@@ -175,7 +200,10 @@ export function createPaymentService(db: DbClient) {
       const subtotalCents = checkInput.items.reduce((total, itemInput) => {
         const item = activeItemsById.get(itemInput.orderItemId);
         if (!item) {
-          throw new PaymentServiceError('Check includes an invalid order item.', 'invalid_split');
+          throw new PaymentServiceError(
+            'Check includes an invalid order item.',
+            'invalid_split',
+          );
         }
 
         return total + item.unitPriceCentsSnapshot * itemInput.quantity;
@@ -196,14 +224,18 @@ export function createPaymentService(db: DbClient) {
         checkInput.items.map((itemInput) => {
           const item = activeItemsById.get(itemInput.orderItemId);
           if (!item) {
-            throw new PaymentServiceError('Check includes an invalid order item.', 'invalid_split');
+            throw new PaymentServiceError(
+              'Check includes an invalid order item.',
+              'invalid_split',
+            );
           }
 
           return {
             checkId: createdCheck.id,
             orderItemId: item.id,
             quantity: itemInput.quantity,
-            amountCentsSnapshot: item.unitPriceCentsSnapshot * itemInput.quantity,
+            amountCentsSnapshot:
+              item.unitPriceCentsSnapshot * itemInput.quantity,
           };
         }),
       );
@@ -220,7 +252,9 @@ export function createPaymentService(db: DbClient) {
     return createdChecks;
   }
 
-  async function splitOrderEqually(input: SplitOrderEquallyInput): Promise<Check[]> {
+  async function splitOrderEqually(
+    input: SplitOrderEquallyInput,
+  ): Promise<Check[]> {
     const values = splitOrderEquallySchema.parse(input);
     let order = await getRequiredOrder(values.orderId);
 
@@ -271,7 +305,10 @@ export function createPaymentService(db: DbClient) {
     const remainingCents = Math.max(0, check.totalCents - existingPaidCents);
 
     if (values.amountCents > remainingCents) {
-      throw new PaymentServiceError('Payment amount exceeds remaining check total.', 'overpayment');
+      throw new PaymentServiceError(
+        'Payment amount exceeds remaining check total.',
+        'overpayment',
+      );
     }
 
     const payment = await createPaidPayment({
@@ -282,11 +319,15 @@ export function createPaymentService(db: DbClient) {
       tenderedCents: values.tenderedCents,
       tipCents: values.tipCents,
       paidBy: values.paidBy,
+      idempotencyKey: values.idempotencyKey,
     });
 
     const paidCents = existingPaidCents + values.amountCents;
     if (paidCents >= check.totalCents) {
-      await db.update(checks).set({ status: 'paid' }).where(eq(checks.id, check.id));
+      await db
+        .update(checks)
+        .set({ status: 'paid' })
+        .where(eq(checks.id, check.id));
     }
 
     await markOrderPaidIfAllChecksPaid(check.orderId);
@@ -349,7 +390,10 @@ export function createPaymentService(db: DbClient) {
     });
 
     if (paidChecks.length > 0) {
-      throw new PaymentServiceError('Cannot replace a split after a check has been paid.', 'invalid_status');
+      throw new PaymentServiceError(
+        'Cannot replace a split after a check has been paid.',
+        'invalid_status',
+      );
     }
   }
 
@@ -361,10 +405,14 @@ export function createPaymentService(db: DbClient) {
     tenderedCents?: number;
     tipCents?: number;
     paidBy?: string;
+    idempotencyKey?: string;
   }): Promise<Payment> {
     const tenderedCents = values.tenderedCents ?? values.amountCents;
     if (tenderedCents < values.amountCents) {
-      throw new PaymentServiceError('Tendered amount cannot be lower than payment amount.', 'invalid_input');
+      throw new PaymentServiceError(
+        'Tendered amount cannot be lower than payment amount.',
+        'invalid_input',
+      );
     }
 
     const [payment] = await db
@@ -380,6 +428,7 @@ export function createPaymentService(db: DbClient) {
         status: 'paid',
         paidBy: values.paidBy,
         paidAt: new Date(),
+        idempotencyKey: values.idempotencyKey,
       })
       .returning();
 
@@ -414,7 +463,13 @@ export function createPaymentService(db: DbClient) {
     const result = await db
       .select({ total: sql<number>`coalesce(sum(${payments.amountCents}), 0)` })
       .from(payments)
-      .where(and(eq(payments.orderId, orderId), isNull(payments.checkId), eq(payments.status, 'paid')));
+      .where(
+        and(
+          eq(payments.orderId, orderId),
+          isNull(payments.checkId),
+          eq(payments.status, 'paid'),
+        ),
+      );
 
     return Number(result[0]?.total ?? 0);
   }
@@ -429,7 +484,10 @@ export function createPaymentService(db: DbClient) {
   }
 
   async function markOrderPaid(orderId: string): Promise<void> {
-    await db.update(orders).set({ status: 'paid', paidAt: new Date() }).where(eq(orders.id, orderId));
+    await db
+      .update(orders)
+      .set({ status: 'paid', paidAt: new Date() })
+      .where(eq(orders.id, orderId));
   }
 
   async function markOrderPaidIfAllChecksPaid(orderId: string): Promise<void> {
@@ -437,7 +495,10 @@ export function createPaymentService(db: DbClient) {
       where: and(eq(checks.orderId, orderId), ne(checks.status, 'void')),
     });
 
-    if (payableChecks.length > 0 && payableChecks.every((check) => check.status === 'paid')) {
+    if (
+      payableChecks.length > 0 &&
+      payableChecks.every((check) => check.status === 'paid')
+    ) {
       await markOrderPaid(orderId);
     }
   }
@@ -536,5 +597,8 @@ function splitCents(totalCents: number, parts: number): number[] {
   const base = Math.floor(totalCents / parts);
   const remainder = totalCents % parts;
 
-  return Array.from({ length: parts }, (_, index) => base + (index < remainder ? 1 : 0));
+  return Array.from(
+    { length: parts },
+    (_, index) => base + (index < remainder ? 1 : 0),
+  );
 }

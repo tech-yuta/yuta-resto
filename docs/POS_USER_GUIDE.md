@@ -66,9 +66,29 @@ shortcuts for `Nouvelle commande` and `Cuisine` from the device app launcher.
 On iPhone or iPad, use Safari's Share menu and choose `Sur l'ecran d'accueil`.
 Safari does not expose the same in-page install proposal as Chromium browsers.
 
-This first PWA level does not make POS operations available offline. The app
+Installing the PWA alone does not make POS operations browser-offline. The app
 shell assets may be cached, but creating orders, sending items to the kitchen,
-and taking payments still require a working network connection.
+and taking payments still require a working connection to the POS server and
+its PostgreSQL database.
+
+When POS, PostgreSQL, and the print worker are deployed on the restaurant edge
+server, an Internet outage does not stop local operations. The restaurant LAN,
+edge server, and database must still be available. Browser-only order entry
+while the edge server is unreachable is not supported.
+
+Every POS screen shows a service strip below the main header:
+
+```txt
+En ligne             local server, database, and configured Internet check work
+Mode local           local POS works; the configured Internet check is unavailable
+Service local        local POS works; no Internet check is configured
+Base indisponible    local server responds but PostgreSQL does not
+Serveur indisponible browser cannot reach the local POS server
+```
+
+`Mode local` is an informational warning, not a reason to stop local cash or
+kitchen operations. Follow the payment-terminal procedure before accepting a
+card or restaurant-ticket payment during an Internet outage.
 
 ## POS Home / Orders
 
@@ -366,6 +386,11 @@ The paid amount is recorded
 The selected POS employee is stored as paidBy
 The order stays open until the remaining amount reaches 0
 ```
+
+Payment submission and its final customer receipt job are committed in one
+database transaction. Retrying the same browser submission cannot create a
+second payment. The same protection applies to a kitchen send and its kitchen
+ticket job.
 
 When the full order is completely paid:
 

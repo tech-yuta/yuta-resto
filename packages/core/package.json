@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "print:worker": "tsx src/print-worker-cli.ts",
     "print:worker:watch": "tsx src/print-worker-cli.ts --watch",
+    "print:worker:healthcheck": "tsx src/print-worker-healthcheck.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

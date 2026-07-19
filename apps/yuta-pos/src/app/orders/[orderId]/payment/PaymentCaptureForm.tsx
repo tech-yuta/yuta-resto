@@ -1,6 +1,10 @@
 'use client';
 
-import { formatEuros, formatEurosInput, parseEuroAmountToCents } from '@yuta/core';
+import {
+  formatEuros,
+  formatEurosInput,
+  parseEuroAmountToCents,
+} from '@yuta/core';
 import { Button, Input, Label } from '@yuta/ui';
 import { Banknote, CircleEllipsis, CreditCard, Ticket } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -12,6 +16,7 @@ type PaymentCaptureFormProps = {
   orderId: string;
   checkId?: string;
   remainingCents: number;
+  idempotencyKey: string;
   disabled?: boolean;
   submitSize?: 'md' | 'lg';
 };
@@ -32,6 +37,7 @@ export function PaymentCaptureForm({
   orderId,
   checkId,
   remainingCents,
+  idempotencyKey,
   disabled = false,
   submitSize = 'md',
 }: PaymentCaptureFormProps) {
@@ -68,6 +74,7 @@ export function PaymentCaptureForm({
   return (
     <form action={action} className="mt-5 grid gap-4">
       <input type="hidden" name="orderId" value={orderId} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       {checkId && <input type="hidden" name="checkId" value={checkId} />}
 
       <div className="grid gap-2">

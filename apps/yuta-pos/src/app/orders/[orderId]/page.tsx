@@ -16,6 +16,7 @@ import {
   User,
 } from 'lucide-react';
 import Link from 'next/link';
+import { randomUUID } from 'node:crypto';
 import type { ReactNode } from 'react';
 import { cancelOrderAction, sendOrderToKitchenAction } from '../../actions';
 import { PosPageShell } from '../../components/PosPageShell';
@@ -169,6 +170,7 @@ function SendOrderButton({
   return (
     <form action={sendOrderToKitchenAction}>
       <input type="hidden" name="orderId" value={orderId} />
+      <input type="hidden" name="idempotencyKey" value={randomUUID()} />
       <Button
         type="submit"
         variant="secondary"

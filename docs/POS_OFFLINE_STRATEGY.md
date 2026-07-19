@@ -12,6 +12,24 @@ This document records the agreed offline direction for `apps/yuta-pos`. It is a
 roadmap and design constraint, not a statement that every item below is already
 implemented.
 
+Repository implementation progress as of 2026-07-19:
+
+- Kitchen send plus kitchen print-job creation is atomic and idempotent.
+- Payment capture plus final receipt-job creation is atomic and idempotent.
+- Competing payments for one order are serialized by an order-row lock.
+- Order cancellation and split changes share that transaction and lock
+  boundary, so they cannot interleave with payment capture.
+- Docker Compose includes a local print-worker service with a heartbeat.
+- `/api/health` and the POS status strip expose local service failure states.
+- Backup and guarded restore scripts are available.
+- Local Docker QA verified POS/database health, worker heartbeat, mock print
+  processing, and recovery after container restart.
+- A custom-format backup, checksum verification, and restore into the local
+  drill database completed successfully on Windows Git Bash and Docker.
+- Physical printer transport, site HTTPS/DNS setup, scheduled off-device
+  backups, and the restaurant Internet-disconnection acceptance test still
+  require deployment work.
+
 ## Offline Availability Target
 
 The primary availability target is:

@@ -5,6 +5,7 @@ import { Button, IconButton, cn } from '@yuta/ui';
 import { and, asc, eq } from 'drizzle-orm';
 import { ChefHat, CreditCard, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { randomUUID } from 'node:crypto';
 import {
   removePendingOrderItemAction,
   sendOrderToKitchenAction,
@@ -92,6 +93,7 @@ export default async function OrderItemsPage({
         <>
           <form action={sendOrderToKitchenAction}>
             <input type="hidden" name="orderId" value={order.id} />
+            <input type="hidden" name="idempotencyKey" value={randomUUID()} />
             <Button
               type="submit"
               variant="primary"

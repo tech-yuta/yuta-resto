@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
 
@@ -22,6 +23,7 @@ const intervalMs = readNumberEnv('PRINT_WORKER_INTERVAL_MS', 3000);
 const batchSize = readNumberEnv('PRINT_WORKER_BATCH_SIZE', 10);
 const failRate = readNumberEnv('PRINT_WORKER_FAIL_RATE', 0);
 const outputDir = process.env.PRINT_WORKER_OUTPUT_DIR;
+const healthFile = process.env.PRINT_WORKER_HEALTH_FILE;
 
 async function runOnce(): Promise<void> {
   const [{ db }, { processPendingPrintJobs }] = await Promise.all([
@@ -42,6 +44,10 @@ async function runOnce(): Promise<void> {
       `skipped=${result.skipped}`,
     ].join(' '),
   );
+
+  if (healthFile) {
+    await writeFile(healthFile, new Date().toISOString(), 'utf8');
+  }
 }
 
 async function main(): Promise<void> {

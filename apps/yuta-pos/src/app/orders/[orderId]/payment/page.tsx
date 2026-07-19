@@ -2,6 +2,7 @@ import { createPaymentService, formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { Badge, Button, Card, Separator } from '@yuta/ui';
 import { Tags } from 'lucide-react';
+import { randomUUID } from 'node:crypto';
 import {
   cancelOrderSplitAction,
   createChecksByItemsAction,
@@ -33,7 +34,8 @@ export default async function PaymentPage({
   const { orderId } = await params;
   const { error, itemSplitError, paymentDialog } = await searchParams;
   const paymentService = createPaymentService(db);
-  const { order, activeComboRules } = await paymentService.getPaymentViewData(orderId);
+  const { order, activeComboRules } =
+    await paymentService.getPaymentViewData(orderId);
 
   const paidCents = order.payments
     .filter((payment) => payment.status === 'paid')
@@ -63,6 +65,7 @@ export default async function PaymentPage({
         action={payFullOrderAction}
         orderId={order.id}
         remainingCents={remainingCents}
+        idempotencyKey={randomUUID()}
         disabled={splitChecks.length > 0}
         submitSize="lg"
       />
@@ -506,6 +509,7 @@ function CheckPaymentList({
                 orderId={orderId}
                 checkId={check.id}
                 remainingCents={remainingCents}
+                idempotencyKey={randomUUID()}
               />
             )}
           </div>

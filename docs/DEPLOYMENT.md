@@ -157,18 +157,84 @@ POS_PORT=3003
 NEXT_PUBLIC_POS_URL=https://pos.example.com
 ```
 
+Start from `apps/yuta-pos/.env.production.example`. Optional edge-operation
+values include:
+
+```env
+POS_INTERNET_CHECK_URL=https://connectivity-endpoint.example.com/health
+PRINT_OUTPUT_DIR=./.tmp/prints
+PRINT_WORKER_BATCH_SIZE=10
+PRINT_WORKER_INTERVAL_MS=3000
+PRINT_WORKER_FAIL_RATE=0
+POS_BACKUP_DIR=/srv/backups/yuta-pos
+POS_BACKUP_RETENTION_DAYS=14
+```
+
+Use an Internet-check endpoint controlled by the operator where possible. The
+endpoint is used only for the operator status strip; POS container readiness
+does not depend on it.
+
 Deploy or update POS:
 
 ```bash
 cd /opt/luna/source/yuta-resto
 git pull
 docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml --profile migrate run --rm --build migrate
-docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml up -d --build pos
+docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml up -d --build pos print-worker
 ```
 
 Check status:
 
 ```bash
-docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml ps
+docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml ps pos print-worker
 docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml logs --tail=100 pos
+docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml logs --tail=100 print-worker
 ```
+
+The POS container is healthy only when the application can query PostgreSQL.
+The print worker is healthy only while its database-poll heartbeat is current.
+An Internet outage by itself must not make either container unhealthy.
+
+### POS Local Hostname And HTTPS
+
+Give the restaurant edge server a stable LAN address and local hostname. Route
+that hostname to the POS container through the site's HTTPS reverse proxy. POS
+terminals and kitchen displays must resolve the hostname without public DNS so
+an Internet outage does not prevent local access.
+
+The certificate must be trusted by every POS device. Installing the PWA from a
+raw LAN IP or an untrusted certificate is not an accepted production setup.
+
+### POS Database Backup
+
+The repository provides a host-side custom-format PostgreSQL backup script. The
+backup directory must be absolute and should be on storage outside the primary
+database disk.
+
+Load the production environment with the site's secret-management procedure,
+then run:
+
+```bash
+sh apps/yuta-pos/scripts/backup-db.sh
+```
+
+The script writes a timestamped `.dump` file and SHA-256 checksum, removes only
+matching YuTa POS backup files older than `POS_BACKUP_RETENTION_DAYS`, and
+refuses `/`, a relative path, or the current home directory as a target.
+
+Schedule this command from the host scheduler. Monitor its exit code and copy
+backups to a second encrypted device or location according to the restaurant's
+retention policy.
+
+### POS Database Restore Drill
+
+Never test restoration against the active production database. Create an empty
+restore-drill database, export its URL as `POS_RESTORE_DATABASE_URL`, and run:
+
+```bash
+sh apps/yuta-pos/scripts/restore-db.sh --confirm /absolute/path/to/yuta-pos-YYYYMMDDTHHMMSSZ.dump
+```
+
+The restore script requires the explicit `--confirm` flag, verifies the
+checksum when present, and may replace existing objects in the target database.
+After restoration, run current migrations and the offline acceptance checks.

@@ -1,13 +1,12 @@
 'use server';
 
 import {
-  createPaymentService,
-  createPrintService,
+  createPosService,
   PaymentServiceError,
   parseEuroAmountToCents,
 } from '@yuta/core';
 import { db } from '@yuta/db/client';
-import { checks, orderItems, orders } from '@yuta/db/schema';
+import { orderItems } from '@yuta/db/schema';
 import { and, eq, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -38,6 +37,7 @@ const payFullOrderFormSchema = z.object({
   method: z.enum(['cash', 'card', 'ticket_resto', 'other']),
   amountCents: moneyCentsSchema,
   tenderedCents: optionalMoneyCentsSchema,
+  idempotencyKey: z.string().uuid(),
 });
 
 const splitOrderEquallyFormSchema = z.object({
@@ -51,6 +51,7 @@ const payCheckFormSchema = z.object({
   method: z.enum(['cash', 'card', 'ticket_resto', 'other']),
   amountCents: moneyCentsSchema,
   tenderedCents: optionalMoneyCentsSchema,
+  idempotencyKey: z.string().uuid(),
 });
 
 const createChecksByItemsFormSchema = z.object({
@@ -64,16 +65,16 @@ export async function payFullOrderAction(formData: FormData): Promise<void> {
     formData,
     orderId,
   );
-  const paymentService = createPaymentService(db);
-  const printService = createPrintService(db);
+  const posService = createPosService(db);
 
   try {
-    await paymentService.payFullOrder({
+    await posService.payFullOrder({
       orderId: values.orderId,
       method: values.method,
       amountCents: values.amountCents,
       tenderedCents: values.tenderedCents,
       paidBy: (await getSelectedStaffUser()).name,
+      idempotencyKey: values.idempotencyKey,
     });
   } catch (error) {
     if (error instanceof PaymentServiceError) {
@@ -82,16 +83,6 @@ export async function payFullOrderAction(formData: FormData): Promise<void> {
 
     throw error;
   }
-  const order = await db.query.orders.findFirst({
-    where: eq(orders.id, values.orderId),
-  });
-
-  if (order?.status === 'paid') {
-    await printService.createCustomerReceiptPrintJob({
-      orderId: values.orderId,
-    });
-  }
-
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
   revalidatePath('/pos/prints');
@@ -106,9 +97,7 @@ export async function splitOrderEquallyAction(
     parts: formData.get('parts'),
   });
   const shouldReturnToPayment = formData.get('returnTo') === 'payment';
-  const paymentService = createPaymentService(db);
-
-  await paymentService.splitOrderEqually({
+  await createPosService(db).splitOrderEqually({
     orderId: values.orderId,
     parts: values.parts,
   });
@@ -128,10 +117,8 @@ export async function cancelOrderSplitAction(
   const values = orderIdFormSchema.parse({
     orderId: formData.get('orderId'),
   });
-  const paymentService = createPaymentService(db);
-
   try {
-    await paymentService.cancelOrderSplit(values.orderId);
+    await createPosService(db).cancelOrderSplit(values.orderId);
   } catch (error) {
     if (error instanceof PaymentServiceError) {
       redirect(`/orders/${values.orderId}/payment?error=${error.code}`);
@@ -152,16 +139,17 @@ export async function payCheckAction(formData: FormData): Promise<void> {
     formData,
     orderId,
   );
-  const paymentService = createPaymentService(db);
-  const printService = createPrintService(db);
+  const posService = createPosService(db);
 
   try {
-    await paymentService.payCheck({
+    await posService.payCheck({
+      orderId: values.orderId,
       checkId: values.checkId,
       method: values.method,
       amountCents: values.amountCents,
       tenderedCents: values.tenderedCents,
       paidBy: (await getSelectedStaffUser()).name,
+      idempotencyKey: values.idempotencyKey,
     });
   } catch (error) {
     if (error instanceof PaymentServiceError) {
@@ -170,17 +158,6 @@ export async function payCheckAction(formData: FormData): Promise<void> {
 
     throw error;
   }
-  const check = await db.query.checks.findFirst({
-    where: eq(checks.id, values.checkId),
-  });
-
-  if (check?.status === 'paid') {
-    await printService.createCustomerReceiptPrintJob({
-      orderId: values.orderId,
-      checkId: values.checkId,
-    });
-  }
-
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
   revalidatePath('/pos/prints');
@@ -285,8 +262,7 @@ export async function createChecksByItemsAction(
     }
   }
 
-  const paymentService = createPaymentService(db);
-  await paymentService.createChecksByItems({
+  await createPosService(db).createChecksByItems({
     orderId: values.orderId,
     checks: filteredChecks,
   });
@@ -320,6 +296,7 @@ function parsePaymentFormOrRedirect<
       rawTenderedCents === null || rawTenderedCents === ''
         ? rawAmountCents
         : rawTenderedCents,
+    idempotencyKey: formData.get('idempotencyKey'),
   });
 
   if (!parsedValues.success) {

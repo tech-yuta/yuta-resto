@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import {
   checkDiscountItems,
   checkDiscounts,
@@ -32,6 +32,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createComboService } from '../src/combos';
 import { createOrderService } from '../src/orders';
 import { createPaymentService } from '../src/payments';
+import { createPosService } from '../src/pos';
 import { processPendingPrintJobs } from '../src/print-worker';
 import { createPrintService } from '../src/prints';
 
@@ -39,7 +40,7 @@ const databaseUrl =
   process.env.DATABASE_TEST_URL ??
   'postgres://yuta:yuta@localhost:55433/yuta_resto_test';
 
-const client = postgres(databaseUrl, { max: 1 });
+const client = postgres(databaseUrl, { max: 4 });
 const db = drizzle(client, { schema });
 let context: TestContext;
 
@@ -234,6 +235,66 @@ describe('YuTa core services', () => {
     });
   });
 
+  it('atomically sends a kitchen batch and replays the same command once', async () => {
+    const posService = createPosService(db);
+    const order = await createTestOrder(context.user.id);
+    await createOrderService(db).addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    const idempotencyKey = randomUUID();
+
+    const firstResult = await posService.sendToKitchen({
+      orderId: order.id,
+      idempotencyKey,
+    });
+    const replayedResult = await posService.sendToKitchen({
+      orderId: order.id,
+      idempotencyKey,
+    });
+    const jobs = await db.query.printJobs.findMany({
+      where: eq(printJobs.orderId, order.id),
+    });
+
+    expect(firstResult.replayed).toBe(false);
+    expect(replayedResult.replayed).toBe(true);
+    expect(replayedResult.printJob.id).toBe(firstResult.printJob.id);
+    expect(jobs).toHaveLength(1);
+  });
+
+  it('rolls back a kitchen send when its print job cannot be created', async () => {
+    const posService = createPosService(db);
+    const orderService = createOrderService(db);
+    const order = await createTestOrder(context.user.id);
+    await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+
+    await installRejectPrintJobTrigger();
+    try {
+      await expect(
+        posService.sendToKitchen({
+          orderId: order.id,
+          idempotencyKey: randomUUID(),
+        }),
+      ).rejects.toThrow('Core test rejected print job');
+    } finally {
+      await removeRejectPrintJobTrigger();
+    }
+
+    const detail = await orderService.getOrderDetail(order.id);
+    expect(detail.status).toBe('draft');
+    expect(detail.items.map((item) => item.status)).toEqual(['pending']);
+    expect(
+      await db.query.printJobs.findMany({
+        where: eq(printJobs.orderId, order.id),
+      }),
+    ).toHaveLength(0);
+  });
+
   it('creates a customer receipt print job for a paid order', async () => {
     const paymentService = createPaymentService(db);
     const printService = createPrintService(db);
@@ -263,6 +324,133 @@ describe('YuTa core services', () => {
       ],
       payments: [{ method: 'card', amountCents: 1400 }],
     });
+  });
+
+  it('atomically captures a full payment and replays the same command once', async () => {
+    const posService = createPosService(db);
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+    ]);
+    const idempotencyKey = randomUUID();
+    const input = {
+      orderId: order.id,
+      method: 'cash' as const,
+      amountCents: 1300,
+      tenderedCents: 1500,
+      idempotencyKey,
+    };
+
+    const firstResult = await posService.payFullOrder(input);
+    const replayedResult = await posService.payFullOrder(input);
+    const savedPayments = await db.query.payments.findMany({
+      where: eq(payments.orderId, order.id),
+    });
+    const jobs = await db.query.printJobs.findMany({
+      where: eq(printJobs.orderId, order.id),
+    });
+
+    expect(firstResult.replayed).toBe(false);
+    expect(firstResult.printJob?.paymentId).toBe(firstResult.payment.id);
+    expect(replayedResult.replayed).toBe(true);
+    expect(replayedResult.payment.id).toBe(firstResult.payment.id);
+    expect(replayedResult.printJob?.id).toBe(firstResult.printJob?.id);
+    expect(savedPayments).toHaveLength(1);
+    expect(jobs).toHaveLength(1);
+  });
+
+  it('rolls back a completed payment when its receipt job cannot be created', async () => {
+    const posService = createPosService(db);
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+    ]);
+
+    await installRejectPrintJobTrigger();
+    try {
+      await expect(
+        posService.payFullOrder({
+          orderId: order.id,
+          method: 'card',
+          amountCents: 1300,
+          idempotencyKey: randomUUID(),
+        }),
+      ).rejects.toThrow('Core test rejected print job');
+    } finally {
+      await removeRejectPrintJobTrigger();
+    }
+
+    expect(
+      await db.query.payments.findMany({
+        where: eq(payments.orderId, order.id),
+      }),
+    ).toHaveLength(0);
+    expect((await getOrder(order.id)).status).toBe('draft');
+  });
+
+  it('serializes competing full payments for the same order', async () => {
+    const posService = createPosService(db);
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+    ]);
+
+    const results = await Promise.allSettled([
+      posService.payFullOrder({
+        orderId: order.id,
+        method: 'card',
+        amountCents: 1300,
+        idempotencyKey: randomUUID(),
+      }),
+      posService.payFullOrder({
+        orderId: order.id,
+        method: 'card',
+        amountCents: 1300,
+        idempotencyKey: randomUUID(),
+      }),
+    ]);
+
+    expect(
+      results.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      results.filter((result) => result.status === 'rejected'),
+    ).toHaveLength(1);
+    expect(
+      await db.query.payments.findMany({
+        where: eq(payments.orderId, order.id),
+      }),
+    ).toHaveLength(1);
+  });
+
+  it('serializes order cancellation against a competing full payment', async () => {
+    const posService = createPosService(db);
+    const order = await createOrderWithItems([
+      { menuItemId: context.items.bunBo.id, quantity: 1 },
+    ]);
+
+    const results = await Promise.allSettled([
+      posService.cancelOrder({
+        orderId: order.id,
+        reason: 'Competing test cancellation',
+      }),
+      posService.payFullOrder({
+        orderId: order.id,
+        method: 'card',
+        amountCents: 1300,
+        idempotencyKey: randomUUID(),
+      }),
+    ]);
+    const savedOrder = await getOrder(order.id);
+    const savedPayments = await db.query.payments.findMany({
+      where: eq(payments.orderId, order.id),
+    });
+
+    expect(
+      results.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      results.filter((result) => result.status === 'rejected'),
+    ).toHaveLength(1);
+    expect(['cancelled', 'paid']).toContain(savedOrder.status);
+    expect(savedPayments).toHaveLength(savedOrder.status === 'paid' ? 1 : 0);
   });
 
   it('creates a customer receipt print job for a paid split check', async () => {
@@ -1184,6 +1372,7 @@ async function cleanupRuntimeData(): Promise<void> {
       ),
     );
   }
+  await db.delete(printJobs).where(inArray(printJobs.orderId, orderIds));
   await db.delete(payments).where(inArray(payments.orderId, orderIds));
   if (checkIds.length > 0) {
     await db.delete(checkItems).where(inArray(checkItems.checkId, checkIds));
@@ -1281,4 +1470,31 @@ async function cleanupDynamicComboRule(): Promise<void> {
   }
 
   await db.delete(comboRules).where(inArray(comboRules.id, ruleIds));
+}
+
+async function installRejectPrintJobTrigger(): Promise<void> {
+  await db.execute(sql`
+    create or replace function yuta_core_test_reject_print_job()
+    returns trigger
+    language plpgsql
+    as $$
+    begin
+      raise exception 'Core test rejected print job';
+    end;
+    $$
+  `);
+  await db.execute(sql`
+    create trigger yuta_core_test_reject_print_job_trigger
+    before insert on print_jobs
+    for each row execute function yuta_core_test_reject_print_job()
+  `);
+}
+
+async function removeRejectPrintJobTrigger(): Promise<void> {
+  await db.execute(
+    sql`drop trigger if exists yuta_core_test_reject_print_job_trigger on print_jobs`,
+  );
+  await db.execute(
+    sql`drop function if exists yuta_core_test_reject_print_job()`,
+  );
 }
