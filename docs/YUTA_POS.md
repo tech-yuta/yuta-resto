@@ -72,6 +72,13 @@ static build assets. It deliberately does not cache page navigations, database
 data, Server Actions, order operations, or payments. Offline order entry and
 background synchronization are not supported at this level.
 
+The accepted offline architecture and phased implementation roadmap live in
+`docs/POS_OFFLINE_STRATEGY.md`. Phases 1 and 2 (restaurant edge operation and
+data-integrity hardening) are approved for implementation. Cloud
+synchronization and browser emergency mode remain deferred. Do not describe
+roadmap items as implemented behavior until their acceptance criteria have
+been verified and the operator documentation has been updated.
+
 Set `NEXT_PUBLIC_POS_URL` in production when the deployed POS URL differs from
 the local default `http://localhost:3003`; this value is used as the metadata
 base for Open Graph, Twitter, manifest, and icon URLs.
@@ -202,6 +209,13 @@ Local database setup lives in:
 
 ```txt
 docs/LOCAL_DATABASE.md
+```
+
+The accepted offline architecture, failure boundaries, and implementation
+phases live in:
+
+```txt
+docs/POS_OFFLINE_STRATEGY.md
 ```
 
 ## Mock Print Worker

@@ -134,6 +134,14 @@ docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/doc
 `apps/yuta-pos` deploys as a standalone Next.js container and uses the shared
 `packages/db` migrations.
 
+The approved long-term availability target is restaurant-edge operation: POS,
+PostgreSQL, and the print worker remain reachable over the restaurant network
+during an Internet outage. The detailed phase-1 and phase-2 requirements,
+acceptance tests, and deferred cloud-sync design are recorded in
+`docs/POS_OFFLINE_STRATEGY.md`. Those roadmap requirements do not replace the
+current commands below until the corresponding deployment changes are
+implemented and verified.
+
 Production env file:
 
 ```txt
