@@ -15,6 +15,13 @@
       "when": 1783824000000,
       "tag": "0001_dynamic_combo_pricing",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784419759420,
+      "tag": "0002_keen_satana",
+      "breakpoints": true
     }
   ]
 }

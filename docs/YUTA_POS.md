@@ -241,3 +241,14 @@ PRINT_WORKER_FAIL_RATE=0
 
 `PRINT_WORKER_OUTPUT_DIR` makes the mock printer write one text file per job.
 Without it, the worker only updates job status in the database.
+
+## Multi-tenant foundation
+
+The shared database now contains organizations, establishments, domains,
+memberships, and establishment entitlements. The initial development seed is
+`FAST VIET` / `LUNA Chasseneuil-du-Poitou`.
+
+POS order and menu repositories are not tenant-scoped yet. The current POS
+staff-selection cookie is not authentication and must not be used to construct
+an authenticated tenant context. Tenant scoping for POS and admin will be
+integrated only after authentication exposes a trustworthy user ID.

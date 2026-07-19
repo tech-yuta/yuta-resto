@@ -9,6 +9,11 @@ import {
   comboRules,
   menuCategories,
   menuItems,
+  organizations,
+  establishments,
+  tenantDomains,
+  tenantEntitlements,
+  tenantMemberships,
   users,
   type ComboRule,
   type ComboRuleGroup,
@@ -16,6 +21,98 @@ import {
   type MenuItem,
   type User,
 } from './schema';
+
+export const INITIAL_ORGANIZATION_ID = '10000000-0000-4000-8000-000000000001';
+export const INITIAL_ESTABLISHMENT_ID = '10000000-0000-4000-8000-000000000002';
+
+export async function seedTenantData(seedDb?: DbClient) {
+  const activeDb = seedDb ?? (await import('./client')).db;
+  const [organization] = await activeDb
+    .insert(organizations)
+    .values({
+      id: INITIAL_ORGANIZATION_ID,
+      name: 'FAST VIET',
+      slug: 'fast-viet',
+      status: 'active',
+      locale: 'fr-FR',
+      timezone: 'Europe/Paris',
+      currency: 'EUR',
+    })
+    .onConflictDoUpdate({
+      target: organizations.id,
+      set: {
+        name: 'FAST VIET',
+        slug: 'fast-viet',
+        status: 'active',
+        locale: 'fr-FR',
+        timezone: 'Europe/Paris',
+        currency: 'EUR',
+      },
+    })
+    .returning();
+  const [establishment] = await activeDb
+    .insert(establishments)
+    .values({
+      id: INITIAL_ESTABLISHMENT_ID,
+      organizationId: organization.id,
+      name: 'LUNA Chasseneuil-du-Poitou',
+      slug: 'luna-chasseneuil-du-poitou',
+      status: 'active',
+      locale: 'fr-FR',
+      timezone: 'Europe/Paris',
+    })
+    .onConflictDoUpdate({
+      target: establishments.id,
+      set: {
+        organizationId: organization.id,
+        name: 'LUNA Chasseneuil-du-Poitou',
+        slug: 'luna-chasseneuil-du-poitou',
+        status: 'active',
+        locale: 'fr-FR',
+        timezone: 'Europe/Paris',
+      },
+    })
+    .returning();
+  await activeDb
+    .insert(tenantDomains)
+    .values({
+      organizationId: organization.id,
+      establishmentId: establishment.id,
+      hostname: 'luna.localhost',
+      status: 'active',
+      isPrimary: true,
+      verifiedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: tenantDomains.hostname,
+      set: {
+        organizationId: organization.id,
+        establishmentId: establishment.id,
+        status: 'active',
+        isPrimary: true,
+        verifiedAt: new Date(),
+      },
+    });
+  for (const key of ['menu.public', 'reservations.public']) {
+    await activeDb
+      .insert(tenantEntitlements)
+      .values({
+        organizationId: organization.id,
+        establishmentId: establishment.id,
+        key,
+        enabled: true,
+      })
+      .onConflictDoUpdate({
+        target: [
+          tenantEntitlements.organizationId,
+          tenantEntitlements.establishmentId,
+          tenantEntitlements.key,
+        ],
+        set: { enabled: true },
+      });
+  }
+  return { organization, establishment };
+}
 
 config({ path: '.env.local' });
 config({ path: '.env' });
@@ -37,10 +134,34 @@ const categorySeeds = [
 ];
 
 const menuItemSeeds = [
-  { name: 'Bun bo', category: 'Plats', priceCents: 1300, kitchenStation: 'kitchen', sortOrder: 10 },
-  { name: 'Com ga', category: 'Plats', priceCents: 1200, kitchenStation: 'kitchen', sortOrder: 20 },
-  { name: 'Pho', category: 'Plats', priceCents: 1400, kitchenStation: 'kitchen', sortOrder: 30 },
-  { name: 'Coca', category: 'Boissons', priceCents: 300, kitchenStation: 'bar', sortOrder: 10 },
+  {
+    name: 'Bun bo',
+    category: 'Plats',
+    priceCents: 1300,
+    kitchenStation: 'kitchen',
+    sortOrder: 10,
+  },
+  {
+    name: 'Com ga',
+    category: 'Plats',
+    priceCents: 1200,
+    kitchenStation: 'kitchen',
+    sortOrder: 20,
+  },
+  {
+    name: 'Pho',
+    category: 'Plats',
+    priceCents: 1400,
+    kitchenStation: 'kitchen',
+    sortOrder: 30,
+  },
+  {
+    name: 'Coca',
+    category: 'Boissons',
+    priceCents: 300,
+    kitchenStation: 'bar',
+    sortOrder: 10,
+  },
   {
     name: 'The glace maison',
     category: 'Boissons',
@@ -48,8 +169,20 @@ const menuItemSeeds = [
     kitchenStation: 'bar',
     sortOrder: 20,
   },
-  { name: 'Che', category: 'Desserts', priceCents: 500, kitchenStation: 'dessert', sortOrder: 10 },
-  { name: 'Mochi', category: 'Desserts', priceCents: 400, kitchenStation: 'dessert', sortOrder: 20 },
+  {
+    name: 'Che',
+    category: 'Desserts',
+    priceCents: 500,
+    kitchenStation: 'dessert',
+    sortOrder: 10,
+  },
+  {
+    name: 'Mochi',
+    category: 'Desserts',
+    priceCents: 400,
+    kitchenStation: 'dessert',
+    sortOrder: 20,
+  },
 ] as const;
 
 const comboSeeds = [
@@ -123,6 +256,7 @@ const comboSeeds = [
 
 export async function seedPosData(seedDb?: DbClient): Promise<SeedContext> {
   const activeDb = seedDb ?? (await import('./client')).db;
+  const tenant = await seedTenantData(activeDb);
 
   const adminUser = await upsertUser(activeDb, {
     name: 'YuTa Admin',
@@ -140,9 +274,24 @@ export async function seedPosData(seedDb?: DbClient): Promise<SeedContext> {
     role: 'kitchen',
   });
 
+  for (const membership of [
+    { userId: adminUser.id, role: 'admin' as const },
+    { userId: staffUser.id, role: 'employee' as const },
+    { userId: kitchenUser.id, role: 'kitchen' as const },
+  ]) {
+    await upsertMembership(activeDb, {
+      ...membership,
+      organizationId: tenant.organization.id,
+      establishmentId: tenant.establishment.id,
+    });
+  }
+
   const categories: Record<string, MenuCategory> = {};
   for (const categorySeed of categorySeeds) {
-    categories[categorySeed.name] = await upsertCategory(activeDb, categorySeed);
+    categories[categorySeed.name] = await upsertCategory(
+      activeDb,
+      categorySeed,
+    );
   }
 
   const seededMenuItems: Record<string, MenuItem> = {};
@@ -190,6 +339,34 @@ export async function seedPosData(seedDb?: DbClient): Promise<SeedContext> {
   };
 }
 
+async function upsertMembership(
+  seedDb: DbClient,
+  values: {
+    userId: string;
+    organizationId: string;
+    establishmentId: string;
+    role: 'admin' | 'employee' | 'kitchen';
+  },
+): Promise<void> {
+  const existing = await seedDb.query.tenantMemberships.findFirst({
+    where: and(
+      eq(tenantMemberships.userId, values.userId),
+      eq(tenantMemberships.organizationId, values.organizationId),
+      eq(tenantMemberships.establishmentId, values.establishmentId),
+    ),
+  });
+  if (existing) {
+    await seedDb
+      .update(tenantMemberships)
+      .set({ role: values.role, status: 'active' })
+      .where(eq(tenantMemberships.id, existing.id));
+    return;
+  }
+  await seedDb
+    .insert(tenantMemberships)
+    .values({ ...values, status: 'active' });
+}
+
 async function upsertUser(
   seedDb: DbClient,
   values: { name: string; email: string; role: 'admin' | 'staff' | 'kitchen' },
@@ -228,7 +405,10 @@ async function upsertCategory(
     return updated;
   }
 
-  const [created] = await seedDb.insert(menuCategories).values(values).returning();
+  const [created] = await seedDb
+    .insert(menuCategories)
+    .values(values)
+    .returning();
   return created;
 }
 
@@ -301,7 +481,10 @@ async function upsertComboRuleGroup(
   },
 ): Promise<ComboRuleGroup> {
   const existing = await seedDb.query.comboRuleGroups.findFirst({
-    where: and(eq(comboRuleGroups.comboRuleId, values.comboRuleId), eq(comboRuleGroups.name, values.name)),
+    where: and(
+      eq(comboRuleGroups.comboRuleId, values.comboRuleId),
+      eq(comboRuleGroups.name, values.name),
+    ),
   });
 
   if (existing) {
@@ -317,7 +500,10 @@ async function upsertComboRuleGroup(
     return updated;
   }
 
-  const [created] = await seedDb.insert(comboRuleGroups).values(values).returning();
+  const [created] = await seedDb
+    .insert(comboRuleGroups)
+    .values(values)
+    .returning();
   return created;
 }
 
@@ -348,12 +534,13 @@ async function upsertComboRuleGroupItem(
 }
 
 const isDirectRun =
-  process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+  process.argv[1] !== undefined &&
+  fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 
 if (isDirectRun) {
   seedPosData()
     .then(() => {
-      console.log('YuTa POS seed data completed.');
+      console.log('YuTa tenant and POS seed data completed.');
       process.exit(0);
     })
     .catch((error: unknown) => {

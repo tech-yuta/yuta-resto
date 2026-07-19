@@ -46,6 +46,19 @@ Seed development data:
 corepack pnpm --filter @yuta/db db:seed
 ```
 
+The seed is idempotent. It creates the initial multi-tenant records before the
+existing POS sample data:
+
+- Organization: `FAST VIET`.
+- Establishment: `LUNA Chasseneuil-du-Poitou`.
+- Development domain: `luna.localhost`.
+- Public entitlements: `menu.public` and `reservations.public`.
+- Memberships for the seeded admin, staff, and kitchen users.
+
+Use `luna.localhost` explicitly when testing public hostname resolution.
+Unknown hosts intentionally return `TENANT_NOT_FOUND`; there is no fallback to
+the LUNA tenant.
+
 Stop the local database:
 
 ```bash

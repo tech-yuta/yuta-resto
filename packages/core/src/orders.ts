@@ -10,28 +10,16 @@ import {
   type OrderItem,
 } from '@yuta/db/schema';
 import type { DbClient } from '@yuta/db/client';
+import {
+  orderTypeSchema,
+  type OrderItemStatus,
+  type OrderStatus,
+} from '@yuta/contracts/orders';
 import { z } from 'zod';
-
-type OrderType = 'dine_in' | 'takeaway' | 'delivery';
-type OrderItemStatus =
-  | 'pending'
-  | 'sent'
-  | 'preparing'
-  | 'ready'
-  | 'served'
-  | 'cancelled';
-type OrderStatus =
-  | 'draft'
-  | 'sent'
-  | 'preparing'
-  | 'ready'
-  | 'served'
-  | 'paid'
-  | 'cancelled';
 
 const createOrderSchema = z.object({
   tableLabel: z.string().trim().min(1).max(255),
-  orderType: z.enum(['dine_in', 'takeaway', 'delivery']),
+  orderType: orderTypeSchema,
   createdBy: z.string().uuid(),
   note: z.string().trim().max(2000).optional(),
 });
