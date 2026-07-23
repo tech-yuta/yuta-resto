@@ -1,6 +1,7 @@
 import type { DbClient } from '@yuta/db/client';
 import {
   orders,
+  orderItems,
   payments,
   printJobs,
   type Check,
@@ -8,7 +9,7 @@ import {
   type Payment,
   type PrintJob,
 } from '@yuta/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { createOrderService, type OrderDetail } from './orders';
 import {
@@ -23,6 +24,8 @@ import { createPrintService } from './prints';
 const sendToKitchenSchema = z.object({
   orderId: z.string().uuid(),
   idempotencyKey: z.string().uuid(),
+  allergyAcknowledged: z.boolean().optional(),
+  allergyAcknowledgedBy: z.string().uuid().optional(),
 });
 
 const payFullOrderWithReceiptSchema = z.object({
@@ -62,7 +65,10 @@ export type PaymentCaptureResult = {
 export class PosServiceError extends Error {
   constructor(
     message: string,
-    public readonly code: 'not_found' | 'idempotency_conflict',
+    public readonly code:
+      | 'not_found'
+      | 'idempotency_conflict'
+      | 'allergy_acknowledgement_required',
   ) {
     super(message);
     this.name = 'PosServiceError';
@@ -105,10 +111,60 @@ export function createPosService(db: DbClient) {
 
       await assertIdempotencyKeyUnusedByPayment(tx, values.idempotencyKey);
 
+      const currentOrder = await tx.query.orders.findFirst({
+        where: eq(orders.id, values.orderId),
+      });
+
+      if (!currentOrder) {
+        throw new PosServiceError('Order not found.', 'not_found');
+      }
+
+      if (currentOrder.hasAllergy && !currentOrder.allergyAcknowledgedAt) {
+        if (!values.allergyAcknowledged || !values.allergyAcknowledgedBy) {
+          throw new PosServiceError(
+            'The allergy warning must be acknowledged before sending to the kitchen.',
+            'allergy_acknowledgement_required',
+          );
+        }
+
+        await tx
+          .update(orders)
+          .set({
+            allergyAcknowledgedAt: new Date(),
+            allergyAcknowledgedBy: values.allergyAcknowledgedBy,
+          })
+          .where(eq(orders.id, values.orderId));
+      }
+
       const pendingItems = await tx.query.orderItems.findMany({
         where: (items, { and, eq }) =>
           and(eq(items.orderId, values.orderId), eq(items.status, 'pending')),
       });
+      const unacknowledgedAllergyItems = pendingItems.filter(
+        (item) => item.hasAllergy && !item.allergyAcknowledgedAt,
+      );
+
+      if (unacknowledgedAllergyItems.length > 0) {
+        if (!values.allergyAcknowledged || !values.allergyAcknowledgedBy) {
+          throw new PosServiceError(
+            'Every pending item allergy must be acknowledged before sending to the kitchen.',
+            'allergy_acknowledgement_required',
+          );
+        }
+
+        await tx
+          .update(orderItems)
+          .set({
+            allergyAcknowledgedAt: new Date(),
+            allergyAcknowledgedBy: values.allergyAcknowledgedBy,
+          })
+          .where(
+            inArray(
+              orderItems.id,
+              unacknowledgedAllergyItems.map((item) => item.id),
+            ),
+          );
+      }
       const orderService = createOrderService(tx);
       const order = await orderService.sendOrderToKitchen(values.orderId);
       const printJob = await createPrintService(tx).createKitchenTicketPrintJob(

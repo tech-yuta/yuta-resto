@@ -1,4 +1,4 @@
-import { getServiceDayWindow } from '@yuta/core';
+import { allergySummary, getServiceDayWindow } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { orderItems, orders } from '@yuta/db/schema';
 import { Badge, Button, Card, SegmentedNav, Separator } from '@yuta/ui';
@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Soup,
   StickyNote,
+  TriangleAlert,
   Wifi,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -21,8 +22,10 @@ import {
   markOrderItemPreparingAction,
   markOrderItemReadyAction,
   markOrderItemSentAction,
+  confirmOrderItemAllergyAction,
 } from '../actions';
 import { PosPageShell } from '../components/PosPageShell';
+import { AllergyAlert } from '../components/AllergyAlert';
 import { KitchenAutoRefresh } from './KitchenAutoRefresh';
 
 type KitchenPageProps = {
@@ -104,7 +107,11 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
       .where(
         and(
           inArray(orderItems.status, ['sent', 'preparing', 'ready']),
-          inArray(orderItems.kitchenStationSnapshot, ['kitchen', 'bar', 'dessert']),
+          inArray(orderItems.kitchenStationSnapshot, [
+            'kitchen',
+            'bar',
+            'dessert',
+          ]),
           gte(orders.createdAt, serviceDay.start),
           lt(orders.createdAt, serviceDay.end),
         ),
@@ -228,6 +235,15 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                     <p className="mt-1 text-xs font-semibold text-primary/45">
                       {group.order.orderNumber}
                     </p>
+                    {group.order.hasAllergy && (
+                      <AllergyAlert
+                        allergyNote={group.order.allergyNote}
+                        acknowledged={Boolean(
+                          group.order.allergyAcknowledgedAt,
+                        )}
+                        className="mt-3"
+                      />
+                    )}
                     {group.order.note?.trim() && (
                       <p className="mt-2 inline-flex max-w-full items-start gap-2 rounded-lg bg-status-info-soft px-3 py-2 text-sm font-semibold text-primary">
                         <StickyNote className="mt-0.5 h-4 w-4 shrink-0 text-status-success" />
@@ -264,6 +280,69 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
                           </p>
                           {renderStatusBadge(item.status)}
                         </div>
+                        {item.hasAllergy && (
+                          <div className="mt-2 grid gap-2 rounded-lg border border-status-danger-border bg-status-danger-soft p-3 text-status-danger">
+                            <p className="inline-flex max-w-full items-start gap-2 text-sm font-black uppercase">
+                              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                              <span className="min-w-0 break-words">
+                                {allergySummary(
+                                  item.allergenCodes,
+                                  item.allergySeverity,
+                                  item.allergyNote,
+                                )}
+                              </span>
+                            </p>
+                            {item.allergyKitchenConfirmedAt ? (
+                              <Badge
+                                tone="danger"
+                                variant="solid"
+                                className="w-fit"
+                              >
+                                Cuisine informée
+                              </Badge>
+                            ) : (
+                              <form action={confirmOrderItemAllergyAction}>
+                                <input
+                                  type="hidden"
+                                  name="orderItemId"
+                                  value={item.id}
+                                />
+                                <Button
+                                  type="submit"
+                                  variant="danger"
+                                  size="sm"
+                                >
+                                  <Check className="h-4 w-4" />
+                                  Confirmer l'allergie
+                                </Button>
+                              </form>
+                            )}
+                          </div>
+                        )}
+                        {item.quickInstructions.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {item.quickInstructions.map((instruction) => (
+                              <Badge
+                                key={instruction.code}
+                                tone="info"
+                                variant="outline"
+                              >
+                                {instruction.labelSnapshot}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        {item.selectedVariants.length > 0 && (
+                          <p className="mt-2 text-sm font-black text-primary">
+                            Parfums:{' '}
+                            {item.selectedVariants
+                              .map(
+                                (variant) =>
+                                  `${variant.quantity}× ${variant.labelSnapshot}`,
+                              )
+                              .join(' · ')}
+                          </p>
+                        )}
                         {item.note && (
                           <p className="mt-2 text-sm font-semibold text-primary/65">
                             Note: {item.note}
@@ -317,7 +396,10 @@ function stationKitchenUrl(
   selectedStatus: KitchenStatusFilter,
   counts: Record<Station, Record<KitchenStatusFilter, number>>,
 ): string {
-  return kitchenUrl(station, nextStatusForStation(station, selectedStatus, counts));
+  return kitchenUrl(
+    station,
+    nextStatusForStation(station, selectedStatus, counts),
+  );
 }
 
 function nextStatusForStation(
@@ -412,14 +494,26 @@ function countItemsByStationAndStatus(
 
 function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
   if (status === 'preparing') {
-    return <Badge tone="warning" variant="soft">En preparation</Badge>;
+    return (
+      <Badge tone="warning" variant="soft">
+        En preparation
+      </Badge>
+    );
   }
 
   if (status === 'ready') {
-    return <Badge tone="success" variant="solid">Pret</Badge>;
+    return (
+      <Badge tone="success" variant="solid">
+        Pret
+      </Badge>
+    );
   }
 
-  return <Badge tone="warning" variant="soft">A preparer</Badge>;
+  return (
+    <Badge tone="warning" variant="soft">
+      A preparer
+    </Badge>
+  );
 }
 
 function statusFilterButtonClass(
@@ -443,11 +537,19 @@ function statusFilterButtonClass(
 
 function renderOrderStatusBadge(status: OrderStatus) {
   if (status === 'paid') {
-    return <Badge tone="success" variant="solid">Payee</Badge>;
+    return (
+      <Badge tone="success" variant="solid">
+        Payee
+      </Badge>
+    );
   }
 
   if (status === 'cancelled') {
-    return <Badge tone="danger" variant="solid">Annulee</Badge>;
+    return (
+      <Badge tone="danger" variant="solid">
+        Annulee
+      </Badge>
+    );
   }
 
   return null;
@@ -510,7 +612,12 @@ function renderKitchenActions(
       </form>
       <form action={markOrderItemReadyAction}>
         <input type="hidden" name="orderItemId" value={item.id} />
-        <Button type="submit" variant="success" className="w-full">
+        <Button
+          type="submit"
+          variant="success"
+          className="w-full"
+          disabled={item.hasAllergy && !item.allergyKitchenConfirmedAt}
+        >
           Pret
         </Button>
       </form>

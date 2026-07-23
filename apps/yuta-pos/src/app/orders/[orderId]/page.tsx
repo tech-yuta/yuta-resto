@@ -1,4 +1,4 @@
-import { createOrderService, formatEuros } from '@yuta/core';
+import { allergySummary, createOrderService, formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { payments } from '@yuta/db/schema';
 import { Badge, Button, Card, Separator, cn } from '@yuta/ui';
@@ -8,18 +8,20 @@ import {
   CreditCard,
   Printer,
   Plus,
-  Send,
   ShieldCheck,
   StickyNote,
   Table2,
   Trash2,
+  TriangleAlert,
   User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { randomUUID } from 'node:crypto';
 import type { ReactNode } from 'react';
-import { cancelOrderAction, sendOrderToKitchenAction } from '../../actions';
+import { cancelOrderAction } from '../../actions';
 import { PosPageShell } from '../../components/PosPageShell';
+import { AllergyAlert } from '../../components/AllergyAlert';
+import { SendToKitchenButton } from '../../components/SendToKitchenButton';
 
 type OrderPageProps = {
   params: Promise<{
@@ -58,7 +60,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
       actions={
         <>
           <SendOrderButton
-            orderId={order.id}
+            order={order}
             disabled={!canSendToKitchen}
             className="border-white/15 bg-primary text-white hover:bg-white/10"
             fullWidth={false}
@@ -75,6 +77,12 @@ export default async function OrderPage({ params }: OrderPageProps) {
       maxWidthClassName="max-w-7xl"
     >
       <div className="grid gap-4">
+        {order.hasAllergy && (
+          <AllergyAlert
+            allergyNote={order.allergyNote}
+            acknowledged={Boolean(order.allergyAcknowledgedAt)}
+          />
+        )}
         <OrderSummaryHeader
           order={order}
           canPay={canPay}
@@ -149,7 +157,7 @@ function OrderSummaryHeader({
       </div>
 
       <div className="grid grid-cols-2 gap-2 md:hidden">
-        <SendOrderButton orderId={order.id} disabled={!canSendToKitchen} />
+        <SendOrderButton order={order} disabled={!canSendToKitchen} />
         <PaymentButton orderId={order.id} disabled={!canPay} />
       </div>
     </section>
@@ -157,30 +165,42 @@ function OrderSummaryHeader({
 }
 
 function SendOrderButton({
-  orderId,
+  order,
   disabled,
   className,
   fullWidth = true,
 }: {
-  orderId: string;
+  order: OrderDetail;
   disabled: boolean;
   className?: string;
   fullWidth?: boolean;
 }) {
   return (
-    <form action={sendOrderToKitchenAction}>
-      <input type="hidden" name="orderId" value={orderId} />
-      <input type="hidden" name="idempotencyKey" value={randomUUID()} />
-      <Button
-        type="submit"
-        variant="secondary"
-        disabled={disabled}
-        className={cn(fullWidth && 'w-full', className)}
-      >
-        <Send className="h-4 w-4" />
-        Envoyer
-      </Button>
-    </form>
+    <SendToKitchenButton
+      orderId={order.id}
+      idempotencyKey={randomUUID()}
+      disabled={disabled}
+      hasAllergy={order.hasAllergy}
+      allergyNote={order.allergyNote}
+      allergyAcknowledged={Boolean(order.allergyAcknowledgedAt)}
+      itemAllergyWarnings={order.items
+        .filter(
+          (item) =>
+            item.status === 'pending' &&
+            item.hasAllergy &&
+            !item.allergyAcknowledgedAt,
+        )
+        .map((item) => ({
+          itemName: item.itemNameSnapshot,
+          allergyNote: allergySummary(
+            item.allergenCodes,
+            item.allergySeverity,
+            item.allergyNote,
+          ),
+        }))}
+      fullWidth={fullWidth}
+      className={className}
+    />
   );
 }
 
@@ -272,6 +292,34 @@ function ArticlesPanel({
                 {item.note && (
                   <p className="mt-1 text-xs font-semibold text-primary/55">
                     Note: {item.note}
+                  </p>
+                )}
+                {item.quickInstructions.length > 0 && (
+                  <p className="mt-1 text-sm font-black text-status-info">
+                    {item.quickInstructions
+                      .map((instruction) => instruction.labelSnapshot)
+                      .join(' · ')}
+                  </p>
+                )}
+                {item.selectedVariants.length > 0 && (
+                  <p className="mt-1 text-sm font-black text-primary/65">
+                    Parfums:{' '}
+                    {item.selectedVariants
+                      .map(
+                        (variant) =>
+                          `${variant.quantity}× ${variant.labelSnapshot}`,
+                      )
+                      .join(' · ')}
+                  </p>
+                )}
+                {item.hasAllergy && (
+                  <p className="mt-1 inline-flex items-start gap-1 rounded-md bg-status-danger-soft px-2 py-1 text-xs font-black text-status-danger">
+                    <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    {allergySummary(
+                      item.allergenCodes,
+                      item.allergySeverity,
+                      item.allergyNote,
+                    )}
                   </p>
                 )}
               </div>

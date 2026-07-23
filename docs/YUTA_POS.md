@@ -184,6 +184,19 @@ batch-accurate. Sent or later kitchen states are immutable from the quantity
 controls. Any recorded payment or active split locks all item mutations. A
 pending row reduced below one is status-cancelled rather than deleted.
 
+Preparation preferences use `order_items.quick_instructions` for structured
+code/label snapshots and `order_items.note` for optional free text. Product or
+category configuration determines the visible choices; conflicting codes are
+also rejected by the service. `order_items.selected_variants` stores structured
+quantity snapshots for Mochi flavours.
+
+Allergies are stored per item with `has_allergy`, `allergen_codes`,
+`allergy_severity`, and `allergy_note`. `allergy_acknowledged_at/by` records the
+POS send acknowledgement. `allergy_kitchen_confirmed_at/by` records a separate
+KDS confirmation; an allergic item cannot become `ready` until it is set. A
+later allergic item requires both confirmations again. Legacy order-level
+allergy fields remain readable for compatibility with existing local data.
+
 The kitchen screen uses lightweight 10-second client polling with `router.refresh()` while the browser tab is visible. This avoids WebSocket/SSE infrastructure for the MVP while still reflecting cancellations and kitchen status changes quickly enough during service.
 
 Kitchen station tabs show unfinished items per station across `sent` and

@@ -1,5 +1,12 @@
 'use client';
 
+import type {
+  AllergySeverity,
+  ItemInstructionConfig,
+  ItemVariantSelection,
+  SelectedItemInstruction,
+} from '@yuta/core';
+
 import {
   Button,
   Dialog,
@@ -11,17 +18,26 @@ import {
   DialogTrigger,
   IconButton,
 } from '@yuta/ui';
-import { List, Minus, Plus } from 'lucide-react';
+import { List, Minus, Plus, TriangleAlert } from 'lucide-react';
 import {
   removePendingOrderItemAction,
   updateOrderItemQuantityAction,
 } from '../../../actions';
+import { OrderItemNoteDialog } from './OrderItemNoteDialog';
 
 type MobileOrderDialogItem = {
   id: string;
   quantity: number;
   name: string;
   note: string | null;
+  quickInstructions: SelectedItemInstruction[];
+  selectedVariants: ItemVariantSelection[];
+  instructionConfig: ItemInstructionConfig;
+  hasAllergy: boolean;
+  allergenCodes: string[];
+  allergySeverity: AllergySeverity | null;
+  allergyNote: string | null;
+  allergyDisplay: string;
   totalLabel: string;
   isPending: boolean;
   statusLabel: string;
@@ -88,9 +104,49 @@ export function MobileOrderDialog({
                         Note: {item.note}
                       </p>
                     )}
+                    {item.quickInstructions.length > 0 && (
+                      <p className="mt-1 text-xs font-black text-status-info">
+                        {item.quickInstructions
+                          .map((instruction) => instruction.labelSnapshot)
+                          .join(' · ')}
+                      </p>
+                    )}
+                    {item.selectedVariants.length > 0 && (
+                      <p className="mt-1 text-xs font-black text-primary/65">
+                        Parfums:{' '}
+                        {item.selectedVariants
+                          .map(
+                            (variant) =>
+                              `${variant.quantity}× ${variant.labelSnapshot}`,
+                          )
+                          .join(' · ')}
+                      </p>
+                    )}
+                    {item.hasAllergy && (
+                      <p className="mt-1 inline-flex items-start gap-1 rounded-md bg-status-danger-soft px-2 py-1 text-xs font-black text-status-danger">
+                        <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        {item.allergyDisplay}
+                      </p>
+                    )}
                     <p className="mt-1 text-xs font-semibold text-primary/45">
                       {item.statusLabel}
                     </p>
+                    {item.isPending && canEditItems && (
+                      <OrderItemNoteDialog
+                        orderId={orderId}
+                        orderItemId={item.id}
+                        itemName={item.name}
+                        quantity={item.quantity}
+                        instructionConfig={item.instructionConfig}
+                        initialNote={item.note}
+                        initialQuickInstructions={item.quickInstructions}
+                        initialVariants={item.selectedVariants}
+                        initialHasAllergy={item.hasAllergy}
+                        initialAllergenCodes={item.allergenCodes}
+                        initialAllergySeverity={item.allergySeverity}
+                        initialAllergyNote={item.allergyNote}
+                      />
+                    )}
                   </div>
                   <span className="font-black">{item.totalLabel}</span>
                 </div>

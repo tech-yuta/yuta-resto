@@ -6,6 +6,7 @@ import {
   orders,
   payments,
   type MenuItem,
+  type ItemVariantSnapshot,
   type Order,
   type OrderItem,
 } from '@yuta/db/schema';
@@ -16,13 +17,30 @@ import {
   type OrderStatus,
 } from '@yuta/contracts/orders';
 import { z } from 'zod';
+import {
+  allergyOptions,
+  buildSelectedInstructionSnapshots,
+  type AllergySeverity,
+} from './item-instructions';
 
-const createOrderSchema = z.object({
-  tableLabel: z.string().trim().min(1).max(255),
-  orderType: orderTypeSchema,
-  createdBy: z.string().uuid(),
-  note: z.string().trim().max(2000).optional(),
-});
+const createOrderSchema = z
+  .object({
+    tableLabel: z.string().trim().min(1).max(255),
+    orderType: orderTypeSchema,
+    createdBy: z.string().uuid(),
+    note: z.string().trim().max(2000).optional(),
+    hasAllergy: z.boolean().optional(),
+    allergyNote: z.string().trim().max(2000).optional(),
+  })
+  .superRefine((values, context) => {
+    if (values.hasAllergy && !values.allergyNote) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['allergyNote'],
+        message: 'Allergy details are required.',
+      });
+    }
+  });
 
 const addOrderItemSchema = z.object({
   orderId: z.string().uuid(),
@@ -35,6 +53,58 @@ const updateOrderItemQuantitySchema = z.object({
   orderItemId: z.string().uuid(),
   quantity: z.number().int().positive(),
 });
+
+const updateOrderItemInstructionsSchema = z
+  .object({
+    orderItemId: z.string().uuid(),
+    note: z.string().trim().max(300).optional(),
+    selectedInstructionCodes: z
+      .array(z.string().trim().min(1))
+      .max(20)
+      .optional(),
+    selectedVariants: z
+      .array(
+        z.object({
+          code: z.string().trim().min(1),
+          quantity: z.number().int().nonnegative(),
+        }),
+      )
+      .max(20)
+      .optional(),
+    hasAllergy: z.boolean().optional(),
+    allergenCodes: z.array(z.string().trim().min(1)).max(20).optional(),
+    allergySeverity: z
+      .enum(['intolerance', 'allergy', 'severe_no_traces'])
+      .optional(),
+    allergyNote: z.string().trim().max(300).optional(),
+  })
+  .superRefine((values, context) => {
+    if (values.hasAllergy && (values.allergenCodes?.length ?? 0) === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['allergenCodes'],
+        message: 'At least one allergen is required.',
+      });
+    }
+    if (values.hasAllergy && !values.allergySeverity) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['allergySeverity'],
+        message: 'Allergy severity is required.',
+      });
+    }
+    if (
+      values.hasAllergy &&
+      values.allergenCodes?.includes('OTHER') &&
+      !values.allergyNote
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['allergyNote'],
+        message: 'Allergy details are required for Other.',
+      });
+    }
+  });
 
 const cancelOrderItemSchema = z.object({
   orderItemId: z.string().uuid(),
@@ -54,6 +124,11 @@ const orderItemIdSchema = z.object({
   orderItemId: z.string().uuid(),
 });
 
+const confirmOrderItemAllergySchema = z.object({
+  orderItemId: z.string().uuid(),
+  confirmedBy: z.string().uuid(),
+});
+
 const orderIdSchema = z.object({
   orderId: z.string().uuid(),
 });
@@ -62,6 +137,9 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type AddOrderItemInput = z.infer<typeof addOrderItemSchema>;
 export type UpdateOrderItemQuantityInput = z.infer<
   typeof updateOrderItemQuantitySchema
+>;
+export type UpdateOrderItemInstructionsInput = z.infer<
+  typeof updateOrderItemInstructionsSchema
 >;
 export type CancelOrderInput = z.infer<typeof cancelOrderSchema>;
 export type CancelOrderItemInput = z.infer<typeof cancelOrderItemSchema>;
@@ -98,6 +176,8 @@ export function createOrderService(db: DbClient) {
         orderType: values.orderType,
         createdBy: values.createdBy,
         note: values.note,
+        hasAllergy: values.hasAllergy ?? false,
+        allergyNote: values.hasAllergy ? values.allergyNote : null,
       })
       .returning();
 
@@ -180,6 +260,87 @@ export function createOrderService(db: DbClient) {
       .returning();
 
     await recalculateOrderTotals(item.orderId);
+
+    return updatedItem;
+  }
+
+  async function updateOrderItemInstructions(
+    input: UpdateOrderItemInstructionsInput,
+  ): Promise<OrderItem> {
+    const values = updateOrderItemInstructionsSchema.parse(input);
+    const item = await getRequiredOrderItem(values.orderItemId);
+    const order = await getRequiredOrder(item.orderId);
+
+    await assertOrderCanChangeItems(db, order);
+
+    if (item.status !== 'pending') {
+      throw new OrderServiceError(
+        'Only pending order items can be edited.',
+        'invalid_status',
+      );
+    }
+
+    const knownAllergenCodes = new Set<string>(
+      allergyOptions.map((option) => option.code),
+    );
+    const requestedAllergenCodes = values.allergenCodes ?? [];
+    if (requestedAllergenCodes.some((code) => !knownAllergenCodes.has(code))) {
+      throw new OrderServiceError('Unknown allergen.', 'invalid_input');
+    }
+
+    let quickInstructions;
+    try {
+      quickInstructions = buildSelectedInstructionSnapshots(
+        values.selectedInstructionCodes ?? [],
+      );
+    } catch (error) {
+      throw new OrderServiceError(
+        error instanceof Error ? error.message : 'Invalid quick instructions.',
+        'invalid_input',
+      );
+    }
+
+    const selectedVariants = buildVariantSnapshots(
+      item.itemNameSnapshot,
+      item.quantity,
+      values.selectedVariants ?? [],
+    );
+    const hasAllergy = values.hasAllergy ?? false;
+    const allergenCodes = hasAllergy ? requestedAllergenCodes : [];
+    const allergySeverity = hasAllergy
+      ? (values.allergySeverity as AllergySeverity)
+      : null;
+    const allergyNote = hasAllergy ? values.allergyNote : null;
+    const allergyChanged =
+      item.hasAllergy !== hasAllergy ||
+      item.allergyNote !== allergyNote ||
+      item.allergySeverity !== allergySeverity ||
+      JSON.stringify(item.allergenCodes) !== JSON.stringify(allergenCodes);
+    const [updatedItem] = await db
+      .update(orderItems)
+      .set({
+        note: values.note || null,
+        quickInstructions,
+        selectedVariants,
+        hasAllergy,
+        allergenCodes,
+        allergySeverity,
+        allergyNote,
+        allergyAcknowledgedAt: allergyChanged
+          ? null
+          : item.allergyAcknowledgedAt,
+        allergyAcknowledgedBy: allergyChanged
+          ? null
+          : item.allergyAcknowledgedBy,
+        allergyKitchenConfirmedAt: allergyChanged
+          ? null
+          : item.allergyKitchenConfirmedAt,
+        allergyKitchenConfirmedBy: allergyChanged
+          ? null
+          : item.allergyKitchenConfirmedBy,
+      })
+      .where(eq(orderItems.id, item.id))
+      .returning();
 
     return updatedItem;
   }
@@ -358,6 +519,22 @@ export function createOrderService(db: DbClient) {
       );
     }
 
+    const incompleteMochi = pendingItems.find(
+      (item) =>
+        item.itemNameSnapshot === 'Mochi glace (2 pcs)' &&
+        item.selectedVariants.reduce(
+          (total, variant) => total + variant.quantity,
+          0,
+        ) !==
+          item.quantity * 2,
+    );
+    if (incompleteMochi) {
+      throw new OrderServiceError(
+        `Select exactly ${incompleteMochi.quantity * 2} Mochi flavours before sending.`,
+        'invalid_input',
+      );
+    }
+
     const now = new Date();
 
     await db
@@ -389,7 +566,43 @@ export function createOrderService(db: DbClient) {
   }
 
   async function markOrderItemReady(orderItemId: string): Promise<OrderItem> {
+    const item = await getRequiredOrderItem(orderItemId);
+    if (item.hasAllergy && !item.allergyKitchenConfirmedAt) {
+      throw new OrderServiceError(
+        'Kitchen must confirm the allergy before marking the item ready.',
+        'invalid_status',
+      );
+    }
     return markOrderItemStatus(orderItemId, 'ready', ['sent', 'preparing']);
+  }
+
+  async function confirmOrderItemAllergy(input: {
+    orderItemId: string;
+    confirmedBy: string;
+  }): Promise<OrderItem> {
+    const values = confirmOrderItemAllergySchema.parse(input);
+    const item = await getRequiredOrderItem(values.orderItemId);
+    if (!item.hasAllergy) {
+      throw new OrderServiceError(
+        'This item has no allergy warning.',
+        'invalid_input',
+      );
+    }
+    if (!['sent', 'preparing', 'ready'].includes(item.status)) {
+      throw new OrderServiceError(
+        'Only kitchen items can have their allergy confirmed.',
+        'invalid_status',
+      );
+    }
+    const [updatedItem] = await db
+      .update(orderItems)
+      .set({
+        allergyKitchenConfirmedAt: new Date(),
+        allergyKitchenConfirmedBy: values.confirmedBy,
+      })
+      .where(eq(orderItems.id, item.id))
+      .returning();
+    return updatedItem;
   }
 
   async function markOrderItemServed(orderItemId: string): Promise<OrderItem> {
@@ -554,6 +767,7 @@ export function createOrderService(db: DbClient) {
     createOrder,
     addOrderItem,
     updateOrderItemQuantity,
+    updateOrderItemInstructions,
     removePendingOrderItem,
     cancelOrder,
     cancelOrderItem,
@@ -562,10 +776,52 @@ export function createOrderService(db: DbClient) {
     markOrderItemSent,
     markOrderItemPreparing,
     markOrderItemReady,
+    confirmOrderItemAllergy,
     markOrderItemServed,
     getOpenOrders,
     getOrderDetail,
   };
+}
+
+function buildVariantSnapshots(
+  itemName: string,
+  itemQuantity: number,
+  selections: Array<{ code: string; quantity: number }>,
+): ItemVariantSnapshot[] {
+  const selected = selections.filter((selection) => selection.quantity > 0);
+  if (itemName !== 'Mochi glace (2 pcs)') {
+    if (selected.length > 0) {
+      throw new OrderServiceError(
+        'Variants are not available for this item.',
+        'invalid_input',
+      );
+    }
+    return [];
+  }
+
+  const labels: Record<string, string> = {
+    MANGUE: 'Mangue',
+    MATCHA: 'Matcha',
+    CACAO: 'Cacao',
+  };
+  if (selected.some((selection) => !labels[selection.code])) {
+    throw new OrderServiceError('Unknown Mochi variant.', 'invalid_input');
+  }
+  const total = selected.reduce(
+    (sum, selection) => sum + selection.quantity,
+    0,
+  );
+  if (total !== itemQuantity * 2) {
+    throw new OrderServiceError(
+      `Select exactly ${itemQuantity * 2} Mochi flavours.`,
+      'invalid_input',
+    );
+  }
+  return selected.map((selection) => ({
+    code: selection.code,
+    labelSnapshot: labels[selection.code],
+    quantity: selection.quantity,
+  }));
 }
 
 async function assertOrderCanChangeItems(

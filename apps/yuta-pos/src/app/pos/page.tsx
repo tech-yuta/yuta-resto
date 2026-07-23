@@ -151,7 +151,7 @@ export default async function PosHome() {
               <Textarea
                 id="note"
                 name="note"
-                placeholder="Ex: Allergie, demande speciale..."
+                placeholder="Ex: Anniversaire, demande generale..."
                 className="min-h-32"
               />
             </div>

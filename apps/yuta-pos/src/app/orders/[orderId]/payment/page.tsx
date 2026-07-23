@@ -1,7 +1,7 @@
-import { createPaymentService, formatEuros } from '@yuta/core';
+import { allergySummary, createPaymentService, formatEuros } from '@yuta/core';
 import { db } from '@yuta/db/client';
 import { Badge, Button, Card, Separator } from '@yuta/ui';
-import { Tags } from 'lucide-react';
+import { Tags, TriangleAlert } from 'lucide-react';
 import { randomUUID } from 'node:crypto';
 import {
   cancelOrderSplitAction,
@@ -11,6 +11,7 @@ import {
   splitOrderEquallyAction,
 } from '../../../actions';
 import { PosPageShell } from '../../../components/PosPageShell';
+import { AllergyAlert } from '../../../components/AllergyAlert';
 import { EqualSplitDialogContent } from './EqualSplitDialogContent';
 import { ItemSplitDialogContent } from './ItemSplitDialogContent';
 import { PaymentCaptureForm } from './PaymentCaptureForm';
@@ -173,6 +174,12 @@ export default async function PaymentPage({
         </Badge>
       }
     >
+      {order.hasAllergy && (
+        <AllergyAlert
+          allergyNote={order.allergyNote}
+          acknowledged={Boolean(order.allergyAcknowledgedAt)}
+        />
+      )}
       {error && (
         <div className="rounded-lg border border-border-default bg-surface-muted p-3 text-sm font-semibold text-primary">
           {paymentErrorMessage(error)}
@@ -210,6 +217,39 @@ export default async function PaymentPage({
                   <p className="font-semibold">
                     {item.quantity} x {item.itemNameSnapshot}
                   </p>
+                  {item.note && (
+                    <p className="mt-1 text-xs font-semibold text-primary/55">
+                      Note: {item.note}
+                    </p>
+                  )}
+                  {item.quickInstructions.length > 0 && (
+                    <p className="mt-1 text-xs font-black text-status-info">
+                      {item.quickInstructions
+                        .map((instruction) => instruction.labelSnapshot)
+                        .join(' · ')}
+                    </p>
+                  )}
+                  {item.selectedVariants.length > 0 && (
+                    <p className="mt-1 text-xs font-black text-primary/65">
+                      Parfums:{' '}
+                      {item.selectedVariants
+                        .map(
+                          (variant) =>
+                            `${variant.quantity}× ${variant.labelSnapshot}`,
+                        )
+                        .join(' · ')}
+                    </p>
+                  )}
+                  {item.hasAllergy && (
+                    <p className="mt-1 inline-flex items-start gap-1 rounded-md bg-status-danger-soft px-2 py-1 text-xs font-black text-status-danger">
+                      <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      {allergySummary(
+                        item.allergenCodes,
+                        item.allergySeverity,
+                        item.allergyNote,
+                      )}
+                    </p>
+                  )}
                 </div>
                 <p className="font-bold">
                   {formatEuros(item.unitPriceCentsSnapshot * item.quantity)}

@@ -2,7 +2,7 @@
  * Import menu LUNA từ luna-menu.json vào database.
  *
  * Chạy:
- *   pnpm --filter @yuta/db tsx src/import-luna-menu.ts
+ *   corepack pnpm --filter @yuta/db exec tsx src/import-luna-menu.ts
  *
  * Script dùng upsert (insert or update) theo name nên chạy nhiều lần vẫn an toàn.
  */
@@ -302,7 +302,11 @@ async function main() {
   console.log(`   ${data.combos.length} combos`);
 }
 
-main().catch((err) => {
-  console.error('❌  Erreur import:', err);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('❌  Erreur import:', err);
+    process.exit(1);
+  });

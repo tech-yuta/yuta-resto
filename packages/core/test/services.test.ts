@@ -263,6 +263,110 @@ describe('YuTa core services', () => {
     expect(jobs).toHaveLength(1);
   });
 
+  it('requires allergy acknowledgement and prints the warning on the kitchen ticket', async () => {
+    const orderService = createOrderService(db);
+    const posService = createPosService(db);
+    const order = await createTestOrder(context.user.id);
+    const item = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+    await orderService.updateOrderItemInstructions({
+      orderItemId: item.id,
+      note: 'No vegetables',
+      selectedInstructionCodes: ['SANS_CORIANDRE', 'SAUCE_A_PART'],
+      hasAllergy: true,
+      allergenCodes: ['PEANUTS'],
+      allergySeverity: 'severe_no_traces',
+      allergyNote: 'Severe peanut allergy',
+    });
+
+    await expect(
+      posService.sendToKitchen({
+        orderId: order.id,
+        idempotencyKey: randomUUID(),
+      }),
+    ).rejects.toMatchObject({ code: 'allergy_acknowledgement_required' });
+
+    const result = await posService.sendToKitchen({
+      orderId: order.id,
+      idempotencyKey: randomUUID(),
+      allergyAcknowledged: true,
+      allergyAcknowledgedBy: context.user.id,
+    });
+    const savedItem = await db.query.orderItems.findFirst({
+      where: eq(orderItems.id, item.id),
+    });
+
+    expect(savedItem?.allergyAcknowledgedAt).toBeInstanceOf(Date);
+    expect(savedItem?.allergyAcknowledgedBy).toBe(context.user.id);
+    expect(result.printJob.payload).toMatchObject({
+      items: [
+        {
+          note: 'No vegetables',
+          quickInstructions: [
+            { code: 'SANS_CORIANDRE', labelSnapshot: 'Sans coriandre' },
+            { code: 'SAUCE_A_PART', labelSnapshot: 'Sauce à part' },
+          ],
+          hasAllergy: true,
+          allergenCodes: ['PEANUTS'],
+          allergySeverity: 'severe_no_traces',
+          allergyNote: 'Severe peanut allergy',
+        },
+      ],
+    });
+
+    await expect(
+      orderService.markOrderItemReady(item.id),
+    ).rejects.toMatchObject({
+      code: 'invalid_status',
+    });
+    await orderService.confirmOrderItemAllergy({
+      orderItemId: item.id,
+      confirmedBy: context.user.id,
+    });
+    await expect(
+      orderService.markOrderItemReady(item.id),
+    ).resolves.toMatchObject({
+      status: 'ready',
+    });
+  });
+
+  it('updates notes only while an order item is pending', async () => {
+    const orderService = createOrderService(db);
+    const order = await createTestOrder(context.user.id);
+    const item = await orderService.addOrderItem({
+      orderId: order.id,
+      menuItemId: context.items.bunBo.id,
+      quantity: 1,
+    });
+
+    const updated = await orderService.updateOrderItemInstructions({
+      orderItemId: item.id,
+      note: 'No coriander',
+      hasAllergy: false,
+    });
+    expect(updated.note).toBe('No coriander');
+
+    await expect(
+      orderService.updateOrderItemInstructions({
+        orderItemId: item.id,
+        selectedInstructionCodes: ['SANS_SAUCE', 'SAUCE_A_PART'],
+        hasAllergy: false,
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_input' });
+
+    await orderService.sendOrderToKitchen(order.id);
+    await expect(
+      orderService.updateOrderItemInstructions({
+        orderItemId: item.id,
+        note: 'Too late',
+        hasAllergy: false,
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_status' });
+  });
+
   it('rolls back a kitchen send when its print job cannot be created', async () => {
     const posService = createPosService(db);
     const orderService = createOrderService(db);

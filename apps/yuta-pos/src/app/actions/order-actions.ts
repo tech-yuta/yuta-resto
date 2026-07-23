@@ -44,6 +44,22 @@ const updateOrderItemQuantityFormSchema = z.object({
   quantity: z.coerce.number().int().positive(),
 });
 
+const updateOrderItemInstructionsFormSchema = z.object({
+  orderId: z.string().uuid(),
+  orderItemId: z.string().uuid(),
+  note: z.string().trim().max(300).optional(),
+  selectedInstructionCodes: z.array(z.string()),
+  selectedVariants: z.array(
+    z.object({ code: z.string(), quantity: z.number().int().nonnegative() }),
+  ),
+  hasAllergy: z.boolean(),
+  allergenCodes: z.array(z.string()),
+  allergySeverity: z
+    .enum(['intolerance', 'allergy', 'severe_no_traces'])
+    .optional(),
+  allergyNote: z.string().trim().max(300).optional(),
+});
+
 const cancelOrderItemFormSchema = z.object({
   orderId: z.string().uuid(),
   orderItemId: z.string().uuid(),
@@ -70,6 +86,7 @@ export async function createOrderAction(formData: FormData): Promise<void> {
     orderType: values.orderType,
     createdBy: staffUser.id,
     note: values.note,
+    hasAllergy: false,
   });
 
   redirect(`/orders/${order.id}/items`);
@@ -100,11 +117,60 @@ export async function sendOrderToKitchenAction(
     idempotencyKey: formData.get('idempotencyKey'),
   });
 
-  await createPosService(db).sendToKitchen(values);
+  const staffUser = await getSelectedStaffUser();
+
+  await createPosService(db).sendToKitchen({
+    ...values,
+    allergyAcknowledged: formData.get('allergyAcknowledged') === 'true',
+    allergyAcknowledgedBy: staffUser.id,
+  });
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath('/kitchen');
   revalidatePath('/pos/prints');
+}
+
+export async function updateOrderItemInstructionsAction(
+  formData: FormData,
+): Promise<void> {
+  const values = updateOrderItemInstructionsFormSchema.parse({
+    orderId: formData.get('orderId'),
+    orderItemId: formData.get('orderItemId'),
+    note: formData.get('note') || undefined,
+    selectedInstructionCodes: parseJsonArray(
+      formData.get('selectedInstructionCodes'),
+    ),
+    selectedVariants: parseJsonArray(formData.get('selectedVariants')),
+    hasAllergy: formData.get('hasAllergy') === 'true',
+    allergenCodes: parseJsonArray(formData.get('allergenCodes')),
+    allergySeverity: formData.get('allergySeverity') || undefined,
+    allergyNote: formData.get('allergyNote') || undefined,
+  });
+
+  await createOrderService(db).updateOrderItemInstructions({
+    orderItemId: values.orderItemId,
+    note: values.note,
+    selectedInstructionCodes: values.selectedInstructionCodes,
+    selectedVariants: values.selectedVariants,
+    hasAllergy: values.hasAllergy,
+    allergenCodes: values.allergenCodes,
+    allergySeverity: values.allergySeverity,
+    allergyNote: values.allergyNote,
+  });
+
+  revalidatePath(`/orders/${values.orderId}`);
+  revalidatePath(`/orders/${values.orderId}/items`);
+}
+
+function parseJsonArray(value: FormDataEntryValue | null): unknown[] {
+  if (typeof value !== 'string' || value.length === 0) {
+    return [];
+  }
+  const parsed: unknown = JSON.parse(value);
+  if (!Array.isArray(parsed)) {
+    throw new Error('Expected a JSON array.');
+  }
+  return parsed;
 }
 
 export async function cancelOrderAction(formData: FormData): Promise<void> {

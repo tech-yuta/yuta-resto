@@ -64,13 +64,22 @@ N/A       not applicable for this run
 
 ## Order Item Entry
 
-| Case                           | Expected Result                                                | Result | Notes |
-| ------------------------------ | -------------------------------------------------------------- | -----: | ----- |
-| Select menu category           | Item grid changes to selected category                         |        |       |
-| Add item                       | Item appears in `Commande en cours`                            |        |       |
-| Add same item twice            | Two rows or expected quantity behavior is visible              |        |       |
-| Item total displays correctly  | Row amount equals snapshot unit price times quantity           |        |       |
-| Order total displays correctly | Total equals sum of active non-cancelled items minus discounts |        |       |
+| Case                             | Expected Result                                                | Result | Notes |
+| -------------------------------- | -------------------------------------------------------------- | -----: | ----- |
+| Select menu category             | Item grid changes to selected category                         |        |       |
+| Add item                         | Item appears in `Commande en cours`                            |        |       |
+| Add same item twice              | Two rows or expected quantity behavior is visible              |        |       |
+| Item total displays correctly    | Row amount equals snapshot unit price times quantity           |        |       |
+| Order total displays correctly   | Total equals sum of active non-cancelled items minus discounts |        |       |
+| Add or edit pending item note    | Note appears below the item and persists                       |        |       |
+| Nems quick options               | Nems shows specific choices and never `Sans legumes`           |        |       |
+| Open `Autres`                    | Additional choices appear without replacing current choices    |        |       |
+| Select conflicting options       | New option automatically removes the incompatible option       |        |       |
+| Structured option persistence    | Code and label snapshot persist on the order item              |        |       |
+| Select Mochi flavours            | Flavor quantities equal two per ordered portion                |        |       |
+| Edit sent item note              | Note action is unavailable after kitchen send                  |        |       |
+| Item allergy without details     | Form validation blocks saving the instructions                 |        |       |
+| Add allergies to different items | Each warning stays attached to its own item                    |        |       |
 
 ## Quantity, Cancel, Restore
 
@@ -87,22 +96,28 @@ N/A       not applicable for this run
 
 ## Kitchen Flow
 
-| Case                                      | Expected Result                                         | Result | Notes |
-| ----------------------------------------- | ------------------------------------------------------- | -----: | ----- |
-| Send pending items to kitchen             | Items become `Cuisine`; kitchen ticket job is created   |        |       |
-| Send button with no pending items         | Button is disabled                                      |        |       |
-| Kitchen station filter `Cuisine`          | Only kitchen station items are shown                    |        |       |
-| Kitchen station filter `Bar`              | Only bar station items are shown                        |        |       |
-| Kitchen station filter `Dessert`          | Only dessert station items are shown                    |        |       |
-| Mark item `Preparer`                      | Item becomes `Preparation`                              |        |       |
-| Mark item `Pret`                          | Item becomes `Pret`                                     |        |       |
-| Open kitchen `Historique`                 | Ready items are visible by station                      |        |       |
-| Tap `Reouvrir` on a ready item            | Item returns to `Preparation` and active kitchen queue  |        |       |
-| Tap `Retour` on a preparing item          | Item returns to `Envoye`                                |        |       |
-| Paid order in kitchen `A preparer`        | Item can still be marked `Preparer` or `Pret`           |        |       |
-| Paid order in kitchen `Historique`        | Ready item can still be reopened for kitchen correction |        |       |
-| Cancelled order in kitchen                | Item is read-only and does not show rollback buttons    |        |       |
-| Order status refreshes from item statuses | Order status reflects sent/preparing/ready state        |        |       |
+| Case                                        | Expected Result                                         | Result | Notes |
+| ------------------------------------------- | ------------------------------------------------------- | -----: | ----- |
+| Send pending items to kitchen               | Items become `Cuisine`; kitchen ticket job is created   |        |       |
+| Send button with no pending items           | Button is disabled                                      |        |       |
+| Send allergic item without confirmation     | Kitchen send is blocked                                 |        |       |
+| Confirm allergy and send                    | Acknowledgement is stored on the affected item          |        |       |
+| Kitchen displays allergic item              | Red alert appears directly below the affected item      |        |       |
+| Allergy missing allergen or severity        | Item instruction form cannot be saved                   |        |       |
+| Mark allergic item ready before KDS confirm | `Pret` remains unavailable                              |        |       |
+| Confirm allergy on KDS                      | Confirmation is stored and `Pret` becomes available     |        |       |
+| Kitchen station filter `Cuisine`            | Only kitchen station items are shown                    |        |       |
+| Kitchen station filter `Bar`                | Only bar station items are shown                        |        |       |
+| Kitchen station filter `Dessert`            | Only dessert station items are shown                    |        |       |
+| Mark item `Preparer`                        | Item becomes `Preparation`                              |        |       |
+| Mark item `Pret`                            | Item becomes `Pret`                                     |        |       |
+| Open kitchen `Historique`                   | Ready items are visible by station                      |        |       |
+| Tap `Reouvrir` on a ready item              | Item returns to `Preparation` and active kitchen queue  |        |       |
+| Tap `Retour` on a preparing item            | Item returns to `Envoye`                                |        |       |
+| Paid order in kitchen `A preparer`          | Item can still be marked `Preparer` or `Pret`           |        |       |
+| Paid order in kitchen `Historique`          | Ready item can still be reopened for kitchen correction |        |       |
+| Cancelled order in kitchen                  | Item is read-only and does not show rollback buttons    |        |       |
+| Order status refreshes from item statuses   | Order status reflects sent/preparing/ready state        |        |       |
 
 ## Full Payment
 

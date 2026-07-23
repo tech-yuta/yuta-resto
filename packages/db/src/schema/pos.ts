@@ -90,6 +90,23 @@ export const comboPricingModeEnum = pgEnum('combo_pricing_mode', [
   'fixed',
   'base_item_plus_delta',
 ]);
+export const allergySeverityEnum = pgEnum('allergy_severity', [
+  'intolerance',
+  'allergy',
+  'severe_no_traces',
+]);
+
+export type SelectedInstructionSnapshot = {
+  instructionId: string;
+  code: string;
+  labelSnapshot: string;
+};
+
+export type ItemVariantSnapshot = {
+  code: string;
+  labelSnapshot: string;
+  quantity: number;
+};
 
 const createdAt = () =>
   timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
@@ -170,6 +187,14 @@ export const orders = pgTable(
     totalCents: integer('total_cents').default(0).notNull(),
     paymentMode: paymentModeEnum('payment_mode').default('single').notNull(),
     note: text('note'),
+    hasAllergy: boolean('has_allergy').default(false).notNull(),
+    allergyNote: text('allergy_note'),
+    allergyAcknowledgedAt: timestamp('allergy_acknowledged_at', {
+      withTimezone: true,
+    }),
+    allergyAcknowledgedBy: uuid('allergy_acknowledged_by').references(
+      () => users.id,
+    ),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id),
@@ -205,6 +230,33 @@ export const orderItems = pgTable(
     ).notNull(),
     quantity: integer('quantity').notNull(),
     note: text('note'),
+    quickInstructions: jsonb('quick_instructions')
+      .$type<SelectedInstructionSnapshot[]>()
+      .default([])
+      .notNull(),
+    selectedVariants: jsonb('selected_variants')
+      .$type<ItemVariantSnapshot[]>()
+      .default([])
+      .notNull(),
+    hasAllergy: boolean('has_allergy').default(false).notNull(),
+    allergenCodes: jsonb('allergen_codes')
+      .$type<string[]>()
+      .default([])
+      .notNull(),
+    allergySeverity: allergySeverityEnum('allergy_severity'),
+    allergyNote: text('allergy_note'),
+    allergyAcknowledgedAt: timestamp('allergy_acknowledged_at', {
+      withTimezone: true,
+    }),
+    allergyAcknowledgedBy: uuid('allergy_acknowledged_by').references(
+      () => users.id,
+    ),
+    allergyKitchenConfirmedAt: timestamp('allergy_kitchen_confirmed_at', {
+      withTimezone: true,
+    }),
+    allergyKitchenConfirmedBy: uuid('allergy_kitchen_confirmed_by').references(
+      () => users.id,
+    ),
     status: orderItemStatusEnum('status').default('pending').notNull(),
     sentAt: timestamp('sent_at', { withTimezone: true }),
     readyAt: timestamp('ready_at', { withTimezone: true }),

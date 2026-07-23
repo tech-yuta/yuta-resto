@@ -1,6 +1,11 @@
 import { and, asc, desc, eq } from 'drizzle-orm';
 import type { DbClient } from '@yuta/db/client';
-import { printJobs, type Payment, type PrintJob } from '@yuta/db/schema';
+import {
+  printJobs,
+  type OrderItem,
+  type Payment,
+  type PrintJob,
+} from '@yuta/db/schema';
 import { z } from 'zod';
 
 type PrintJobStatus = 'pending' | 'printing' | 'printed' | 'failed';
@@ -10,12 +15,31 @@ type KitchenTicketPayload = {
   orderNumber: string;
   tableLabel: string;
   orderType: string;
+  orderNote: string | null;
+  hasAllergy: boolean;
+  allergyNote: string | null;
+  allergyAcknowledgedAt: string | null;
   createdAt: string;
   items: {
     orderItemId: string;
     name: string;
     quantity: number;
     note: string | null;
+    quickInstructions: Array<{
+      code: string;
+      labelSnapshot: string;
+    }>;
+    selectedVariants: Array<{
+      code: string;
+      labelSnapshot: string;
+      quantity: number;
+    }>;
+    hasAllergy: boolean;
+    allergenCodes: string[];
+    allergySeverity: string | null;
+    allergyNote: string | null;
+    allergyAcknowledgedAt: string | null;
+    allergyKitchenConfirmedAt: string | null;
     station: string;
   }[];
 };
@@ -147,12 +171,26 @@ export function createPrintService(db: DbClient) {
       orderNumber: order.orderNumber,
       tableLabel: order.tableLabel,
       orderType: order.orderType,
+      orderNote: order.note,
+      hasAllergy: order.hasAllergy,
+      allergyNote: order.allergyNote,
+      allergyAcknowledgedAt: order.allergyAcknowledgedAt?.toISOString() ?? null,
       createdAt: new Date().toISOString(),
       items: printableItems.map((item) => ({
         orderItemId: item.id,
         name: item.itemNameSnapshot,
         quantity: item.quantity,
         note: item.note,
+        quickInstructions: item.quickInstructions,
+        selectedVariants: item.selectedVariants,
+        hasAllergy: item.hasAllergy,
+        allergenCodes: item.allergenCodes,
+        allergySeverity: item.allergySeverity,
+        allergyNote: item.allergyNote,
+        allergyAcknowledgedAt:
+          item.allergyAcknowledgedAt?.toISOString() ?? null,
+        allergyKitchenConfirmedAt:
+          item.allergyKitchenConfirmedAt?.toISOString() ?? null,
         station: item.kitchenStationSnapshot,
       })),
     };
@@ -336,9 +374,9 @@ export function createPrintService(db: DbClient) {
       throw new PrintServiceError('Order not found.', 'not_found');
     }
 
-    const activeItems = order.items.filter(
-      (item) => item.status !== 'cancelled',
-    );
+    const activeItems = order.items
+      .filter((item) => item.status !== 'cancelled')
+      .sort(compareOrderItems);
     const paidPayments = order.payments.filter(
       (payment) => payment.status === 'paid',
     );
@@ -436,6 +474,13 @@ function requirePrintJob(job: PrintJob | undefined): PrintJob {
 
 function sumPayments(payments: Payment[]): number {
   return payments.reduce((total, payment) => total + payment.amountCents, 0);
+}
+
+function compareOrderItems(left: OrderItem, right: OrderItem): number {
+  return (
+    left.createdAt.getTime() - right.createdAt.getTime() ||
+    left.id.localeCompare(right.id)
+  );
 }
 
 function formatPayment(

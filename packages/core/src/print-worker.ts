@@ -26,7 +26,9 @@ export async function processPendingPrintJobs(
 ): Promise<ProcessPrintJobsResult> {
   const values = processPrintJobsSchema.parse(input);
   const printService = createPrintService(db);
-  const pendingJobs = await printService.listPendingPrintJobs({ limit: values.batchSize });
+  const pendingJobs = await printService.listPendingPrintJobs({
+    limit: values.batchSize,
+  });
   const result: ProcessPrintJobsResult = {
     scanned: pendingJobs.length,
     printed: 0,
@@ -48,7 +50,10 @@ export async function processPendingPrintJobs(
 
       await printService.markPrintJobFailed({
         printJobId: pendingJob.id,
-        errorMessage: error instanceof Error ? error.message : 'Unknown print worker error.',
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : 'Unknown print worker error.',
       });
       result.failed += 1;
     }
@@ -57,7 +62,10 @@ export async function processPendingPrintJobs(
   return result;
 }
 
-async function mockPrint(job: PrintJob, options: { outputDir?: string; failRate: number }): Promise<void> {
+async function mockPrint(
+  job: PrintJob,
+  options: { outputDir?: string; failRate: number },
+): Promise<void> {
   if (Math.random() < options.failRate) {
     throw new Error('Mock printer failure.');
   }
@@ -67,7 +75,11 @@ async function mockPrint(job: PrintJob, options: { outputDir?: string; failRate:
   }
 
   await mkdir(options.outputDir, { recursive: true });
-  await writeFile(path.join(options.outputDir, `${job.id}.txt`), renderPrintJob(job), 'utf8');
+  await writeFile(
+    path.join(options.outputDir, `${job.id}.txt`),
+    renderPrintJob(job),
+    'utf8',
+  );
 }
 
 function renderPrintJob(job: PrintJob): string {
@@ -97,6 +109,8 @@ function renderPayload(payload: unknown): string {
     valueLine('Table', record.tableLabel),
     valueLine('Check', record.checkLabel),
     valueLine('Type', record.orderType),
+    allergyLine(record.hasAllergy, record.allergyNote),
+    valueLine('Order note', record.orderNote),
   ].filter(Boolean);
   const itemLines = items.map((item) => renderPayloadItem(item));
   const totalLines = [
@@ -108,11 +122,28 @@ function renderPayload(payload: unknown): string {
   const payments = Array.isArray(record.payments) ? record.payments : [];
   const paymentLines = payments.map((payment) => renderPayloadPayment(payment));
 
-  return [...header, '', ...itemLines, '', ...totalLines, '', ...paymentLines].join('\n').trim();
+  return [...header, '', ...itemLines, '', ...totalLines, '', ...paymentLines]
+    .join('\n')
+    .trim();
+}
+
+function allergyLine(hasAllergy: unknown, allergyNote: unknown): string {
+  if (hasAllergy !== true) {
+    return '';
+  }
+
+  const details =
+    typeof allergyNote === 'string' && allergyNote.length > 0
+      ? `: ${allergyNote}`
+      : '';
+
+  return `!!! ALLERGY${details} !!!`;
 }
 
 function valueLine(label: string, value: unknown): string {
-  return typeof value === 'string' && value.length > 0 ? `${label}: ${value}` : '';
+  return typeof value === 'string' && value.length > 0
+    ? `${label}: ${value}`
+    : '';
 }
 
 function renderPayloadItem(item: unknown): string {
@@ -123,10 +154,80 @@ function renderPayloadItem(item: unknown): string {
   const record = item as Record<string, unknown>;
   const quantity = typeof record.quantity === 'number' ? record.quantity : 1;
   const name = typeof record.name === 'string' ? record.name : 'Item';
-  const station = typeof record.station === 'string' ? ` [${record.station}]` : '';
-  const note = typeof record.note === 'string' && record.note.length > 0 ? ` - ${record.note}` : '';
+  const station =
+    typeof record.station === 'string' ? ` [${record.station}]` : '';
+  const note =
+    typeof record.note === 'string' && record.note.length > 0
+      ? `NOTE: ${record.note}`
+      : '';
+  const allergy = structuredItemAllergyLine(record);
+  const instructions = Array.isArray(record.quickInstructions)
+    ? record.quickInstructions
+        .map((instruction) => {
+          if (!instruction || typeof instruction !== 'object') return '';
+          const label = (instruction as Record<string, unknown>).labelSnapshot;
+          return typeof label === 'string' ? `  > ${label.toUpperCase()}` : '';
+        })
+        .filter(Boolean)
+    : [];
+  const variants = Array.isArray(record.selectedVariants)
+    ? record.selectedVariants
+        .map((variant) => {
+          if (!variant || typeof variant !== 'object') return '';
+          const variantRecord = variant as Record<string, unknown>;
+          return typeof variantRecord.labelSnapshot === 'string' &&
+            typeof variantRecord.quantity === 'number'
+            ? `${variantRecord.quantity}x ${variantRecord.labelSnapshot}`
+            : '';
+        })
+        .filter(Boolean)
+        .join(' · ')
+    : '';
 
-  return `- ${quantity}x ${name}${station}${note}`;
+  return [
+    `- ${quantity}x ${name}${station}`,
+    allergy,
+    variants ? `  PARFUMS: ${variants}` : '',
+    ...instructions,
+    note,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+function structuredItemAllergyLine(record: Record<string, unknown>): string {
+  if (record.hasAllergy !== true) return '';
+  const severityLabels: Record<string, string> = {
+    intolerance: 'INTOLERANCE',
+    allergy: 'ALLERGIE',
+    severe_no_traces: 'ALLERGIE SEVERE - TRACES INTERDITES',
+  };
+  const allergenLabels: Record<string, string> = {
+    PEANUTS: 'CACAHUETES',
+    GLUTEN: 'GLUTEN',
+    SOY: 'SOJA',
+    CRUSTACEANS: 'CRUSTACES',
+    EGGS: 'OEUFS',
+    MILK: 'LAIT',
+    SESAME: 'SESAME',
+    FISH: 'POISSON',
+    OTHER: 'AUTRE',
+  };
+  const severity =
+    typeof record.allergySeverity === 'string'
+      ? (severityLabels[record.allergySeverity] ?? 'ALLERGIE')
+      : 'ALLERGIE';
+  const allergens = Array.isArray(record.allergenCodes)
+    ? record.allergenCodes
+        .filter((code): code is string => typeof code === 'string')
+        .map((code) => allergenLabels[code] ?? code)
+        .join(', ')
+    : '';
+  const detail =
+    typeof record.allergyNote === 'string' && record.allergyNote.length > 0
+      ? ` - ${record.allergyNote.toUpperCase()}`
+      : '';
+  return `!!! ${severity}${allergens ? `: ${allergens}` : ''}${detail} !!!`;
 }
 
 function centsLine(label: string, value: unknown): string {
@@ -140,7 +241,10 @@ function renderPayloadPayment(payment: unknown): string {
 
   const record = payment as Record<string, unknown>;
   const method = typeof record.method === 'string' ? record.method : 'unknown';
-  const amount = typeof record.amountCents === 'number' ? formatCents(record.amountCents) : '';
+  const amount =
+    typeof record.amountCents === 'number'
+      ? formatCents(record.amountCents)
+      : '';
 
   return `Payment: ${method} ${amount}`.trim();
 }

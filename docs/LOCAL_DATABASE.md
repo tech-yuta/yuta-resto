@@ -1,5 +1,10 @@
 # Local Database
 
+Migration `0006_colorful_supreme_intelligence.sql` adds structured item quick
+instructions, item variants, allergen codes, allergy severity, and separate
+kitchen allergy confirmation audit fields. Existing free-text and legacy
+allergy data remain readable.
+
 This document describes the local development database for YuTa operations apps such as `apps/yuta-pos` and `apps/admin`.
 
 Production is different. On the mini server, YuTa apps must use the existing `luna-postgres` container and the external `postgres_default` Docker network. Follow `docs/DEPLOYMENT.md` for production.
@@ -37,7 +42,7 @@ schema:
 
 ```bash
 corepack pnpm --filter @yuta/db db:migrate
-corepack pnpm --filter @yuta/db tsx src/import-luna-menu.ts
+corepack pnpm --filter @yuta/db exec tsx src/import-luna-menu.ts
 ```
 
 Seed development data:
@@ -45,6 +50,18 @@ Seed development data:
 ```bash
 corepack pnpm --filter @yuta/db db:seed
 ```
+
+To rebuild the local POS with the current LUNA menu, seed the tenant and users
+first, then clean-import the menu:
+
+```bash
+corepack pnpm --filter @yuta/db db:seed
+corepack pnpm --filter @yuta/db exec tsx src/import-luna-menu.ts --clean
+```
+
+The clean import deletes local orders, payments, print jobs, combo rules, and
+menu data before recreating the LUNA catalog. In `Boissons`, each soft drink is
+a separate POS item; the only beer items are `Biere Hanoi` and `Biere Saigon`.
 
 The seed is idempotent. It creates the initial multi-tenant records before the
 existing POS sample data:

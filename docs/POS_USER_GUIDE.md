@@ -124,7 +124,7 @@ To create an order:
    - `Sur place`
    - `A emporter`
    - `Livraison`
-4. Add an optional note when needed.
+4. Add an optional general note when needed.
 5. Submit the form.
 6. The app opens the item-entry screen so staff can add menu items.
 
@@ -213,6 +213,31 @@ is available again as long as no payment has been recorded. Quantity changes
 keep the row in its original display position; order items are displayed by
 creation time with the item ID as a deterministic tie-breaker.
 
+### Item Instructions
+
+Use `Notes / allergie` on a pending article. Preparation preferences are quick
+choices tailored to the article or its menu group. The four to six most common
+choices are visible immediately; less common choices are under `Autres`.
+Choices behave as toggles, and selecting an incompatible choice automatically
+removes the previous one. A free-text note of up to 300 characters remains
+available. Quick choices are stored as structured code and label snapshots.
+
+`Sans cacahuetes` is only a preparation request and never enables the allergy
+workflow by itself. If the client reports an allergy, enable `Allergie pour cet
+article`, select at least one allergen, and select `Intolerance`, `Allergie`, or
+`Allergie severe - traces interdites`. Details are required for `Autre` and are
+otherwise optional. Allergy details are limited to 300 characters.
+
+The preference and allergy are attached to that specific item, which supports
+tables with multiple guests and different allergies. They are shown directly
+below the affected item in the order, kitchen queue, payment summary, and
+kitchen ticket. Instructions can be changed only while the item is pending;
+they are locked after the item is sent to the kitchen. Never promise that
+cross-contamination is impossible without confirmation from the kitchen.
+
+For `Mochi glace (2 pcs)`, choose quantities of `Mangue`, `Matcha`, and `Cacao`.
+The total must equal two pieces per ordered portion before kitchen send.
+
 ### Send To Kitchen
 
 Use `Envoyer`.
@@ -226,6 +251,12 @@ Creates a kitchen_ticket print job
 ```
 
 If no item is pending, the send button is disabled.
+
+If any pending item contains an unacknowledged allergy, the kitchen send opens
+a blocking confirmation listing each affected item. The employee must review
+the warnings, inform the kitchen, and check `J'ai informe la cuisine` before
+sending. The confirmation time and employee are stored on each affected item.
+A new allergic item added in a later batch requires a new confirmation.
 
 ### Go To Payment
 
@@ -263,7 +294,7 @@ queue.
 It shows active kitchen work only: items in `sent`, `preparing`, or `ready`.
 It is limited to the current service day, from 05:00 to 05:00 local time. This keeps the queue from showing old unfinished history while allowing late-night orders to stay visible after midnight.
 When the kitchen screen is open, it refreshes automatically every 10 seconds while the browser tab is visible. This keeps cancelled orders and status changes reasonably fresh without a permanent realtime connection.
-Order-level notes are shown on the kitchen screen inside the matching order group, so staff can see food or drink instructions attached during order creation.
+Order-level notes are shown on the kitchen screen inside the matching order group, so staff can see general instructions attached during order creation. Item preparation notes and red allergy alerts appear directly below the affected article. Structured quick instructions appear as separate labels and Mochi flavours appear as quantities. Allergy warnings stay expanded above ordinary notes. Kitchen staff must use `Confirmer l'allergie` before an allergic item can become `Pret`; this kitchen confirmation is stored separately from the POS send acknowledgement.
 
 Kitchen staff can switch between:
 
@@ -662,6 +693,10 @@ Changing the menu later does not change old order totals or kitchen history.
 ### Kitchen Ticket Batches
 
 Each `Envoyer cuisine` action creates a kitchen ticket only for the items that were still `A envoyer` at the moment of that send. Adding more items later and sending again creates a new ticket for the new batch.
+
+Kitchen tickets include the general order note and each printed item's
+preparation note. An item allergy is printed immediately below that item as a
+prominent `!!! ALLERGY ... !!!` line.
 
 ### Display App Is Separate
 

@@ -15,6 +15,7 @@ import {
   Search,
   Send,
   SlidersHorizontal,
+  TriangleAlert,
   User,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -227,6 +228,7 @@ function DesktopOrderTable({ orders: orderRows }: { orders: OrderRow[] }) {
                 <p className="mt-1 text-xs font-semibold text-primary/50">
                   {orderTypeLabel(order.orderType)}
                 </p>
+                {orderHasAllergy(order) && <OrderAllergyBadge />}
               </div>
               <p className="self-center font-black">{order.orderNumber}</p>
               <div className="self-center">
@@ -278,8 +280,10 @@ function OrderCard({ order }: { order: OrderRow }) {
             <p className="mt-2 truncate text-sm font-semibold text-primary/55">
               {order.orderNumber}
             </p>
+            {orderHasAllergy(order) && <OrderAllergyBadge />}
           </div>
           <StatusBadge status={order.status} />
+          {orderHasAllergy(order) && <OrderAllergyBadge />}
         </div>
         <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-primary/55">
           <span className="inline-flex items-center gap-1">
@@ -308,6 +312,19 @@ function OrderCard({ order }: { order: OrderRow }) {
   );
 }
 
+function OrderAllergyBadge() {
+  return (
+    <Badge tone="danger" variant="solid" size="sm" className="mt-2 gap-1">
+      <TriangleAlert className="h-3.5 w-3.5" />
+      Allergie
+    </Badge>
+  );
+}
+
+function orderHasAllergy(order: OrderRow): boolean {
+  return order.hasAllergy || order.items.some((item) => item.hasAllergy);
+}
+
 function TabletOrderRow({ order }: { order: OrderRow }) {
   return (
     <div
@@ -325,6 +342,7 @@ function TabletOrderRow({ order }: { order: OrderRow }) {
             {order.orderNumber}
           </p>
           <StatusBadge status={order.status} />
+          {orderHasAllergy(order) && <OrderAllergyBadge />}
         </div>
         <div className="mt-2 flex items-center gap-4 text-xs font-semibold text-primary/55">
           <span>{formatTime(order.createdAt)}</span>
@@ -368,9 +386,7 @@ function EmptyOrders() {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  return (
-    <Badge {...statusBadgeProps(status)}>{statusLabel(status)}</Badge>
-  );
+  return <Badge {...statusBadgeProps(status)}>{statusLabel(status)}</Badge>;
 }
 
 function renderPrimaryOrderAction(order: OrderRow) {
@@ -430,7 +446,6 @@ function parseView(value: string | undefined): OrderView {
 
   return 'open';
 }
-
 
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
