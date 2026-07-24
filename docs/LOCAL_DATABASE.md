@@ -5,6 +5,10 @@ instructions, item variants, allergen codes, allergy severity, and separate
 kitchen allergy confirmation audit fields. Existing free-text and legacy
 allergy data remain readable.
 
+Migration `0007_overjoyed_spencer_smythe.sql` adds the shared reputation model
+for Google reviews, direct customer feedback, replies, AI analyses, incidents,
+connectors, settings, internal notes, and audit events.
+
 This document describes the local development database for YuTa operations apps such as `apps/yuta-pos` and `apps/admin`.
 
 Production is different. On the mini server, YuTa apps must use the existing `luna-postgres` container and the external `postgres_default` Docker network. Follow `docs/DEPLOYMENT.md` for production.
@@ -71,10 +75,22 @@ existing POS sample data:
 - Development domain: `luna.localhost`.
 - Public entitlements: `menu.public` and `reservations.public`.
 - Memberships for the seeded admin, staff, and kitchen users.
+- Reputation entitlement: `reputation.enabled`.
+- LUNA reputation settings and representative Phase 1 feedback records.
 
 Use `luna.localhost` explicitly when testing public hostname resolution.
 Unknown hosts intentionally return `TENANT_NOT_FOUND`; there is no fallback to
 the LUNA tenant.
+
+The public feedback route has a development-only localhost resolver so the
+seeded form can be tested at:
+
+```text
+http://localhost:3000/luna/feedback
+```
+
+This slug resolver is disabled in production. See `docs/REPUTATION.md` for the
+production hostname and privacy rules.
 
 Stop the local database:
 

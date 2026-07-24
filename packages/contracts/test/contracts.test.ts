@@ -7,6 +7,7 @@ import {
   kitchenOrderCreatedEventSchema,
   moneySchema,
   orderStatusSchema,
+  publicFeedbackSubmissionSchema,
 } from '../src';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -91,5 +92,58 @@ describe('@yuta/contracts', () => {
         customer: { firstName: 'Tam' },
       }).success,
     ).toBe(false);
+  });
+
+  it('validates public feedback and requires contact consent', () => {
+    expect(
+      publicFeedbackSubmissionSchema.parse({
+        rating: 5,
+        topics: ['FOOD_QUALITY', 'SERVICE'],
+        comment: 'Très bon accueil.',
+      }),
+    ).toMatchObject({
+      rating: 5,
+      topics: ['FOOD_QUALITY', 'SERVICE'],
+      consentToContact: false,
+    });
+
+    expect(
+      publicFeedbackSubmissionSchema.safeParse({
+        rating: 2,
+        topics: ['ORDER_ACCURACY'],
+        customerEmail: 'client@example.com',
+        consentToContact: false,
+      }).success,
+    ).toBe(false);
+    expect(
+      publicFeedbackSubmissionSchema.safeParse({
+        rating: 2,
+        topics: ['ORDER_ACCURACY'],
+        customerEmail: 'client@example.com',
+        consentToContact: true,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rejects invalid public ratings and topics', () => {
+    expect(
+      publicFeedbackSubmissionSchema.safeParse({
+        rating: 0,
+        topics: [],
+      }).success,
+    ).toBe(false);
+    expect(
+      publicFeedbackSubmissionSchema.safeParse({
+        rating: 5,
+        topics: ['UNSUPPORTED_TOPIC'],
+      }).success,
+    ).toBe(false);
+    expect(
+      publicFeedbackSubmissionSchema.parse({
+        rating: 5,
+        topics: [],
+        website: 'https://spam.example',
+      }).website,
+    ).toBe('https://spam.example');
   });
 });

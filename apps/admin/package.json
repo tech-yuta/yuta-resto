@@ -9,8 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@yuta/contracts": "workspace:*",
     "@yuta/core": "workspace:*",
     "@yuta/db": "workspace:*",
+    "@yuta/tenant": "workspace:*",
     "@yuta/ui": "workspace:*",
     "drizzle-orm": "^0.43.1",
     "lucide-react": "^0.525.0",

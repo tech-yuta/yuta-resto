@@ -1,17 +1,22 @@
 'use client';
 
+import type {
+  FeedbackSentiment,
+  FeedbackSource,
+  FeedbackStatus,
+  FeedbackUrgency,
+} from '@yuta/contracts/reputation';
 import {
   Avatar,
   Badge,
   Button,
   Card,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  EmptyState,
+  ErrorState,
   IconButton,
   Input,
+  MetricCard,
+  PageHeader,
   Select,
   SelectContent,
   SelectItem,
@@ -21,772 +26,529 @@ import {
   cn,
 } from '@yuta/ui';
 import {
+  AlertTriangle,
   Bot,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Clock3,
   ExternalLink,
   FilePenLine,
-  Filter,
-  Gauge,
+  Inbox,
   MessageCircle,
-  MoreHorizontal,
   RefreshCw,
   Search,
   Send,
   Settings,
   Sparkles,
   Star,
-  ThumbsUp,
-  X,
+  UserRound,
 } from 'lucide-react';
-import { useMemo, useState, type ComponentType } from 'react';
+import { useMemo, useState } from 'react';
 
-type ReviewStatus = 'À traiter' | 'Brouillon' | 'Répondu';
-type Sentiment = 'Positif' | 'Neutre' | 'Négatif';
-type Platform = 'Google' | 'Instagram' | 'Facebook';
-
-type Review = {
+export type ReviewListRecord = {
   id: string;
-  platform: Platform;
-  author: string;
-  initials: string;
-  rating?: number;
-  time: string;
-  text: string;
-  status: ReviewStatus;
-  sentiment: Sentiment;
-  tags: string[];
-  history: string;
+  source: FeedbackSource;
+  authorName: string | null;
+  authorAvatarUrl: string | null;
+  rating: number | null;
+  content: string | null;
+  sentiment: FeedbackSentiment | null;
+  urgency: FeedbackUrgency | null;
+  status: FeedbackStatus;
+  receivedAt: string;
+  incidentId: string | null;
+  replyStatus: string | null;
 };
 
-const reviews: Review[] = [
-  {
-    id: 'AV-018',
-    platform: 'Google',
-    author: 'Julie Bernard',
-    initials: 'JB',
-    rating: 2,
-    time: 'Il y a 12 min',
-    text: 'Très déçue, j’ai attendu 50 minutes pour trois bao à emporter. Les bao étaient bons mais il y avait très peu de viande.',
-    status: 'À traiter',
-    sentiment: 'Négatif',
-    tags: ['Attente', 'Quantité', 'À emporter'],
-    history: '12 avis · 3 photos',
-  },
-  {
-    id: 'AV-017',
-    platform: 'Instagram',
-    author: 'Thomas Leroy',
-    initials: 'TL',
-    time: 'Il y a 1 h',
-    text: 'Ça donne vraiment envie 😍 À très bientôt !',
-    status: 'Brouillon',
-    sentiment: 'Positif',
-    tags: ['Commentaire'],
-    history: '8 interactions',
-  },
-  {
-    id: 'AV-016',
-    platform: 'Facebook',
-    author: 'Sophie Martin',
-    initials: 'SM',
-    rating: 5,
-    time: 'Il y a 2 h',
-    text: "Super expérience ! Le bún bò est délicieux et l'équipe très accueillante.",
-    status: 'À traiter',
-    sentiment: 'Positif',
-    tags: ['Accueil', 'Cuisine'],
-    history: '4 avis',
-  },
-  {
-    id: 'AV-015',
-    platform: 'Google',
-    author: 'Marc Dupont',
-    initials: 'MD',
-    rating: 3,
-    time: 'Il y a 3 h',
-    text: 'Bon restaurant mais un peu cher pour la quantité. Le service est correct.',
-    status: 'À traiter',
-    sentiment: 'Neutre',
-    tags: ['Prix', 'Quantité'],
-    history: '6 avis',
-  },
-  {
-    id: 'AV-014',
-    platform: 'Instagram',
-    author: 'Chloé Petit',
-    initials: 'CP',
-    time: 'Il y a 5 h',
-    text: 'Votre banh mi est incroyable !!! 😍 Quel pain croustillant !',
-    status: 'Répondu',
-    sentiment: 'Positif',
-    tags: ['Commentaire'],
-    history: '15 interactions',
-  },
-  {
-    id: 'AV-013',
-    platform: 'Google',
-    author: 'Antoine R.',
-    initials: 'AR',
-    rating: 1,
-    time: 'Hier',
-    text: 'Commande annulée sans prévenir. Très mauvaise expérience.',
-    status: 'À traiter',
-    sentiment: 'Négatif',
-    tags: ['Livraison', 'Service'],
-    history: '2 avis',
-  },
-  {
-    id: 'AV-012',
-    platform: 'Facebook',
-    author: 'Lucie Bernard',
-    initials: 'LB',
-    rating: 4,
-    time: 'Hier',
-    text: 'Très bon accueil et plats savoureux. Je reviendrai !',
-    status: 'À traiter',
-    sentiment: 'Positif',
-    tags: ['Accueil', 'Cuisine'],
-    history: '7 avis',
-  },
-];
-
-const sentimentTones: Record<Sentiment, 'success' | 'neutral' | 'danger'> = {
-  Positif: 'success',
-  Neutre: 'neutral',
-  Négatif: 'danger',
+export type ReviewsPageData = {
+  state: 'ready' | 'authentication-required' | 'unavailable';
+  items: ReviewListRecord[];
+  counters: {
+    total: number;
+    new: number;
+    unanswered: number;
+    negative: number;
+    withIncident: number;
+  };
 };
 
-const statusTones: Record<ReviewStatus, 'brand' | 'warning' | 'success'> = {
-  'À traiter': 'brand',
-  Brouillon: 'warning',
-  Répondu: 'success',
+const statusLabels: Record<FeedbackStatus, string> = {
+  NEW: 'Nouveau',
+  TO_PROCESS: 'À traiter',
+  DRAFTED: 'Brouillon',
+  REPLIED: 'Répondu',
+  FOLLOW_UP: 'À suivre',
+  RESOLVED: 'Résolu',
+  ARCHIVED: 'Archivé',
+  SPAM: 'Indésirable',
 };
 
-const platformConfig: Record<Platform, { logo: string; className: string }> = {
-  Google: { logo: 'G', className: 'bg-surface text-status-info' },
-  Instagram: {
-    logo: 'IG',
-    className: 'bg-status-danger-soft text-status-danger',
-  },
-  Facebook: { logo: 'f', className: 'bg-status-info text-inverse' },
+const statusTones: Record<
+  FeedbackStatus,
+  'neutral' | 'brand' | 'warning' | 'success' | 'danger'
+> = {
+  NEW: 'brand',
+  TO_PROCESS: 'brand',
+  DRAFTED: 'warning',
+  REPLIED: 'success',
+  FOLLOW_UP: 'danger',
+  RESOLVED: 'success',
+  ARCHIVED: 'neutral',
+  SPAM: 'neutral',
 };
 
-const metrics: Array<{
-  label: string;
-  value: string;
-  helper: string;
-  icon: ComponentType<{ className?: string }>;
-  tone: string;
-}> = [
-  {
-    label: 'À traiter',
-    value: '18',
-    helper: '+6 depuis hier',
-    icon: MessageCircle,
-    tone: 'bg-surface-selected text-brand-800',
-  },
-  {
-    label: 'Brouillons',
-    value: '4',
-    helper: '-1 depuis hier',
-    icon: FilePenLine,
-    tone: 'bg-status-success-soft text-status-success',
-  },
-  {
-    label: 'Répondus',
-    value: '126',
-    helper: '+14 cette semaine',
-    icon: Send,
-    tone: 'bg-status-info-soft text-status-info',
-  },
-  {
-    label: 'Note moyenne',
-    value: '4,6 / 5',
-    helper: '+0,1 ce mois',
-    icon: Star,
-    tone: 'bg-status-warning-soft text-status-warning',
-  },
-  {
-    label: 'Taux de réponse',
-    value: '87 %',
-    helper: '+5 % ce mois',
-    icon: Gauge,
-    tone: 'bg-status-success-soft text-status-success',
-  },
-  {
-    label: 'Temps moyen réponse',
-    value: '3 h 24',
-    helper: '-1 h ce mois',
-    icon: Clock3,
-    tone: 'bg-status-success-soft text-status-success',
-  },
-];
+const sentimentLabels: Record<FeedbackSentiment, string> = {
+  POSITIVE: 'Positif',
+  NEUTRAL: 'Neutre',
+  NEGATIVE: 'Négatif',
+};
 
-const reviewTabs = [
-  { value: 'À traiter', label: 'À traiter', count: 18 },
-  { value: 'Brouillon', label: 'Brouillons', count: 4 },
-  { value: 'Répondu', label: 'Répondus', count: 126 },
-  { value: 'all', label: 'Tous', count: 152 },
-  { value: 'internal', label: 'Avis internes', count: 7 },
-] as const;
+const sentimentTones: Record<
+  FeedbackSentiment,
+  'success' | 'neutral' | 'danger'
+> = {
+  POSITIVE: 'success',
+  NEUTRAL: 'neutral',
+  NEGATIVE: 'danger',
+};
 
-const defaultReply = `Bonjour Julie,
+const urgencyLabels: Record<FeedbackUrgency, string> = {
+  LOW: 'Faible',
+  MEDIUM: 'Moyenne',
+  HIGH: 'Haute',
+  CRITICAL: 'Critique',
+};
 
-Nous sommes sincèrement désolés pour cette attente beaucoup trop longue.
-Nous comprenons parfaitement votre déception, surtout concernant la quantité de viande.
+function getInitials(name: string | null): string {
+  if (!name) return 'A';
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+}
 
-Nous allons revoir ce point avec notre équipe pour améliorer notre organisation et offrir une meilleure expérience, même quand il y a beaucoup de commandes.
+function formatRelativeDate(value: string): string {
+  const date = new Date(value);
+  const elapsedMinutes = Math.max(
+    1,
+    Math.round((Date.now() - date.getTime()) / 60_000),
+  );
+  if (elapsedMinutes < 60) return `Il y a ${elapsedMinutes} min`;
+  const hours = Math.round(elapsedMinutes / 60);
+  if (hours < 24) return `Il y a ${hours} h`;
+  const days = Math.round(hours / 24);
+  return `Il y a ${days} j`;
+}
 
-Merci d’avoir pris le temps de nous faire ce retour, cela nous aide vraiment à progresser.
-Au plaisir de vous accueillir à nouveau dans de meilleures conditions !
-
-L’équipe YuTa`;
-
-export function ReviewsPage() {
-  const [activeTab, setActiveTab] =
-    useState<(typeof reviewTabs)[number]['value']>('À traiter');
-  const [source, setSource] = useState('all');
-  const [rating, setRating] = useState('all');
-  const [sentiment, setSentiment] = useState('all');
+export function ReviewsPage({
+  data,
+  initialSelectedId,
+}: {
+  data: ReviewsPageData;
+  initialSelectedId?: string;
+}) {
+  const [source, setSource] = useState<'ALL' | FeedbackSource>('ALL');
+  const [status, setStatus] = useState<'ALL' | FeedbackStatus>('ALL');
+  const [rating, setRating] = useState('ALL');
   const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState('AV-018');
-  const [reply, setReply] = useState(defaultReply);
-
-  const filteredReviews = useMemo(
-    () =>
-      reviews.filter((review) => {
-        const normalizedQuery = query.trim().toLocaleLowerCase('fr');
-        const matchesTab =
-          activeTab === 'all' ||
-          activeTab === 'internal' ||
-          review.status === activeTab;
-        return (
-          matchesTab &&
-          (source === 'all' || review.platform === source) &&
-          (rating === 'all' || review.rating === Number(rating)) &&
-          (sentiment === 'all' || review.sentiment === sentiment) &&
-          `${review.author} ${review.text}`
-            .toLocaleLowerCase('fr')
-            .includes(normalizedQuery)
-        );
-      }),
-    [activeTab, query, rating, sentiment, source],
+  const [selectedId, setSelectedId] = useState(
+    initialSelectedId &&
+      data.items.some((item) => item.id === initialSelectedId)
+      ? initialSelectedId
+      : (data.items[0]?.id ?? ''),
   );
 
-  const selectedReview =
-    reviews.find((review) => review.id === selectedId) ?? reviews[0];
+  const items = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase('fr');
+    return data.items.filter((item) => {
+      return (
+        (source === 'ALL' || item.source === source) &&
+        (status === 'ALL' || item.status === status) &&
+        (rating === 'ALL' || item.rating === Number(rating)) &&
+        `${item.authorName ?? ''} ${item.content ?? ''}`
+          .toLocaleLowerCase('fr')
+          .includes(normalizedQuery)
+      );
+    });
+  }, [data.items, query, rating, source, status]);
+
+  const selected =
+    data.items.find((item) => item.id === selectedId) ?? items[0] ?? null;
 
   return (
     <div className="flex w-full flex-col gap-5">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight">
-            Avis &amp; commentaires
-          </h1>
-          <p className="mt-1 text-sm text-secondary">
-            Centralisez et répondez aux retours de vos clients sur tous vos
-            canaux.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="secondary" size="lg">
-            <RefreshCw className="h-4 w-4" />
-            Actualiser
-          </Button>
-          <Button variant="secondary" size="lg">
-            <Settings className="h-4 w-4" />
-            Paramètres IA
-          </Button>
-          <Button size="lg">
-            <Filter className="h-4 w-4" />
-            Filtres avancés
-          </Button>
-        </div>
-      </header>
-      <Card
-        padding="none"
-        className="grid grid-cols-2 overflow-hidden md:grid-cols-3 xl:grid-cols-6"
-      >
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <div
-              key={metric.label}
-              className="flex min-w-0 items-center gap-3 border-b border-r border-border-default p-4 xl:border-b-0"
-            >
-              <div
-                className={cn(
-                  'grid h-11 w-11 shrink-0 place-items-center rounded-full',
-                  metric.tone,
-                )}
-              >
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-secondary">
-                  {metric.label}
-                </p>
-                <p className="text-xl font-black">{metric.value}</p>
-                <p
-                  className={cn(
-                    'truncate text-xs',
-                    metric.label === 'À traiter'
-                      ? 'text-status-danger'
-                      : 'text-status-success',
-                  )}
-                >
-                  {metric.helper}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </Card>
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(440px,0.9fr)]">
-        <Card padding="none" className="overflow-hidden">
-          <nav
-            className="flex overflow-x-auto border-b border-border-default px-3"
-            aria-label="Statut des avis"
-          >
-            {reviewTabs.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => setActiveTab(tab.value)}
-                className={cn(
-                  'relative flex min-w-max items-center gap-2 px-4 py-4 text-sm font-semibold text-secondary',
-                  activeTab === tab.value && 'text-brand-800',
-                )}
-              >
-                {tab.label}
-                <Badge size="sm">{tab.count}</Badge>
-                {activeTab === tab.value && (
-                  <span className="absolute inset-x-2 bottom-0 h-0.5 bg-action-primary" />
-                )}
-              </button>
-            ))}
-          </nav>
-          <div className="grid gap-2 border-b border-border-default p-4 sm:grid-cols-2 lg:grid-cols-[150px_150px_170px_minmax(180px,1fr)_auto]">
-            <Select value={source} onValueChange={setSource}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les sources</SelectItem>
-                <SelectItem value="Google">Google</SelectItem>
-                <SelectItem value="Instagram">Instagram</SelectItem>
-                <SelectItem value="Facebook">Facebook</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={rating} onValueChange={setRating}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les notes</SelectItem>
-                {[5, 4, 3, 2, 1].map((value) => (
-                  <SelectItem key={value} value={String(value)}>
-                    {value} étoiles
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sentiment} onValueChange={setSentiment}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les sentiments</SelectItem>
-                <SelectItem value="Positif">Positif</SelectItem>
-                <SelectItem value="Neutre">Neutre</SelectItem>
-                <SelectItem value="Négatif">Négatif</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Rechercher un avis, un client..."
-                className="pl-10"
-              />
-            </div>
-            <IconButton
-              variant="secondary"
-              aria-label="Réinitialiser les filtres"
-              onClick={() => {
-                setSource('all');
-                setRating('all');
-                setSentiment('all');
-                setQuery('');
-              }}
-            >
-              <Filter className="h-4 w-4" />
-            </IconButton>
-          </div>
-          <ReviewsList
-            reviews={filteredReviews}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
+      <PageHeader
+        eyebrow="Clients"
+        title="Avis & commentaires"
+        description="Centralisez les avis Google et les retours directs de vos clients."
+        actions={
+          <>
+            <Button variant="secondary">
+              <RefreshCw className="h-4 w-4" />
+              Synchroniser
+            </Button>
+            <Button variant="secondary">
+              <Settings className="h-4 w-4" />
+              Paramètres
+            </Button>
+          </>
+        }
+      />
+
+      {data.state === 'authentication-required' && (
+        <Card padding="none">
+          <ErrorState
+            title="Session administrateur requise"
+            description="Le stockage reputation est prêt, mais les actions admin attendent une session serveur fournissant un utilisateur et un établissement vérifiés."
           />
         </Card>
-        <ReviewWorkspace
-          review={selectedReview}
-          reply={reply}
-          onReplyChange={setReply}
-        />
-      </div>
+      )}
+
+      {data.state === 'unavailable' && (
+        <Card padding="none">
+          <ErrorState
+            title="Les avis sont momentanément indisponibles"
+            description="Vérifiez la base locale, appliquez la migration et relancez le seed."
+          />
+        </Card>
+      )}
+
+      {data.state === 'ready' && (
+        <>
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <MetricCard
+              label="Total"
+              value={data.counters.total}
+              helper="Google et retours directs"
+            />
+            <MetricCard
+              label="Nouveaux"
+              value={data.counters.new}
+              helper="À consulter"
+            />
+            <MetricCard
+              label="Sans réponse"
+              value={data.counters.unanswered}
+              helper="Action recommandée"
+            />
+            <MetricCard
+              label="Négatifs"
+              value={data.counters.negative}
+              helper="À surveiller"
+            />
+            <MetricCard
+              label="Avec incident"
+              value={data.counters.withIncident}
+              helper="Suivi opérationnel"
+            />
+          </section>
+
+          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.85fr)]">
+            <Card padding="none" className="overflow-hidden">
+              <div className="grid gap-2 border-b border-border-default p-4 sm:grid-cols-2 lg:grid-cols-[145px_145px_135px_minmax(180px,1fr)]">
+                <Select
+                  value={source}
+                  onValueChange={(value) =>
+                    setSource(value as 'ALL' | FeedbackSource)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Toutes les sources</SelectItem>
+                    <SelectItem value="GOOGLE">Google</SelectItem>
+                    <SelectItem value="DIRECT">Retour direct</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={status}
+                  onValueChange={(value) =>
+                    setStatus(value as 'ALL' | FeedbackStatus)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Tous les statuts</SelectItem>
+                    {Object.entries(statusLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={rating} onValueChange={setRating}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Toutes les notes</SelectItem>
+                    {[5, 4, 3, 2, 1].map((value) => (
+                      <SelectItem key={value} value={String(value)}>
+                        {value} étoiles
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                  <Input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Rechercher un avis…"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {items.length === 0 ? (
+                <EmptyState
+                  icon={<Inbox className="mx-auto h-8 w-8" />}
+                  title="Aucun avis trouvé"
+                  description="Modifiez les filtres pour afficher d'autres résultats."
+                />
+              ) : (
+                <div className="divide-y divide-border-default">
+                  {items.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedId(item.id)}
+                      className={cn(
+                        'grid w-full gap-3 p-4 text-left transition-colors hover:bg-surface-muted sm:grid-cols-[auto_minmax(0,1fr)_auto]',
+                        selected?.id === item.id && 'bg-surface-selected',
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <SourceMark source={item.source} />
+                        <Avatar
+                          fallback={getInitials(item.authorName)}
+                          src={item.authorAvatarUrl}
+                          size="sm"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-bold">
+                            {item.authorName ?? 'Client anonyme'}
+                          </p>
+                          {item.rating && <Rating value={item.rating} />}
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-sm leading-5 text-secondary">
+                          {item.content || 'Aucun commentaire.'}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {item.sentiment && (
+                            <Badge
+                              size="sm"
+                              tone={sentimentTones[item.sentiment]}
+                            >
+                              {sentimentLabels[item.sentiment]}
+                            </Badge>
+                          )}
+                          {item.incidentId && (
+                            <Badge size="sm" tone="danger" variant="outline">
+                              Incident
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge tone={statusTones[item.status]}>
+                          {statusLabels[item.status]}
+                        </Badge>
+                        <span className="text-xs text-muted">
+                          {formatRelativeDate(item.receivedAt)}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {selected ? (
+              <ReviewDetail review={selected} />
+            ) : (
+              <Card padding="none">
+                <EmptyState
+                  icon={<MessageCircle className="mx-auto h-8 w-8" />}
+                  title="Sélectionnez un avis"
+                />
+              </Card>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-function ReviewsList({
-  reviews: items,
-  selectedId,
-  onSelect,
-}: {
-  reviews: Review[];
-  selectedId: string;
-  onSelect(id: string): void;
-}) {
-  return (
-    <>
-      <div className="divide-y divide-border-default">
-        {items.map((review, index) => (
-          <div
-            key={review.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => onSelect(review.id)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onSelect(review.id);
-              }
-            }}
-            className={cn(
-              'grid w-full gap-3 p-4 text-left transition-colors hover:bg-surface-muted sm:grid-cols-[auto_130px_minmax(0,1fr)_auto]',
-              review.id === selectedId &&
-                'bg-surface-selected ring-1 ring-inset ring-focus-ring',
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <PlatformLogo platform={review.platform} />
-              <Avatar
-                fallback={review.initials}
-                size="sm"
-                className={
-                  index % 2 === 0
-                    ? 'bg-status-danger-soft text-status-danger'
-                    : 'bg-surface-selected text-brand-800'
-                }
-              />
-            </div>
-            <div>
-              <p className="font-bold">{review.author}</p>
-              {review.rating ? (
-                <StarRating value={review.rating} />
-              ) : (
-                <Badge tone="brand" size="sm" className="mt-1">
-                  Commentaire
-                </Badge>
-              )}
-              <p className="mt-1 text-xs text-muted">{review.time}</p>
-            </div>
-            <div className="min-w-0">
-              <p className="line-clamp-2 text-sm leading-5 text-secondary">
-                {review.text}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {review.tags.map((tag) => (
-                  <Badge key={tag} size="sm">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <Badge tone={statusTones[review.status]}>{review.status}</Badge>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    size="sm"
-                    aria-label={`Actions pour ${review.author}`}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </IconButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Voir le profil</DropdownMenuItem>
-                  <DropdownMenuItem>Marquer comme répondu</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem destructive>Ignorer</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        ))}
-      </div>
-      {items.length === 0 && (
-        <div className="p-16 text-center">
-          <MessageCircle className="mx-auto h-8 w-8 text-muted" />
-          <p className="mt-3 font-semibold">Aucun avis trouvé</p>
-        </div>
-      )}
-      <footer className="flex flex-col gap-3 border-t border-border-default px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm">
-          <strong>1 à {items.length}</strong> sur 18 avis
-        </p>
-        <div className="flex gap-2">
-          <IconButton
-            variant="secondary"
-            size="sm"
-            aria-label="Première page"
-            disabled
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </IconButton>
-          <IconButton
-            variant="secondary"
-            size="sm"
-            aria-label="Page précédente"
-            disabled
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </IconButton>
-          <Button size="sm" className="w-9 px-0">
-            1
-          </Button>
-          <Button variant="secondary" size="sm" className="w-9 px-0">
-            2
-          </Button>
-          <Button variant="secondary" size="sm" className="w-9 px-0">
-            3
-          </Button>
-          <IconButton variant="secondary" size="sm" aria-label="Page suivante">
-            <ChevronRight className="h-4 w-4" />
-          </IconButton>
-          <IconButton variant="secondary" size="sm" aria-label="Dernière page">
-            <ChevronsRight className="h-4 w-4" />
-          </IconButton>
-        </div>
-      </footer>
-    </>
+function ReviewDetail({ review }: { review: ReviewListRecord }) {
+  const [reply, setReply] = useState(
+    review.source === 'GOOGLE'
+      ? `Bonjour,\n\nMerci d'avoir pris le temps de partager votre expérience. Votre retour est précieux pour notre équipe.\n\nL'équipe LUNA`
+      : '',
   );
-}
 
-function ReviewWorkspace({
-  review,
-  reply,
-  onReplyChange,
-}: {
-  review: Review;
-  reply: string;
-  onReplyChange(value: string): void;
-}) {
   return (
     <Card padding="none" className="overflow-hidden xl:sticky xl:top-0">
       <div className="flex items-center justify-between border-b border-border-default p-4">
         <div className="flex items-center gap-3">
-          <PlatformLogo platform={review.platform} />
+          <SourceMark source={review.source} />
           <div>
-            <p className="font-bold">{review.platform}</p>
-            <p className="text-xs text-muted">Avis public</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm">
-            Ouvrir sur {review.platform}
-            <ExternalLink className="h-4 w-4" />
-          </Button>
-          <IconButton size="sm" aria-label="Fermer l'avis">
-            <X className="h-5 w-5" />
-          </IconButton>
-        </div>
-      </div>
-      <div className="p-4">
-        <div className="rounded-lg border border-border-default">
-          <div className="flex flex-wrap items-center gap-3 border-b border-border-default p-4">
-            <Avatar
-              fallback={review.initials}
-              size="md"
-              className="bg-status-danger-soft text-status-danger"
-            />
-            <div className="flex-1">
-              <p className="font-bold">{review.author}</p>
-              <p className="text-sm text-muted">{review.history}</p>
-            </div>
-            {review.rating && <StarRating value={review.rating} />}
-            <span className="text-xs text-muted">{review.time}</span>
-          </div>
-          <p className="p-4 text-sm leading-6">{review.text}</p>
-        </div>
-      </div>
-      <section className="border-t border-border-default p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="inline-flex items-center gap-2 font-bold text-brand-800">
-            <Sparkles className="h-4 w-4" />
-            Analyse IA
-          </h3>
-          <span className="text-xs text-muted">
-            Mis à jour à l&apos;instant
-          </span>
-        </div>
-        <div className="rounded-lg border border-border-default p-4">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <p className="text-xs text-muted">Sentiment</p>
-              <Badge tone={sentimentTones[review.sentiment]} className="mt-2">
-                {review.sentiment}
-              </Badge>
-            </div>
-            <div className="sm:col-span-2">
-              <p className="text-xs text-muted">Thèmes détectés</p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {review.tags.map((tag) => (
-                  <Badge key={tag} tone="brand">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-muted">Résumé</p>
-            <p className="mt-1 text-sm">
-              Le client apprécie le goût des plats mais est déçu par le temps
-              d&apos;attente et la quantité servie.
+            <p className="font-bold">
+              {review.source === 'GOOGLE' ? 'Avis Google' : 'Retour direct'}
+            </p>
+            <p className="text-xs text-muted">
+              {formatRelativeDate(review.receivedAt)}
             </p>
           </div>
-          <div className="mt-3 flex items-center gap-2 text-sm text-status-success">
-            <ThumbsUp className="h-4 w-4" />
-            Goût des plats
+        </div>
+        {review.source === 'GOOGLE' && (
+          <IconButton
+            variant="ghost"
+            aria-label="Ouvrir l'avis sur Google"
+          >
+            <ExternalLink className="h-4 w-4" />
+          </IconButton>
+        )}
+      </div>
+
+      <section className="p-4">
+        <div className="rounded-lg border border-border-default p-4">
+          <div className="flex items-center gap-3">
+            <Avatar
+              fallback={getInitials(review.authorName)}
+              src={review.authorAvatarUrl}
+            />
+            <div className="flex-1">
+              <p className="font-bold">
+                {review.authorName ?? 'Client anonyme'}
+              </p>
+              {review.rating && <Rating value={review.rating} />}
+            </div>
+            <Badge tone={statusTones[review.status]}>
+              {statusLabels[review.status]}
+            </Badge>
+          </div>
+          <p className="mt-4 text-sm leading-6">
+            {review.content || 'Aucun commentaire.'}
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-border-default p-4">
+        <h2 className="flex items-center gap-2 font-bold text-brand-800">
+          <Sparkles className="h-4 w-4" />
+          Analyse
+        </h2>
+        <div className="mt-3 grid gap-3 rounded-lg bg-surface-muted p-4 sm:grid-cols-2">
+          <div>
+            <p className="text-xs text-muted">Sentiment</p>
+            <div className="mt-2">
+              {review.sentiment ? (
+                <Badge tone={sentimentTones[review.sentiment]}>
+                  {sentimentLabels[review.sentiment]}
+                </Badge>
+              ) : (
+                <Badge>En attente</Badge>
+              )}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-muted">Urgence</p>
+            <div className="mt-2">
+              {review.urgency ? (
+                <Badge
+                  tone={
+                    review.urgency === 'CRITICAL' ||
+                    review.urgency === 'HIGH'
+                      ? 'danger'
+                      : review.urgency === 'MEDIUM'
+                        ? 'warning'
+                        : 'neutral'
+                  }
+                >
+                  {urgencyLabels[review.urgency]}
+                </Badge>
+              ) : (
+                <Badge>En attente</Badge>
+              )}
+            </div>
           </div>
         </div>
+        {(review.urgency === 'HIGH' || review.urgency === 'CRITICAL') && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-status-danger bg-status-danger-soft p-3 text-sm text-status-danger">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            Une attention managériale est recommandée.
+          </div>
+        )}
       </section>
-      <section className="border-t border-border-default p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="inline-flex items-center gap-2 font-bold text-brand-800">
-            <Bot className="h-4 w-4" />
-            Réponse suggérée par l&apos;IA
-          </h3>
-          <Select defaultValue="warm">
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="warm">Chaleureux</SelectItem>
-              <SelectItem value="soft">Plus doux</SelectItem>
-              <SelectItem value="direct">Plus direct</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <ReplyControls />
-        <Textarea
-          value={reply}
-          onChange={(event) => onReplyChange(event.target.value)}
-          className="min-h-52 border-focus-ring leading-6"
-        />
-        <div className="mt-1 flex items-center justify-between text-xs text-muted">
-          <span>Généré par l&apos;IA. Vérifiez toujours avant de publier.</span>
-          <span>{reply.length} / 1000</span>
-        </div>
-        <div className="mt-3 flex gap-2">
-          <Input placeholder="Demander une modification à l’IA..." />
-          <IconButton variant="secondary" aria-label="Envoyer la demande">
-            <Send className="h-4 w-4" />
-          </IconButton>
-        </div>
-      </section>
-      <div className="grid grid-cols-2 gap-3 border-t border-border-default p-4">
-        <Button variant="secondary">Enregistrer en brouillon</Button>
-        <Button>
-          <Send className="h-4 w-4" />
-          Publier la réponse
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-      </div>
+
+      {review.source === 'GOOGLE' ? (
+        <section className="border-t border-border-default p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 font-bold text-brand-800">
+              <Bot className="h-4 w-4" />
+              Réponse suggérée
+            </h2>
+            {review.replyStatus && (
+              <Badge variant="outline">{review.replyStatus}</Badge>
+            )}
+          </div>
+          <Textarea
+            value={reply}
+            onChange={(event) => setReply(event.target.value)}
+            className="mt-3 min-h-44 leading-6"
+          />
+          <p className="mt-2 text-xs text-muted">
+            Vérifiez toujours le contenu avant publication.
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <Button variant="secondary" disabled>
+              <FilePenLine className="h-4 w-4" />
+              Enregistrer
+            </Button>
+            <Button disabled>
+              <Send className="h-4 w-4" />
+              Publier sur Google
+            </Button>
+          </div>
+        </section>
+      ) : (
+        <section className="border-t border-border-default p-4">
+          <Button variant="secondary" fullWidth disabled>
+            <UserRound className="h-4 w-4" />
+            Créer un incident
+          </Button>
+        </section>
+      )}
     </Card>
   );
 }
 
-function ReplyControls() {
-  return (
-    <div className="mb-3 grid gap-2 text-xs">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="w-16 text-muted">Ajuster le ton</span>
-        {[
-          'Plus chaleureux',
-          'Plus doux',
-          'Plus professionnel',
-          'Plus direct',
-        ].map((label, index) => (
-          <Button
-            key={label}
-            variant={index === 0 ? 'primary' : 'secondary'}
-            size="sm"
-            className="h-7 px-2 text-[11px]"
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="w-16 text-muted">Format</span>
-        {[
-          'Plus court',
-          'Plus détaillé',
-          'Reformuler',
-          'Corriger le français',
-        ].map((label, index) => (
-          <Button
-            key={label}
-            variant={index === 0 ? 'primary' : 'secondary'}
-            size="sm"
-            className="h-7 px-2 text-[11px]"
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PlatformLogo({ platform }: { platform: Platform }) {
-  const config = platformConfig[platform];
+function SourceMark({ source }: { source: FeedbackSource }) {
   return (
     <span
       className={cn(
-        'grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-black shadow-xs',
-        config.className,
+        'grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-black',
+        source === 'GOOGLE'
+          ? 'bg-status-info-soft text-status-info'
+          : 'bg-surface-selected text-brand-800',
       )}
+      aria-label={source === 'GOOGLE' ? 'Google' : 'Retour direct'}
     >
-      {config.logo}
+      {source === 'GOOGLE' ? 'G' : 'D'}
     </span>
   );
 }
-function StarRating({ value }: { value: number }) {
+
+function Rating({ value }: { value: number }) {
   return (
-    <div className="flex items-center gap-0.5">
-      <span className="mr-1 text-xs font-bold">{value.toFixed(1)}</span>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={cn(
-            'h-3.5 w-3.5',
-            star <= value
-              ? 'fill-status-rating text-status-rating'
-              : 'text-border-strong',
-          )}
-        />
-      ))}
-    </div>
+    <span className="inline-flex items-center gap-1 text-xs font-bold">
+      {value.toFixed(1)}
+      <Star className="h-3.5 w-3.5 fill-status-rating text-status-rating" />
+    </span>
   );
 }

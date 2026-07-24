@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./common": "./src/common/index.ts",
     "./orders": "./src/orders/index.ts",
+    "./reputation": "./src/reputation/index.ts",
     "./reservations": "./src/reservations/index.ts",
     "./display": "./src/display/index.ts"
   },

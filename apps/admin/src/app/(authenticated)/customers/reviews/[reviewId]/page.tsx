@@ -1,7 +1,10 @@
-export default function Page() {
-  return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <p className="text-2xl font-bold text-primary/30">À mettre à jour</p>
-    </div>
-  );
+import { redirect } from 'next/navigation';
+
+export default async function ReviewDetailPage({
+  params,
+}: {
+  params: Promise<{ reviewId: string }>;
+}) {
+  const { reviewId } = await params;
+  redirect(`/customers/reviews?selected=${encodeURIComponent(reviewId)}`);
 }
