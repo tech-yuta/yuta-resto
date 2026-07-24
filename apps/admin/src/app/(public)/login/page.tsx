@@ -1,7 +1,27 @@
-export default function Page() {
+import { getCurrentSession, safeReturnTo } from '../../../server/auth/session';
+import { redirect } from 'next/navigation';
+import { LoginForm } from './login-form';
+
+export const dynamic = 'force-dynamic';
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    returnTo?: string;
+    reset?: string;
+    error?: string;
+  }>;
+}) {
+  const query = await searchParams;
+  const session = await getCurrentSession();
+  if (session) redirect(safeReturnTo(query.returnTo));
+
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <p className="text-2xl font-bold text-primary/30">À mettre à jour</p>
-    </div>
+    <LoginForm
+      returnTo={safeReturnTo(query.returnTo)}
+      passwordReset={query.reset === '1'}
+      membershipError={query.error === 'membership'}
+    />
   );
 }

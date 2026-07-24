@@ -17,7 +17,8 @@ export const metadata: Metadata = {
     default: 'YuTa Admin',
     template: '%s | YuTa Admin',
   },
-  description: 'Back office YuTa pour piloter les operations restaurant, le POS, les reservations, les menus, les stocks et les clients.',
+  description:
+    'Back office YuTa pour piloter les operations restaurant, le POS, les reservations, les menus, les stocks et les clients.',
   manifest: '/site.webmanifest',
   icons: {
     icon: [
@@ -25,14 +26,21 @@ export const metadata: Metadata = {
       { url: '/favicon.ico', sizes: 'any' },
       { url: '/images/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
     ],
-    apple: [{ url: '/images/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    apple: [
+      {
+        url: '/images/apple-touch-icon.png',
+        sizes: '180x180',
+        type: 'image/png',
+      },
+    ],
     shortcut: ['/favicon.ico'],
   },
   openGraph: {
     type: 'website',
     siteName: 'YuTa Admin',
     title: 'YuTa Admin',
-    description: 'Back office restaurant YuTa pour suivre les operations quotidiennes.',
+    description:
+      'Back office restaurant YuTa pour suivre les operations quotidiennes.',
     images: [
       {
         url: '/images/logo-slogan.png',
@@ -43,7 +51,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'YuTa Admin',
-    description: 'Back office restaurant YuTa pour suivre les operations quotidiennes.',
+    description:
+      'Back office restaurant YuTa pour suivre les operations quotidiennes.',
     images: ['/images/logo-slogan.png'],
   },
   robots: {
@@ -60,9 +69,11 @@ export const viewport: Viewport = {
   themeColor: '#3a9c7c',
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="vi">
+    <html lang="fr">
       <body className={inter.className}>{children}</body>
     </html>
   );

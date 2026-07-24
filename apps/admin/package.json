@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@yuta/auth": "workspace:*",
     "@yuta/contracts": "workspace:*",
     "@yuta/core": "workspace:*",
     "@yuta/db": "workspace:*",

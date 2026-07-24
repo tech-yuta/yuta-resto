@@ -154,6 +154,45 @@ export async function findScopedEstablishment(
   return rows[0] ?? null;
 }
 
+export async function findAuthenticatedTenantMetadata(
+  db: DbClient,
+  scope: { organizationId: string; establishmentId: string },
+): Promise<{
+  locale: string;
+  timezone: string;
+  entitlements: string[];
+} | null> {
+  const rows = await db
+    .select({
+      locale: establishments.locale,
+      timezone: establishments.timezone,
+    })
+    .from(establishments)
+    .innerJoin(
+      organizations,
+      eq(organizations.id, establishments.organizationId),
+    )
+    .where(
+      and(
+        eq(establishments.id, scope.establishmentId),
+        eq(establishments.organizationId, scope.organizationId),
+        eq(establishments.status, 'active'),
+        eq(organizations.status, 'active'),
+      ),
+    )
+    .limit(1);
+  const metadata = rows[0];
+  if (!metadata) return null;
+  return {
+    ...metadata,
+    entitlements: await getEntitlements(
+      db,
+      scope.organizationId,
+      scope.establishmentId,
+    ),
+  };
+}
+
 async function getEntitlements(
   db: DbClient,
   organizationId: string,

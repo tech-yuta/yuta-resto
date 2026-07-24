@@ -1,4 +1,5 @@
 import { config } from 'dotenv';
+import { hashPassword } from '@yuta/auth';
 import { and, eq } from 'drizzle-orm';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -267,11 +268,19 @@ const comboSeeds = [
 export async function seedPosData(seedDb?: DbClient): Promise<SeedContext> {
   const activeDb = seedDb ?? (await import('./client')).db;
   const tenant = await seedTenantData(activeDb);
+  const configuredAdminPassword = process.env.YUTA_SEED_ADMIN_PASSWORD;
+  if (process.env.NODE_ENV === 'production' && !configuredAdminPassword) {
+    throw new Error(
+      'YUTA_SEED_ADMIN_PASSWORD is required when seeding production.',
+    );
+  }
+  const adminPassword = configuredAdminPassword ?? 'ChangeMe-YuTa-2026!';
 
   const adminUser = await upsertUser(activeDb, {
     name: 'YuTa Admin',
     email: 'admin@yuta.local',
     role: 'admin',
+    passwordHash: await hashPassword(adminPassword),
   });
   const staffUser = await upsertUser(activeDb, {
     name: 'YuTa Staff',
@@ -426,7 +435,7 @@ End with "L'équipe LUNA" unless the context requires otherwise.`;
       authorName: 'Camille R.',
       rating: 5,
       content:
-        "Excellent accueil et plats délicieux. Le bánh mì était très frais, nous reviendrons !",
+        'Excellent accueil et plats délicieux. Le bánh mì était très frais, nous reviendrons !',
       sentiment: 'POSITIVE' as const,
       urgency: 'LOW' as const,
       status: 'REPLIED' as const,
@@ -489,7 +498,7 @@ End with "L'équipe LUNA" unless the context requires otherwise.`;
       authorName: 'Thomas L.',
       rating: 2,
       content:
-        "Il manquait un plat dans ma commande. Je souhaite être recontacté.",
+        'Il manquait un plat dans ma commande. Je souhaite être recontacté.',
       sentiment: 'NEGATIVE' as const,
       urgency: 'MEDIUM' as const,
       status: 'TO_PROCESS' as const,
@@ -603,7 +612,7 @@ End with "L'équipe LUNA" unless the context requires otherwise.`;
       sentiment: 'NEGATIVE' as const,
       urgency: 'HIGH' as const,
       summary:
-        "Attente importante et commande incomplète nécessitant un suivi opérationnel.",
+        'Attente importante et commande incomplète nécessitant un suivi opérationnel.',
       topics: ['WAITING_TIME', 'ORDER_ACCURACY'],
       suggestedAction: 'Vérifier la préparation des commandes à emporter.',
       requiresFollowUp: true,
@@ -757,7 +766,12 @@ async function upsertMembership(
 
 async function upsertUser(
   seedDb: DbClient,
-  values: { name: string; email: string; role: 'admin' | 'staff' | 'kitchen' },
+  values: {
+    name: string;
+    email: string;
+    role: 'admin' | 'staff' | 'kitchen';
+    passwordHash?: string;
+  },
 ): Promise<User> {
   const existing = await seedDb.query.users.findFirst({
     where: eq(users.email, values.email),
@@ -766,13 +780,29 @@ async function upsertUser(
   if (existing) {
     const [updated] = await seedDb
       .update(users)
-      .set({ name: values.name, role: values.role, isActive: true })
+      .set({
+        name: values.name,
+        role: values.role,
+        isActive: true,
+        ...(values.passwordHash
+          ? {
+              passwordHash: values.passwordHash,
+              emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
+            }
+          : {}),
+      })
       .where(eq(users.id, existing.id))
       .returning();
     return updated;
   }
 
-  const [created] = await seedDb.insert(users).values(values).returning();
+  const [created] = await seedDb
+    .insert(users)
+    .values({
+      ...values,
+      emailVerifiedAt: values.passwordHash ? new Date() : null,
+    })
+    .returning();
   return created;
 }
 

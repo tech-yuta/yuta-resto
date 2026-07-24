@@ -1,55 +1,14 @@
 import { feedbackListQuerySchema } from '@yuta/contracts/reputation';
+import { listFeedback } from '@yuta/db';
 import { db } from '@yuta/db/client';
-import {
-  findDevelopmentFeedbackTenantBySlug,
-  listFeedback,
-} from '@yuta/db';
-import { createMembershipLookup } from '@yuta/db/tenant-adapters';
-import { users } from '@yuta/db/schema';
-import { resolveAuthenticatedTenant } from '@yuta/tenant';
-import { eq } from 'drizzle-orm';
+import { requireReputationTenant } from '../../../../server/auth/session';
 import { ReviewsPage, type ReviewsPageData } from './reviews-page';
 
 export const dynamic = 'force-dynamic';
 
 async function loadReviewsPage(): Promise<ReviewsPageData> {
-  if (process.env.NODE_ENV === 'production') {
-    return {
-      state: 'authentication-required',
-      items: [],
-      counters: {
-        total: 0,
-        new: 0,
-        unanswered: 0,
-        negative: 0,
-        withIncident: 0,
-      },
-    };
-  }
-
+  const { tenant } = await requireReputationTenant();
   try {
-    const developmentTenant = await findDevelopmentFeedbackTenantBySlug(
-      db,
-      'luna',
-    );
-    const adminUser = await db.query.users.findFirst({
-      where: eq(users.email, 'admin@yuta.local'),
-    });
-    if (!developmentTenant || !adminUser) {
-      throw new Error('Development tenant seed is missing.');
-    }
-
-    const tenant = await resolveAuthenticatedTenant({
-      userId: adminUser.id,
-      organizationId: developmentTenant.organizationId,
-      establishmentId: developmentTenant.establishmentId,
-      membershipLookup: createMembershipLookup(db),
-      tenantMetadata: {
-        locale: developmentTenant.locale,
-        timezone: developmentTenant.timezone,
-        entitlements: [...developmentTenant.entitlements],
-      },
-    });
     const result = await listFeedback(
       db,
       tenant,

@@ -129,6 +129,21 @@ docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/doc
 docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml up -d --build <service>
 ```
 
+## YuTa Admin authentication
+
+Admin deployments must provide:
+
+```env
+DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
+AUTH_SECRET=replace-with-at-least-32-random-characters
+NEXT_PUBLIC_ADMIN_URL=https://admin.example.com
+```
+
+`AUTH_SECRET` must be generated independently per environment and must not be
+committed. Apply database migration `0008_elite_the_twelve.sql` before starting
+an admin build that uses server-side sessions. Production seeding additionally
+requires `YUTA_SEED_ADMIN_PASSWORD`; routine application startup does not.
+
 ## YuTa POS
 
 `apps/yuta-pos` deploys as a standalone Next.js container and uses the shared

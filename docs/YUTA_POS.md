@@ -299,5 +299,6 @@ memberships, and establishment entitlements. The initial development seed is
 
 POS order and menu repositories are not tenant-scoped yet. The current POS
 staff-selection cookie is not authentication and must not be used to construct
-an authenticated tenant context. Tenant scoping for POS and admin will be
-integrated only after authentication exposes a trustworthy user ID.
+an authenticated tenant context. Admin now has its own trusted server-side
+session; POS tenant scoping remains pending until POS authentication exposes a
+trustworthy user ID.

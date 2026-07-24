@@ -78,33 +78,23 @@ The hostname-scoped public URL is also available through
 
 ## Authentication boundary
 
-The admin application currently has an `(authenticated)` route group and login
-UI, but it does not yet expose a trustworthy server-side session user ID.
-Production reputation reads and mutations must not accept organization,
-establishment, role, or user IDs from the browser.
+The admin inbox now requires a database-backed server session. The authenticated
+layout resolves the session user, validates the active membership, creates a
+trusted tenant context, checks `reputation.enabled`, and enforces
+`reputation.read` before the repository is called.
 
-For this reason:
-
-- Local development may load the seeded admin membership through a
-  development-only resolver.
-- Production displays an authentication-required state.
-- Reply saving, Google publication, assignment, status mutation, and incident
-  mutation remain disabled until the shared server-side authentication project
-  supplies a verified user ID.
-
-Once authentication is available, the admin boundary must call
-`resolveAuthenticatedTenant`, enforce the relevant reputation permission, and
-pass the resulting context into the scoped repository.
+No production development-tenant fallback remains in the admin application.
+Organization, establishment, role, entitlement, and permission values are never
+accepted from the browser. See `docs/AUTHENTICATION.md`.
 
 ## Remaining Phase 1 work
 
-- Shared server-side admin authentication and reputation permissions.
 - Google OAuth, encrypted credential service, review synchronization, and reply
   publication.
 - AI analysis and reply services with versioned prompts and strict structured
   output validation.
 - Admin mutation flows, incidents, notifications, audit timeline, analytics,
-  jobs, and connector monitoring.
+  jobs, and connector monitoring. Each mutation must use the implemented
+  server-side permission boundary.
 - QR PNG/SVG downloads.
 - Integration and end-to-end tests for external connectors.
-

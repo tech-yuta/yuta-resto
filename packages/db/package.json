@@ -19,6 +19,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@yuta/auth": "workspace:*",
     "@yuta/contracts": "workspace:*",
     "@yuta/tenant": "workspace:*",
     "drizzle-orm": "^0.43.1",

@@ -14,6 +14,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@yuta/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@yuta/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -226,6 +229,22 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/auth:
+    dependencies:
+      zod:
+        specifier: ^3.25.67
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^26.0.0
+        version: 26.0.0
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.0.15
+        version: 4.1.9(@types/node@26.0.0)(vite@8.1.0(@types/node@26.0.0)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.101.0)(tsx@4.22.4))
+
   packages/contracts:
     dependencies:
       zod:
@@ -275,6 +294,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@yuta/auth':
+        specifier: workspace:*
+        version: link:../auth
       '@yuta/contracts':
         specifier: workspace:*
         version: link:../contracts

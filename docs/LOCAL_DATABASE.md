@@ -9,6 +9,9 @@ Migration `0007_overjoyed_spencer_smythe.sql` adds the shared reputation model
 for Google reviews, direct customer feedback, replies, AI analyses, incidents,
 connectors, settings, internal notes, and audit events.
 
+Migration `0008_elite_the_twelve.sql` adds admin password identity fields,
+database-backed sessions, password reset tokens, and login rate-limit records.
+
 This document describes the local development database for YuTa operations apps such as `apps/yuta-pos` and `apps/admin`.
 
 Production is different. On the mini server, YuTa apps must use the existing `luna-postgres` container and the external `postgres_default` Docker network. Follow `docs/DEPLOYMENT.md` for production.
@@ -77,6 +80,9 @@ existing POS sample data:
 - Memberships for the seeded admin, staff, and kitchen users.
 - Reputation entitlement: `reputation.enabled`.
 - LUNA reputation settings and representative Phase 1 feedback records.
+- A password hash for `admin@yuta.local`. The default development password is
+  `ChangeMe-YuTa-2026!`; set `YUTA_SEED_ADMIN_PASSWORD` before seeding to
+  override it.
 
 Use `luna.localhost` explicitly when testing public hostname resolution.
 Unknown hosts intentionally return `TENANT_NOT_FOUND`; there is no fallback to

@@ -58,7 +58,7 @@ export type ReviewListRecord = {
 };
 
 export type ReviewsPageData = {
-  state: 'ready' | 'authentication-required' | 'unavailable';
+  state: 'ready' | 'unavailable';
   items: ReviewListRecord[];
   counters: {
     total: number;
@@ -192,15 +192,6 @@ export function ReviewsPage({
           </>
         }
       />
-
-      {data.state === 'authentication-required' && (
-        <Card padding="none">
-          <ErrorState
-            title="Session administrateur requise"
-            description="Le stockage reputation est prêt, mais les actions admin attendent une session serveur fournissant un utilisateur et un établissement vérifiés."
-          />
-        </Card>
-      )}
 
       {data.state === 'unavailable' && (
         <Card padding="none">
@@ -406,10 +397,7 @@ function ReviewDetail({ review }: { review: ReviewListRecord }) {
           </div>
         </div>
         {review.source === 'GOOGLE' && (
-          <IconButton
-            variant="ghost"
-            aria-label="Ouvrir l'avis sur Google"
-          >
+          <IconButton variant="ghost" aria-label="Ouvrir l'avis sur Google">
             <ExternalLink className="h-4 w-4" />
           </IconButton>
         )}
@@ -462,8 +450,7 @@ function ReviewDetail({ review }: { review: ReviewListRecord }) {
               {review.urgency ? (
                 <Badge
                   tone={
-                    review.urgency === 'CRITICAL' ||
-                    review.urgency === 'HIGH'
+                    review.urgency === 'CRITICAL' || review.urgency === 'HIGH'
                       ? 'danger'
                       : review.urgency === 'MEDIUM'
                         ? 'warning'

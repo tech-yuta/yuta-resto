@@ -29,6 +29,7 @@ import {
   Heart,
   LayoutDashboard,
   LayoutGrid,
+  LogOut,
   Mail,
   Menu,
   Megaphone,
@@ -50,6 +51,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { logoutAction } from '../app/(authenticated)/actions';
 
 type NavItem = {
   label: string;
@@ -156,7 +158,13 @@ const navSections: NavSection[] = [
   },
 ];
 
-export function AdminFrame({ children }: { children: ReactNode }) {
+export function AdminFrame({
+  children,
+  currentUser,
+}: {
+  children: ReactNode;
+  currentUser: { name: string; email: string };
+}) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -238,14 +246,30 @@ export function AdminFrame({ children }: { children: ReactNode }) {
                   3
                 </span>
               </IconButton>
-              <Button variant="ghost" size="sm" className="gap-1.5 p-1">
-                <Avatar
-                  fallback="YT"
+              <div className="hidden text-right lg:block">
+                <p className="text-xs font-bold text-primary">
+                  {currentUser.name}
+                </p>
+                <p className="max-w-44 truncate text-[11px] text-muted">
+                  {currentUser.email}
+                </p>
+              </div>
+              <Avatar
+                fallback={currentUser.name}
+                size="sm"
+                className="bg-primary text-white"
+              />
+              <form action={logoutAction}>
+                <IconButton
+                  type="submit"
+                  variant="ghost"
                   size="sm"
-                  className="bg-primary text-white"
-                />
-                <ChevronRight className="hidden h-3.5 w-3.5 rotate-90 text-primary/40 sm:block" />
-              </Button>
+                  aria-label="Se déconnecter"
+                  title="Se déconnecter"
+                >
+                  <LogOut className="h-4 w-4" />
+                </IconButton>
+              </form>
             </>
           }
         />

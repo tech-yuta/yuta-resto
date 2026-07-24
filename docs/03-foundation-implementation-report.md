@@ -33,13 +33,14 @@ Date: 2026-07-19
 - `apps/yuta-display` is a separate signage product with its own database and no
   existing POS kitchen-event consumer. No artificial event integration was
   added.
-- Existing authentication does not expose a trustworthy user ID. The POS staff
-  cookie is deliberately not connected to `resolveAuthenticatedTenant`.
+- Admin now uses a database-backed HttpOnly session and connects its verified
+  user membership to `resolveAuthenticatedTenant`. The POS staff-selection
+  cookie remains deliberately separate and is not authentication.
 
 ## Remaining work
 
-- Integrate authenticated tenant resolution into POS and admin after the
-  authentication project is complete.
+- Integrate authenticated tenant resolution into POS after its authentication
+  model is defined. Admin integration is complete.
 - Add `organization_id` / `establishment_id` ownership and explicit context to
   existing POS order, menu, payment, print, and reporting repositories. They
   remain single-tenant and were left unchanged to avoid changing payment and
