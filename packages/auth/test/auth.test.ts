@@ -5,6 +5,7 @@ import {
   hashRateLimitKey,
   hashSessionToken,
   loginInputSchema,
+  switchTenantInputSchema,
   verifyPassword,
 } from '../src';
 
@@ -40,5 +41,20 @@ describe('@yuta/auth', () => {
     expect(hashRateLimitKey('admin@yuta.local|127.0.0.1', 'secret-a')).not.toBe(
       hashRateLimitKey('admin@yuta.local|127.0.0.1', 'secret-b'),
     );
+  });
+
+  it('accepts only UUID establishment identifiers for tenant switching', () => {
+    expect(
+      switchTenantInputSchema.parse({
+        establishmentId: '00000000-0000-4000-8000-000000000001',
+        returnTo: '/customers/reviews',
+      }),
+    ).toEqual({
+      establishmentId: '00000000-0000-4000-8000-000000000001',
+      returnTo: '/customers/reviews',
+    });
+    expect(() =>
+      switchTenantInputSchema.parse({ establishmentId: 'untrusted-slug' }),
+    ).toThrow();
   });
 });

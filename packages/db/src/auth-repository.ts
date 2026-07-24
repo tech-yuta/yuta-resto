@@ -4,10 +4,12 @@ import {
   hashPassword,
   hashSessionToken,
   verifyPassword,
+  type AvailableTenant,
   type AuthenticatedSession,
 } from '@yuta/auth';
 import {
   and,
+  asc,
   count,
   desc,
   eq,
@@ -210,6 +212,156 @@ export function createAuthRepository(repositoryDb: DbClient) {
     };
   }
 
+  async function listAvailableTenants(
+    userId: string,
+  ): Promise<AvailableTenant[]> {
+    return repositoryDb
+      .select({
+        organizationId: tenantMemberships.organizationId,
+        organizationName: organizations.name,
+        establishmentId: establishments.id,
+        establishmentName: establishments.name,
+      })
+      .from(tenantMemberships)
+      .innerJoin(
+        organizations,
+        eq(organizations.id, tenantMemberships.organizationId),
+      )
+      .innerJoin(
+        establishments,
+        and(
+          eq(establishments.id, tenantMemberships.establishmentId),
+          eq(establishments.organizationId, tenantMemberships.organizationId),
+        ),
+      )
+      .where(
+        and(
+          eq(tenantMemberships.userId, userId),
+          eq(tenantMemberships.status, 'active'),
+          isNotNull(tenantMemberships.establishmentId),
+          eq(organizations.status, 'active'),
+          eq(establishments.status, 'active'),
+        ),
+      )
+      .orderBy(asc(organizations.name), asc(establishments.name));
+  }
+
+  async function switchTenant(input: {
+    token: string;
+    establishmentId: string;
+  }): Promise<SignInResult> {
+    const currentTokenHash = hashSessionToken(input.token);
+    const nextToken = createSessionToken();
+    const nextExpiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+
+    return repositoryDb.transaction(async (transaction) => {
+      const currentRows = await transaction
+        .select({
+          session: authSessions,
+          userId: users.id,
+          userName: users.name,
+          userEmail: users.email,
+          userAuthVersion: users.authVersion,
+          userIsActive: users.isActive,
+        })
+        .from(authSessions)
+        .innerJoin(users, eq(users.id, authSessions.userId))
+        .where(
+          and(
+            eq(authSessions.tokenHash, currentTokenHash),
+            isNull(authSessions.revokedAt),
+            gt(authSessions.expiresAt, new Date()),
+          ),
+        )
+        .limit(1);
+      const current = currentRows[0];
+      if (
+        !current ||
+        !current.userIsActive ||
+        !current.userEmail ||
+        current.userAuthVersion !== current.session.authVersion
+      ) {
+        throw new AuthError('Invalid session.', 'SESSION_INVALID');
+      }
+
+      const membershipRows = await transaction
+        .select({
+          organizationId: tenantMemberships.organizationId,
+          establishmentId: establishments.id,
+        })
+        .from(tenantMemberships)
+        .innerJoin(
+          organizations,
+          eq(organizations.id, tenantMemberships.organizationId),
+        )
+        .innerJoin(
+          establishments,
+          and(
+            eq(establishments.id, tenantMemberships.establishmentId),
+            eq(establishments.organizationId, tenantMemberships.organizationId),
+          ),
+        )
+        .where(
+          and(
+            eq(tenantMemberships.userId, current.userId),
+            eq(tenantMemberships.establishmentId, input.establishmentId),
+            eq(tenantMemberships.status, 'active'),
+            eq(organizations.status, 'active'),
+            eq(establishments.status, 'active'),
+          ),
+        )
+        .limit(1);
+      const membership = membershipRows[0];
+      if (!membership) {
+        throw new AuthError(
+          'No active membership for this establishment.',
+          'TENANT_ACCESS_DENIED',
+        );
+      }
+
+      const [revokedSession] = await transaction
+        .update(authSessions)
+        .set({ revokedAt: new Date() })
+        .where(
+          and(
+            eq(authSessions.id, current.session.id),
+            isNull(authSessions.revokedAt),
+          ),
+        )
+        .returning({ id: authSessions.id });
+      if (!revokedSession) {
+        throw new AuthError('Invalid session.', 'SESSION_INVALID');
+      }
+
+      const [storedSession] = await transaction
+        .insert(authSessions)
+        .values({
+          userId: current.userId,
+          organizationId: membership.organizationId,
+          establishmentId: membership.establishmentId,
+          tokenHash: hashSessionToken(nextToken),
+          authVersion: current.userAuthVersion,
+          expiresAt: nextExpiresAt,
+          ipHash: current.session.ipHash,
+          userAgent: current.session.userAgent,
+        })
+        .returning({ id: authSessions.id });
+
+      return {
+        token: nextToken,
+        session: {
+          id: storedSession.id,
+          userId: current.userId,
+          userName: current.userName,
+          userEmail: current.userEmail,
+          organizationId: membership.organizationId,
+          establishmentId: membership.establishmentId,
+          expiresAt: nextExpiresAt,
+        },
+      };
+    });
+  }
+
   async function revokeSession(token: string): Promise<void> {
     if (!token) return;
     await repositoryDb
@@ -297,6 +449,8 @@ export function createAuthRepository(repositoryDb: DbClient) {
   return {
     signIn,
     findSession,
+    listAvailableTenants,
+    switchTenant,
     revokeSession,
     revokeAllUserSessions,
     createPasswordResetToken,

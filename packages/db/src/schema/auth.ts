@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -89,6 +90,38 @@ export const authLoginAttempts = pgTable(
   ],
 );
 
+export const authAuditEvents = pgTable(
+  'auth_audit_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    event: varchar('event', { length: 100 }).notNull(),
+    actorUserId: uuid('actor_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    subjectUserId: uuid('subject_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    organizationId: uuid('organization_id').references(() => organizations.id),
+    establishmentId: uuid('establishment_id').references(
+      () => establishments.id,
+    ),
+    metadata: jsonb('metadata')
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index('auth_audit_events_actor_user_id_idx').on(table.actorUserId),
+    index('auth_audit_events_subject_user_id_idx').on(table.subjectUserId),
+    index('auth_audit_events_scope_idx').on(
+      table.organizationId,
+      table.establishmentId,
+    ),
+    index('auth_audit_events_created_at_idx').on(table.createdAt),
+  ],
+);
+
 export const authSessionsRelations = relations(authSessions, ({ one }) => ({
   user: one(users, {
     fields: [authSessions.userId],
@@ -115,3 +148,4 @@ export const passwordResetTokensRelations = relations(
 );
 
 export type AuthSession = typeof authSessions.$inferSelect;
+export type AuthAuditEvent = typeof authAuditEvents.$inferSelect;

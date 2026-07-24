@@ -12,6 +12,9 @@ connectors, settings, internal notes, and audit events.
 Migration `0008_elite_the_twelve.sql` adds admin password identity fields,
 database-backed sessions, password reset tokens, and login rate-limit records.
 
+Migration `0009_sparkling_galactus.sql` adds authentication and membership
+administration audit events.
+
 This document describes the local development database for YuTa operations apps such as `apps/yuta-pos` and `apps/admin`.
 
 Production is different. On the mini server, YuTa apps must use the existing `luna-postgres` container and the external `postgres_default` Docker network. Follow `docs/DEPLOYMENT.md` for production.

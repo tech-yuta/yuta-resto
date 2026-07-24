@@ -83,6 +83,11 @@ layout resolves the session user, validates the active membership, creates a
 trusted tenant context, checks `reputation.enabled`, and enforces
 `reputation.read` before the repository is called.
 
+The admin shell can switch to another active establishment membership. The
+server validates the target and rotates the session before reloading the inbox,
+so review queries always use the newly authenticated organization and
+establishment scope.
+
 No production development-tenant fallback remains in the admin application.
 Organization, establishment, role, entitlement, and permission values are never
 accepted from the browser. See `docs/AUTHENTICATION.md`.

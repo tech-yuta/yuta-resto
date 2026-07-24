@@ -1,5 +1,8 @@
 import { AdminFrame } from '../../components/admin-frame';
-import { requireAuthenticatedTenant } from '../../server/auth/session';
+import {
+  authRepository,
+  requireAuthenticatedTenant,
+} from '../../server/auth/session';
 import type { ReactNode } from 'react';
 
 export const dynamic = 'force-dynamic';
@@ -9,13 +12,24 @@ export default async function AuthenticatedLayout({
 }: {
   children: ReactNode;
 }) {
-  const { session } = await requireAuthenticatedTenant();
+  const { session, tenant } = await requireAuthenticatedTenant();
+  const availableTenants = await authRepository.listAvailableTenants(
+    session.userId,
+  );
   return (
     <AdminFrame
       currentUser={{
         name: session.userName,
         email: session.userEmail,
       }}
+      tenantSwitcher={{
+        tenants: availableTenants,
+        currentEstablishmentId: session.establishmentId,
+      }}
+      canManageUsers={
+        tenant.actor.type === 'user' &&
+        (tenant.actor.role === 'owner' || tenant.actor.role === 'admin')
+      }
     >
       {children}
     </AdminFrame>

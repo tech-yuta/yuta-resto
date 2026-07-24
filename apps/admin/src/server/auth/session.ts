@@ -9,6 +9,7 @@ import {
 } from '@yuta/db/tenant-adapters';
 import {
   requireEntitlement,
+  requireRole,
   resolveAuthenticatedTenant,
   type TenantContext,
 } from '@yuta/tenant';
@@ -90,6 +91,15 @@ export async function requireReputationTenant(
   const context = await requireAuthenticatedTenant(returnTo);
   requireEntitlement(context.tenant, 'reputation.enabled');
   requireReputationPermission(context.tenant, 'reputation.read');
+  return context;
+}
+
+export async function requireUserManagementTenant(): Promise<{
+  session: AuthenticatedSession;
+  tenant: TenantContext;
+}> {
+  const context = await requireAuthenticatedTenant('/settings/users');
+  requireRole(context.tenant, ['owner', 'admin']);
   return context;
 }
 

@@ -64,6 +64,13 @@
       "when": 1784928207919,
       "tag": "0008_elite_the_twelve",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784935506946,
+      "tag": "0009_sparkling_galactus",
+      "breakpoints": true
     }
   ]
 }

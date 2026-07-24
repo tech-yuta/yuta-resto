@@ -1,5 +1,6 @@
 'use client';
 
+import type { AvailableTenant } from '@yuta/auth';
 import {
   AppFooter,
   AppMain,
@@ -44,6 +45,7 @@ import {
   Store,
   Tag,
   Truck,
+  UserCog,
   Users,
   X,
 } from 'lucide-react';
@@ -52,6 +54,7 @@ import Image from 'next/image';
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { logoutAction } from '../app/(authenticated)/actions';
+import { TenantSwitcher } from './tenant-switcher';
 
 type NavItem = {
   label: string;
@@ -59,6 +62,7 @@ type NavItem = {
   href: string;
   note?: string;
   sub?: boolean;
+  requiresUserManagement?: boolean;
 };
 
 type NavSection = {
@@ -149,6 +153,12 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Restaurant', icon: Store, href: '/settings/restaurant' },
       {
+        label: 'Utilisateurs & accès',
+        icon: UserCog,
+        href: '/settings/users',
+        requiresUserManagement: true,
+      },
+      {
         label: 'Modules & abonnement',
         icon: PackageCheck,
         href: '/settings/billing',
@@ -161,9 +171,16 @@ const navSections: NavSection[] = [
 export function AdminFrame({
   children,
   currentUser,
+  tenantSwitcher,
+  canManageUsers,
 }: {
   children: ReactNode;
   currentUser: { name: string; email: string };
+  tenantSwitcher: {
+    tenants: AvailableTenant[];
+    currentEstablishmentId: string;
+  };
+  canManageUsers: boolean;
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -206,7 +223,10 @@ export function AdminFrame({
             </AppSidebarFooter>
           }
         >
-          <AdminNavigation pathname={pathname} />
+          <AdminNavigation
+            pathname={pathname}
+            canManageUsers={canManageUsers}
+          />
         </AppSidebar>
       }
     >
@@ -237,6 +257,11 @@ export function AdminFrame({
           }
           actions={
             <>
+              <TenantSwitcher
+                tenants={tenantSwitcher.tenants}
+                currentEstablishmentId={tenantSwitcher.currentEstablishmentId}
+                className="hidden w-56 md:flex"
+              />
               <IconButton
                 className="relative text-primary/60"
                 aria-label="Notifications"
@@ -285,6 +310,8 @@ export function AdminFrame({
       <MobileMenuDrawer
         open={mobileMenuOpen}
         pathname={pathname}
+        tenantSwitcher={tenantSwitcher}
+        canManageUsers={canManageUsers}
         onClose={() => setMobileMenuOpen(false)}
       />
     </AppShell>
@@ -318,9 +345,11 @@ function AdminBrand() {
 
 function AdminNavigation({
   pathname,
+  canManageUsers,
   onNavigate,
 }: {
   pathname: string;
+  canManageUsers: boolean;
   onNavigate?: () => void;
 }) {
   return (
@@ -336,14 +365,16 @@ function AdminNavigation({
             </p>
           )}
           <div className="grid gap-0.5">
-            {section.items.map((item) => (
-              <NavLink
-                key={item.label}
-                item={item}
-                pathname={pathname}
-                onNavigate={onNavigate}
-              />
-            ))}
+            {section.items
+              .filter((item) => !item.requiresUserManagement || canManageUsers)
+              .map((item) => (
+                <NavLink
+                  key={item.label}
+                  item={item}
+                  pathname={pathname}
+                  onNavigate={onNavigate}
+                />
+              ))}
           </div>
         </div>
       ))}
@@ -354,10 +385,17 @@ function AdminNavigation({
 function MobileMenuDrawer({
   open,
   pathname,
+  tenantSwitcher,
+  canManageUsers,
   onClose,
 }: {
   open: boolean;
   pathname: string;
+  tenantSwitcher: {
+    tenants: AvailableTenant[];
+    currentEstablishmentId: string;
+  };
+  canManageUsers: boolean;
   onClose: () => void;
 }) {
   return (
@@ -405,7 +443,16 @@ function MobileMenuDrawer({
           Menu admin YuTa
         </h2>
         <nav className="min-h-0 flex-1 overflow-y-auto p-4">
-          <AdminNavigation pathname={pathname} onNavigate={onClose} />
+          <TenantSwitcher
+            tenants={tenantSwitcher.tenants}
+            currentEstablishmentId={tenantSwitcher.currentEstablishmentId}
+            className="mb-4 md:hidden"
+          />
+          <AdminNavigation
+            pathname={pathname}
+            canManageUsers={canManageUsers}
+            onNavigate={onClose}
+          />
         </nav>
         <AppSidebarFooter>
           <Button

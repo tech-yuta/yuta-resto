@@ -36,6 +36,10 @@ Date: 2026-07-19
 - Admin now uses a database-backed HttpOnly session and connects its verified
   user membership to `resolveAuthenticatedTenant`. The POS staff-selection
   cookie remains deliberately separate and is not authentication.
+- Admin users can switch between their active establishment memberships.
+  Owners can manage organization-wide establishment memberships from
+  `/settings/users`; administrators are limited to the selected establishment.
+  Membership mutations are audited and suspension revokes matching sessions.
 
 ## Remaining work
 

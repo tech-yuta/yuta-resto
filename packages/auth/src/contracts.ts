@@ -20,6 +20,11 @@ export const resetPasswordInputSchema = z.object({
   password: passwordSchema,
 });
 
+export const switchTenantInputSchema = z.object({
+  establishmentId: z.string().uuid(),
+  returnTo: z.string().optional(),
+});
+
 export type AuthenticatedSession = Readonly<{
   id: string;
   userId: string;
@@ -30,12 +35,20 @@ export type AuthenticatedSession = Readonly<{
   expiresAt: Date;
 }>;
 
+export type AvailableTenant = Readonly<{
+  organizationId: string;
+  organizationName: string;
+  establishmentId: string;
+  establishmentName: string;
+}>;
+
 export type AuthErrorCode =
   | 'INVALID_CREDENTIALS'
   | 'LOGIN_RATE_LIMITED'
   | 'SESSION_INVALID'
   | 'SESSION_EXPIRED'
   | 'NO_ACTIVE_MEMBERSHIP'
+  | 'TENANT_ACCESS_DENIED'
   | 'RESET_TOKEN_INVALID';
 
 export class AuthError extends Error {

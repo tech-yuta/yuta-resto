@@ -294,7 +294,7 @@ export async function seedPosData(seedDb?: DbClient): Promise<SeedContext> {
   });
 
   for (const membership of [
-    { userId: adminUser.id, role: 'admin' as const },
+    { userId: adminUser.id, role: 'owner' as const },
     { userId: staffUser.id, role: 'employee' as const },
     { userId: kitchenUser.id, role: 'kitchen' as const },
   ]) {
@@ -742,7 +742,7 @@ async function upsertMembership(
     userId: string;
     organizationId: string;
     establishmentId: string;
-    role: 'admin' | 'employee' | 'kitchen';
+    role: 'owner' | 'admin' | 'employee' | 'kitchen';
   },
 ): Promise<void> {
   const existing = await seedDb.query.tenantMemberships.findFirst({
