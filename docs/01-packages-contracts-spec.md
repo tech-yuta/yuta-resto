@@ -81,7 +81,8 @@ Forbidden dependencies:
 
 - `next`.
 - `react`.
-- `@yuta/db`.
+- `@yuta/db`, `@yuta/db-cloud`, `@yuta/db-pos`, and any future database
+  package.
 - `@yuta/ui`.
 - `@yuta/core`.
 - Node-only APIs such as `fs`, `path`, or database drivers.
@@ -91,7 +92,8 @@ Preferred dependency graph:
 ```text
 apps/* ───────────────→ @yuta/contracts
 @Yuta/core ───────────→ @yuta/contracts (types only when useful)
-@Yuta/db ─────────────→ no dependency required
+@Yuta/db-cloud ───────→ may consume explicit contracts
+@Yuta/db-pos ─────────→ may consume explicit contracts
 @Yuta/contracts ──────→ zod only
 ```
 
@@ -183,9 +185,9 @@ Public exports must be intentional. Internal helpers should not be exported from
 Use the suffix `Schema`:
 
 ```ts
-createReservationInputSchema
-reservationResponseSchema
-kitchenOrderCreatedEventSchema
+createReservationInputSchema;
+reservationResponseSchema;
+kitchenOrderCreatedEventSchema;
 ```
 
 ### TypeScript types
@@ -221,7 +223,7 @@ Avoid vague names such as `ReservationData`, `OrderObject`, or `CommonType`.
 For the first implementation, identifiers may remain UUID strings:
 
 ```ts
-import { z } from "zod";
+import { z } from 'zod';
 
 export const organizationIdSchema = z.string().uuid();
 export const establishmentIdSchema = z.string().uuid();
@@ -277,8 +279,8 @@ export const apiErrorSchema = z.object({
     code: z.string().min(1),
     message: z.string().min(1),
     fieldErrors: z.record(z.array(z.string())).optional(),
-    requestId: z.string().optional()
-  })
+    requestId: z.string().optional(),
+  }),
 });
 
 export type ApiError = z.infer<typeof apiErrorSchema>;
@@ -325,11 +327,8 @@ export const pageInfoSchema = z.object({
 The public client may specify an establishment reference, but the server must validate it against the tenant resolved from hostname or authenticated membership.
 
 ```ts
-import { z } from "zod";
-import {
-  establishmentIdSchema,
-  isoDateTimeSchema,
-} from "../common";
+import { z } from 'zod';
+import { establishmentIdSchema, isoDateTimeSchema } from '../common';
 
 export const createReservationInputSchema = z.object({
   establishmentId: establishmentIdSchema,
@@ -356,17 +355,15 @@ The contract validates shape only. It does not decide whether the requested slot
 
 ```ts
 export const reservationStatusSchema = z.enum([
-  "pending",
-  "confirmed",
-  "seated",
-  "completed",
-  "cancelled",
-  "no_show",
+  'pending',
+  'confirmed',
+  'seated',
+  'completed',
+  'cancelled',
+  'no_show',
 ]);
 
-export type ReservationStatus = z.infer<
-  typeof reservationStatusSchema
->;
+export type ReservationStatus = z.infer<typeof reservationStatusSchema>;
 ```
 
 Do not duplicate these literal values in applications.
@@ -396,13 +393,13 @@ Initial order contracts should focus on fields shared by POS, API, and display.
 
 ```ts
 export const orderStatusSchema = z.enum([
-  "draft",
-  "submitted",
-  "in_preparation",
-  "ready",
-  "served",
-  "paid",
-  "cancelled",
+  'draft',
+  'submitted',
+  'in_preparation',
+  'ready',
+  'served',
+  'paid',
+  'cancelled',
 ]);
 
 export const orderItemInputSchema = z.object({
@@ -414,7 +411,7 @@ export const orderItemInputSchema = z.object({
 
 export const createOrderInputSchema = z.object({
   establishmentId: establishmentIdSchema,
-  serviceType: z.enum(["dine_in", "takeaway", "delivery"]),
+  serviceType: z.enum(['dine_in', 'takeaway', 'delivery']),
   tableId: z.string().uuid().optional(),
   items: z.array(orderItemInputSchema).min(1),
   idempotencyKey: z.string().uuid(),
@@ -447,7 +444,7 @@ export const eventEnvelopeSchema = z.object({
 
 ```ts
 export const kitchenOrderCreatedEventSchema = eventEnvelopeSchema.extend({
-  type: z.literal("kitchen.order.created"),
+  type: z.literal('kitchen.order.created'),
   payload: z.object({
     orderId: z.string().uuid(),
     orderNumber: z.string().min(1),
@@ -573,7 +570,7 @@ Recommended policy:
 Example:
 
 ```ts
-it("rejects a reservation with partySize 0", () => {
+it('rejects a reservation with partySize 0', () => {
   const result = createReservationInputSchema.safeParse({
     // valid fields omitted for brevity
     partySize: 0,
@@ -593,7 +590,7 @@ it("rejects a reservation with partySize 0", () => {
 import {
   createReservationInputSchema,
   type PublicReservationResponse,
-} from "@yuta/contracts/reservations";
+} from '@yuta/contracts/reservations';
 ```
 
 ### `apps/yuta-pos`
@@ -602,7 +599,7 @@ import {
 import {
   createOrderInputSchema,
   type OrderStatus,
-} from "@yuta/contracts/orders";
+} from '@yuta/contracts/orders';
 ```
 
 ### `apps/yuta-display`
@@ -611,7 +608,7 @@ import {
 import {
   kitchenOrderCreatedEventSchema,
   type KitchenOrderCreatedEvent,
-} from "@yuta/contracts/display";
+} from '@yuta/contracts/display';
 ```
 
 ### Server route

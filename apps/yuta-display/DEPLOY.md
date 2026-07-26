@@ -1,5 +1,11 @@
 # yuta-display production deploy
 
+> **Database reset note:** This guide uses the target
+> `DISPLAY_DATABASE_URL`. The current application and compose files still use
+> the legacy `DATABASE_URL` until the code phase of the architecture reset is
+> completed. Do not perform a production deployment between the documentation
+> and code phases.
+
 This production compose file does not start PostgreSQL. It expects an existing
 PostgreSQL database reachable from the mini PC.
 
@@ -53,18 +59,18 @@ First check whether the application user or database already exists:
 Create a dedicated user and database only if they do not already exist:
 
 ```sql
-CREATE USER yuta WITH PASSWORD 'replace_with_a_strong_password';
-CREATE DATABASE luna_display OWNER yuta;
-GRANT ALL PRIVILEGES ON DATABASE luna_display TO yuta;
+CREATE USER yuta_display WITH PASSWORD 'replace_with_a_strong_password';
+CREATE DATABASE luna_display OWNER yuta_display;
+GRANT ALL PRIVILEGES ON DATABASE luna_display TO yuta_display;
 \q
 ```
 
-If `CREATE USER` fails because `yuta` already exists, only create the database
-and grant privileges:
+If `CREATE USER` fails because `yuta_display` already exists, only create the
+database and grant privileges:
 
 ```sql
-CREATE DATABASE luna_display OWNER yuta;
-GRANT ALL PRIVILEGES ON DATABASE luna_display TO yuta;
+CREATE DATABASE luna_display OWNER yuta_display;
+GRANT ALL PRIVILEGES ON DATABASE luna_display TO yuta_display;
 ```
 
 ### 1.2 Create the production env file
@@ -72,12 +78,12 @@ GRANT ALL PRIVILEGES ON DATABASE luna_display TO yuta;
 Create an env file on the server, for example `apps/yuta-display/.env.production`:
 
 ```env
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/luna_display
+DISPLAY_DATABASE_URL=postgres://yuta_display:encoded_password@luna-postgres:5432/luna_display
 POSTGRES_NETWORK=postgres_default
 ```
 
 If the password contains special characters, URL-encode it before putting it in
-`DATABASE_URL`.
+`DISPLAY_DATABASE_URL`.
 
 `POSTGRES_NETWORK` must match the Docker network used by the existing
 PostgreSQL container. In Portainer, this is visible in the Network list. For
@@ -87,14 +93,14 @@ example, if the PostgreSQL stack is named `postgres`, the network is often:
 postgres_default
 ```
 
-The host part of `DATABASE_URL` must be the PostgreSQL container or service name
+The host part of `DISPLAY_DATABASE_URL` must be the PostgreSQL container or service name
 on that Docker network. Common examples:
 
 ```env
-DATABASE_URL=postgres://yuta:encoded_password@postgres:5432/luna_display
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/luna_display
-DATABASE_URL=postgres://yuta:encoded_password@db:5432/luna_display
-DATABASE_URL=postgres://yuta:encoded_password@postgres-postgres-1:5432/luna_display
+DISPLAY_DATABASE_URL=postgres://yuta_display:encoded_password@postgres:5432/luna_display
+DISPLAY_DATABASE_URL=postgres://yuta_display:encoded_password@luna-postgres:5432/luna_display
+DISPLAY_DATABASE_URL=postgres://yuta_display:encoded_password@db:5432/luna_display
+DISPLAY_DATABASE_URL=postgres://yuta_display:encoded_password@postgres-postgres-1:5432/luna_display
 ```
 
 ### 1.3 Make sure the display app can reach PostgreSQL
@@ -138,7 +144,7 @@ If migration still fails without a clear error, run this debug command and
 inspect the output above the final pnpm error:
 
 ```bash
-docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build --entrypoint sh migrate -lc 'pwd && ls -la drizzle && node -e "const u=new URL(process.env.DATABASE_URL); console.log({host:u.hostname, port:u.port, database:u.pathname.slice(1), user:u.username})" && pnpm db:migrate'
+docker compose --env-file apps/yuta-display/.env.production -f apps/yuta-display/docker-compose.yml --profile migrate run --rm --build --entrypoint sh migrate -lc 'pwd && ls -la drizzle && node -e "const u=new URL(process.env.DISPLAY_DATABASE_URL); console.log({host:u.hostname, port:u.port, database:u.pathname.slice(1), user:u.username})" && pnpm db:migrate'
 ```
 
 ### 1.5 Build and start the display app
@@ -219,7 +225,7 @@ http://SERVER_IP:3002/display
 
 If the app cannot connect to PostgreSQL, verify:
 
-- `DATABASE_URL` host, port, user, password, and database name.
+- `DISPLAY_DATABASE_URL` host, port, user, password, and database name.
 - `POSTGRES_NETWORK` matches the existing PostgreSQL Docker network.
 - The PostgreSQL container name or service name is resolvable on that network.
 - The database exists before running migrations.
@@ -249,7 +255,7 @@ yuta-display
 In the stack environment variables, add:
 
 ```env
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/luna_display
+DISPLAY_DATABASE_URL=postgres://yuta_display:encoded_password@luna-postgres:5432/luna_display
 POSTGRES_NETWORK=postgres_default
 ```
 

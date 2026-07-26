@@ -1,8 +1,16 @@
 # Admin Authentication
 
 YuTa Admin uses server-side, database-backed sessions. Authentication is
-implemented by `@yuta/auth`, `@yuta/db`, and the server boundary in
-`apps/admin/src/server/auth`.
+implemented by `@yuta/auth`, the cloud database boundary, and the server
+boundary in `apps/admin/src/server/auth`.
+
+The target persistence package is `@yuta/db-cloud`. Current imports from the
+legacy `@yuta/db` are transitional and must be replaced during the database
+architecture reset.
+
+Cloud authentication is not used by `apps/yuta-pos`, `apps/site-agent`, or
+`apps/yuta-display`. POS staff authentication is local and uses local users,
+roles, PIN sessions, and audit records through `site-agent`/`db-pos`.
 
 ## Sign-in flow
 
@@ -116,8 +124,8 @@ it never stores plaintext passwords or session tokens.
 Run the database migration and seed before signing in:
 
 ```bash
-corepack pnpm --filter @yuta/db db:migrate
-corepack pnpm --filter @yuta/db db:seed
+pnpm db:cloud:migrate
+pnpm --filter @yuta/db-cloud db:seed
 ```
 
 Default development login:

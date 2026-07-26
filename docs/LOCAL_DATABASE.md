@@ -1,155 +1,183 @@
-# Local Database
+# Local Database Development
 
-Migration `0006_colorful_supreme_intelligence.sql` adds structured item quick
-instructions, item variants, allergen codes, allergy severity, and separate
-kitchen allergy confirmation audit fields. Existing free-text and legacy
-allergy data remain readable.
+## Status
 
-Migration `0007_overjoyed_spencer_smythe.sql` adds the shared reputation model
-for Google reviews, direct customer feedback, replies, AI analyses, incidents,
-connectors, settings, internal notes, and audit events.
+This document describes the target database-development workflow defined by
+`docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`.
 
-Migration `0008_elite_the_twelve.sql` adds admin password identity fields,
-database-backed sessions, password reset tokens, and login rate-limit records.
+The repository still contains the legacy `packages/db`, migration history, and
+`DATABASE_URL` usage. Those commands remain transitional until the code reset
+is implemented. Do not add new schema or migrations to the legacy package.
 
-Migration `0009_sparkling_galactus.sql` adds authentication and membership
-administration audit events.
+## Database boundaries
 
-This document describes the local development database for YuTa operations apps such as `apps/yuta-pos` and `apps/admin`.
+Development uses three isolated database boundaries:
 
-Production is different. On the mini server, YuTa apps must use the existing `luna-postgres` container and the external `postgres_default` Docker network. Follow `docs/DEPLOYMENT.md` for production.
+| Boundary           | Owner                                 | Connection variable    | Data                                                                |
+| ------------------ | ------------------------------------- | ---------------------- | ------------------------------------------------------------------- |
+| Cloud              | `packages/db-cloud`                   | `CLOUD_DATABASE_URL`   | Auth, organizations, establishments, reputation, reservations, SaaS |
+| Local POS          | `apps/site-agent` + `packages/db-pos` | `POS_DATABASE_URL`     | Orders, payments, kitchen, printers, local users, local catalog     |
+| Standalone display | `apps/yuta-display/src/db`            | `DISPLAY_DATABASE_URL` | Display-owned media and playlist state                              |
 
-## Local Development
+They must not share a database name, Docker volume, migration directory, or
+Drizzle configuration.
 
-Start a dedicated PostgreSQL container from the repository root:
+The POS and display databases are independent even when they run on the same
+local PostgreSQL server.
 
-```bash
-docker compose -f docker-compose.db.dev.yml up -d
-```
-
-Default local connection:
-
-```env
-DATABASE_URL=postgres://yuta:yuta@localhost:55433/yuta_resto
-```
-
-Create `packages/db/.env.local` with that value:
-
-```env
-DATABASE_URL=postgres://yuta:yuta@localhost:55433/yuta_resto
-```
-
-Run migrations:
-
-```bash
-corepack pnpm --filter @yuta/db db:migrate
-```
-
-When menu pricing schema changes, run migrations before re-importing Luna menu
-data. Dynamic Luna formulas such as `Menu Express`, `Menu Gourmand`, and
-`Combo Ete` require the combo pricing columns added after the initial POS
-schema:
-
-```bash
-corepack pnpm --filter @yuta/db db:migrate
-corepack pnpm --filter @yuta/db exec tsx src/import-luna-menu.ts
-```
-
-Seed development data:
-
-```bash
-corepack pnpm --filter @yuta/db db:seed
-```
-
-To rebuild the local POS with the current LUNA menu, seed the tenant and users
-first, then clean-import the menu:
-
-```bash
-corepack pnpm --filter @yuta/db db:seed
-corepack pnpm --filter @yuta/db exec tsx src/import-luna-menu.ts --clean
-```
-
-The clean import deletes local orders, payments, print jobs, combo rules, and
-menu data before recreating the LUNA catalog. In `Boissons`, each soft drink is
-a separate POS item; the only beer items are `Biere Hanoi` and `Biere Saigon`.
-
-The seed is idempotent. It creates the initial multi-tenant records before the
-existing POS sample data:
-
-- Organization: `FAST VIET`.
-- Establishment: `LUNA Chasseneuil-du-Poitou`.
-- Development domain: `luna.localhost`.
-- Public entitlements: `menu.public` and `reservations.public`.
-- Memberships for the seeded admin, staff, and kitchen users.
-- Reputation entitlement: `reputation.enabled`.
-- LUNA reputation settings and representative Phase 1 feedback records.
-- A password hash for `admin@yuta.local`. The default development password is
-  `ChangeMe-YuTa-2026!`; set `YUTA_SEED_ADMIN_PASSWORD` before seeding to
-  override it.
-
-Use `luna.localhost` explicitly when testing public hostname resolution.
-Unknown hosts intentionally return `TENANT_NOT_FOUND`; there is no fallback to
-the LUNA tenant.
-
-The public feedback route has a development-only localhost resolver so the
-seeded form can be tested at:
+## Target development topology
 
 ```text
-http://localhost:3000/luna/feedback
+docker-compose.cloud.dev.yml
+└── cloud-db (yuta_cloud)
+
+docker-compose.local.dev.yml
+├── pos-db (yuta_pos)
+├── site-agent
+└── yuta-pos
+
+apps/yuta-display/docker-compose.dev.yml
+└── display-db (yuta_display)
 ```
 
-This slug resolver is disabled in production. See `docs/REPUTATION.md` for the
-production hostname and privacy rules.
+Example local-only connection values:
 
-Stop the local database:
+```env
+CLOUD_DATABASE_URL=postgres://yuta_cloud:yuta_cloud@localhost:55431/yuta_cloud
+POS_DATABASE_URL=postgres://yuta_pos:yuta_pos@localhost:55432/yuta_pos
+DISPLAY_DATABASE_URL=postgres://yuta_display:yuta_display@localhost:55433/yuta_display
+```
+
+These are development examples only. Do not reuse development credentials in
+production.
+
+## Environment ownership
+
+- Cloud server code may receive `CLOUD_DATABASE_URL`.
+- Only `site-agent` may receive `POS_DATABASE_URL`.
+- POS browser/client code receives no database URL.
+- Standalone display server code may receive `DISPLAY_DATABASE_URL`.
+- No application environment file may contain both cloud and POS connection
+  strings.
+- A root orchestration file may reference multiple URLs only when it does not
+  expose them to application bundles.
+- Validate runtime environment variables with Zod at startup.
+
+## Schema workflow during the reset
+
+While the new schemas are being designed, use disposable development
+databases and schema push commands:
 
 ```bash
-docker compose -f docker-compose.db.dev.yml down
+pnpm db:cloud:push
+pnpm db:pos:push
+pnpm --filter @yuta/display db:push
 ```
 
-Remove local database data and start fresh:
+Do not generate a chain of compatibility migrations from the legacy shared
+schema. Do not backfill legacy development data.
+
+After the target schemas are accepted:
+
+1. Reset all disposable development databases.
+2. Delete temporary generated migrations.
+3. Generate `packages/db-cloud/drizzle/0000_initial.sql`.
+4. Generate `packages/db-pos/drizzle/0000_initial.sql`.
+5. Generate `apps/yuta-display/drizzle/0000_initial.sql`.
+6. Create fresh databases using migrations only.
+7. Run architecture, database, and integration tests.
+
+## Root scripts
+
+The code reset must provide:
+
+```text
+db:cloud:push
+db:cloud:generate
+db:cloud:migrate
+db:pos:push
+db:pos:generate
+db:pos:migrate
+db:reset:dev
+architecture:check
+```
+
+Display migration scripts remain in `@yuta/display` because its database has
+only one owning application.
+
+## Guarded development reset
+
+`db:reset:dev` must:
+
+- refuse to run when `NODE_ENV=production`;
+- require `CONFIRM_DB_RESET=true`;
+- target only explicitly named development services and volumes;
+- recreate separate cloud, POS, and display development databases;
+- apply current schemas or baseline migrations;
+- optionally seed clearly marked development data.
+
+Never add a production reset script.
+
+Conceptual usage after implementation:
 
 ```bash
-docker compose -f docker-compose.db.dev.yml down -v
+CONFIRM_DB_RESET=true pnpm db:reset:dev
 ```
 
-## Local Defaults
-
-```txt
-Container: yuta-postgres-dev
-Database:  yuta_resto
-User:      yuta
-Password:  yuta
-Host port: 55433
-```
-
-The host port is `55433` to avoid conflicts with a local PostgreSQL server or other projects using port `5432` or `5433`.
-
-If Windows reserves that port range, Docker may fail with a message like `ports are not available`. Use another free host port and keep app env files in sync:
+On PowerShell:
 
 ```powershell
-$env:POSTGRES_PORT='15432'
-docker compose -f docker-compose.db.dev.yml up -d --force-recreate postgres
+$env:CONFIRM_DB_RESET = 'true'
+pnpm db:reset:dev
+Remove-Item Env:CONFIRM_DB_RESET
 ```
 
-```env
-DATABASE_URL=postgres://yuta:yuta@localhost:15432/yuta_resto
+## Seed ownership
+
+Cloud seed data may include:
+
+- a demo organization;
+- a demo establishment;
+- a cloud owner user and membership;
+- demo feature flags;
+- clearly marked mock reviews.
+
+POS seed data may include:
+
+- a local restaurant profile;
+- tables, categories, products, and combo rules;
+- local employee roles;
+- printer placeholders;
+- sample development orders.
+
+Display seed data may include placeholder media records only when the
+corresponding local files exist.
+
+Never seed Google OAuth tokens. Never use the cloud organization seed to
+initialize POS data.
+
+## Fresh-install verification
+
+Before the first real deployment, verify:
+
+- each active boundary builds from its own `0000_initial`;
+- cloud schema contains no POS operational tables;
+- POS schema contains no cloud auth, OAuth, organization-membership, or
+  subscription tables;
+- display schema contains no POS mirror tables;
+- POS operates when cloud services and Internet are unavailable;
+- no client bundle contains a DB client or connection string;
+- UUIDv7 business IDs are generated by application/service code.
+
+## Legacy warning
+
+Until the code phase is complete, searches will still find:
+
+```text
+packages/db
+@yuta/db
+DATABASE_URL
 ```
 
-## Production Reminder
-
-Do not use `docker-compose.db.dev.yml` in production.
-
-Production apps should use:
-
-```env
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
-POSTGRES_NETWORK=postgres_default
-```
-
-Production compose files belong next to each app, for example:
-
-```txt
-apps/yuta-pos/docker-compose.yml
-apps/yuta-pos/.env.production
-```
+Their presence records unfinished implementation work, not an approved
+architecture. New code must target the explicit database boundaries above.

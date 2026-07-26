@@ -8,17 +8,32 @@ This is the YuTa internal restaurant tool monorepo.
 apps/admin          — Admin dashboard (port 3001)
 apps/web            — Public web app (port 3000)
 apps/yuta-display   — Digital signage display (port 3002)
-apps/yuta-pos       — Internal restaurant POS (planned)
-packages/db         — Shared database package for YuTa ecosystem apps
+apps/yuta-pos       — Local-only restaurant POS client
+apps/site-agent     — Target local POS API/device integration boundary
+packages/db-cloud   — Target cloud SaaS database package
+packages/db-pos     — Target local POS database package
 packages/core       — Shared business logic, tool registry
 packages/ui         — Shared UI component library (@yuta/ui)
 ```
 
 Future apps may include: `yuta-staff`, `yuta-reservation`, `yuta-crm`.
 
-`apps/yuta-display` is intentionally separate from the main YuTa operations
-ecosystem and keeps its own database setup. New operations apps such as
-`apps/yuta-pos` should use the shared `packages/db` package.
+The repository is transitioning away from the legacy shared `packages/db`.
+The authoritative target architecture is
+`docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`.
+
+- `apps/admin` and server-side cloud features in `apps/web` use
+  `packages/db-cloud`.
+- `apps/yuta-pos` accesses local operational data through `apps/site-agent`;
+  `site-agent` is the runtime owner of `packages/db-pos`.
+- POS operational data must never be stored in or synchronized to the cloud
+  database.
+- `apps/yuta-display` is a standalone local product and keeps its single-owner
+  database under `apps/yuta-display/src/db`.
+- Do not create `packages/db-display` unless a second legitimate server-side
+  consumer needs the display schema or repositories.
+- Do not introduce a compatibility package that re-exports the new databases
+  through `@yuta/db`.
 
 ---
 
@@ -34,24 +49,24 @@ NEVER introduce MUI, Ant Design, Chakra UI, Mantine, or any other component libr
 
 Use semantic Tailwind CSS token classes. Never use raw hex values in `className` or `style={{}}`. Core UI components must use role-based tokens, not product/story color names.
 
-| Token family | Purpose |
-| ------------- | ------- |
-| `brand-*` | Brand palette foundation |
-| `neutral-*` | Neutral palette foundation |
-| `bg-canvas` | Page background |
-| `bg-surface` | Default card, panel, input surface |
-| `bg-surface-muted` | Subtle backgrounds and hover states |
-| `bg-surface-selected` | Selected or brand-tinted soft surface |
-| `text-primary` | Primary text |
-| `text-secondary` | Secondary text |
-| `text-muted` | Muted text |
-| `text-inverse` | Text on dark or solid backgrounds |
-| `border-border-default` | Default borders and dividers |
-| `border-border-strong` | Stronger borders |
-| `bg-action-primary` | Primary action background |
-| `bg-action-danger` | Destructive action background |
-| `ring-focus-ring` | Focus rings |
-| `status-*` | Success, warning, danger, and info states |
+| Token family            | Purpose                                   |
+| ----------------------- | ----------------------------------------- |
+| `brand-*`               | Brand palette foundation                  |
+| `neutral-*`             | Neutral palette foundation                |
+| `bg-canvas`             | Page background                           |
+| `bg-surface`            | Default card, panel, input surface        |
+| `bg-surface-muted`      | Subtle backgrounds and hover states       |
+| `bg-surface-selected`   | Selected or brand-tinted soft surface     |
+| `text-primary`          | Primary text                              |
+| `text-secondary`        | Secondary text                            |
+| `text-muted`            | Muted text                                |
+| `text-inverse`          | Text on dark or solid backgrounds         |
+| `border-border-default` | Default borders and dividers              |
+| `border-border-strong`  | Stronger borders                          |
+| `bg-action-primary`     | Primary action background                 |
+| `bg-action-danger`      | Destructive action background             |
+| `ring-focus-ring`       | Focus rings                               |
+| `status-*`              | Success, warning, danger, and info states |
 
 ### Available `@yuta/ui` components
 
@@ -225,9 +240,16 @@ the user explicitly requests a different production topology.
 
 Key defaults:
 
-- Production apps use the existing PostgreSQL container `luna-postgres`.
-- Production apps join the external Docker network `postgres_default`.
-- Use Docker hostnames in `DATABASE_URL`, never container IP addresses.
+- Cloud and local runtime families use separate database names, credentials,
+  migrations, and failure domains.
+- Cloud apps receive `CLOUD_DATABASE_URL`; only `site-agent` receives
+  `POS_DATABASE_URL`; standalone display server code receives
+  `DISPLAY_DATABASE_URL`.
+- Browser bundles receive no database connection string.
+- Local deployments may use the existing PostgreSQL server and
+  `postgres_default` network, but cloud, POS, and display databases must remain
+  logically isolated.
+- Use Docker hostnames in database URLs, never container IP addresses.
 - Keep production env files next to the app as `apps/<app-name>/.env.production`.
 - Run Docker Compose from the repository root with `--env-file` and `-f`.
 - Use a one-shot `migrate` service for database migrations.

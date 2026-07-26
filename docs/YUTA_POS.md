@@ -2,7 +2,18 @@
 
 `apps/yuta-pos` is the internal restaurant POS application for YuTa.
 
-It is part of the YuTa restaurant operations ecosystem and should share database access through `packages/db`. It must not reuse or modify the database setup inside `apps/yuta-display`; the display app is intentionally separate.
+It is a local-only client. Its operational data must remain at the restaurant
+and must never be stored in or synchronized to the cloud database.
+
+The target runtime boundary is:
+
+```txt
+apps/yuta-pos -> apps/site-agent -> packages/db-pos -> local PostgreSQL
+```
+
+The current direct use of the legacy `packages/db` is transitional and must be
+removed by the database architecture reset. The POS must not reuse or modify
+the standalone database inside `apps/yuta-display`.
 
 ## Scope
 
@@ -93,12 +104,12 @@ base for Open Graph, Twitter, manifest, and icon URLs.
 ## Production Deployment
 
 Production deployment uses `apps/yuta-pos/Dockerfile` and
-`apps/yuta-pos/docker-compose.yml`. The runtime service is `pos`; database
-migrations run through the compose `migrate` profile and execute
-`packages/db` migrations against the shared `yuta_resto` database.
+`apps/yuta-pos/docker-compose.yml`. The target local stack contains the POS
+client, `site-agent`, and a POS-only PostgreSQL database. Database migrations
+run through a one-shot migrate service using `packages/db-pos`.
 
-Routes that read POS data directly, including `/pos`, must remain dynamically
-rendered so Docker image builds never require a live database connection.
+The POS browser/server bundle must receive neither `POS_DATABASE_URL` nor
+`CLOUD_DATABASE_URL`. Only `site-agent` receives `POS_DATABASE_URL`.
 
 Follow `docs/DEPLOYMENT.md` for the exact Luna server commands and required
 `apps/yuta-pos/.env.production` values.
@@ -109,32 +120,37 @@ Use:
 
 ```txt
 apps/yuta-pos
-packages/db
+apps/site-agent
+packages/db-pos
+packages/contracts
 packages/core
 packages/ui
 ```
 
-`packages/db` owns POS database schema, migrations, and shared database access for YuTa ecosystem apps. `apps/yuta-pos` should consume exported schema and service helpers instead of defining a private POS schema inside the app.
+`packages/db-pos` owns the local POS schema, migrations, and repositories.
+`apps/site-agent` is the only runtime owner of POS database access.
+`apps/yuta-pos` communicates with `site-agent` through contracts from
+`packages/contracts`.
 
-`packages/core/src/pos.ts` owns transaction boundaries for service-time
-operations that combine business data and print jobs. Kitchen sends and
-payment capture use application-provided UUID idempotency keys. Replaying the
-same command returns the existing payment or print job; reusing a key with
-different input is rejected. The order row is locked while these operations
-run so competing payments for one order are serialized. Order cancellation,
-split creation, and split cancellation use the same order lock and transaction
-boundary, preventing them from interleaving with payment capture.
+`packages/core` contains pure POS calculations and validation only. Database
+transactions for kitchen sends, payment capture, cancellation, splitting, and
+print-job creation belong to application services inside `site-agent`.
+Commands use UUIDv7 idempotency keys supplied through the local API. Replaying
+the same command returns the existing result; reusing a key with different
+input is rejected.
 
-`apps/admin` is the back-office surface for POS setup and reporting:
+POS setup and reporting are local workflows, not cloud admin workflows:
 
 ```txt
-Staff users
-Menu categories
-Menu items
+Local POS users and PIN roles
+Menu categories and items
 Combo rules
-Daily orders
-Daily revenue
+Printers and printer routes
+Daily orders and payments
 ```
+
+These workflows must be implemented in a local UI backed by `site-agent`.
+They must be removed from `apps/admin`.
 
 Combo rules support two pricing modes:
 
@@ -273,11 +289,10 @@ Run continuously:
 corepack pnpm --filter @yuta/core print:worker:watch
 ```
 
-Production Docker Compose runs the continuous worker as the `print-worker`
-service. The worker writes a heartbeat after every successful database poll;
-Docker marks it unhealthy when the heartbeat becomes stale. The current worker
-still produces mock text output. Physical printer transport remains pending a
-hardware and connection decision.
+The target `site-agent` owns the print queue and printer integration. During
+the transition, the existing continuous `print-worker` service remains a
+legacy implementation. Physical printer transport remains pending a hardware
+and connection decision.
 
 Optional env values:
 
@@ -291,14 +306,12 @@ PRINT_WORKER_FAIL_RATE=0
 `PRINT_WORKER_OUTPUT_DIR` makes the mock printer write one text file per job.
 Without it, the worker only updates job status in the database.
 
-## Multi-tenant foundation
+## Local installation identity
 
-The shared database now contains organizations, establishments, domains,
-memberships, and establishment entitlements. The initial development seed is
-`FAST VIET` / `LUNA Chasseneuil-du-Poitou`.
+The POS database is single-site and is not cloud multi-tenant. POS tables do
+not use `organization_id`, `establishment_id`, or `@yuta/tenant`.
 
-POS order and menu repositories are not tenant-scoped yet. The current POS
-staff-selection cookie is not authentication and must not be used to construct
-an authenticated tenant context. Admin now has its own trusted server-side
-session; POS tenant scoping remains pending until POS authentication exposes a
-trustworthy user ID.
+A single local installation record may identify the restaurant/site for
+licensing, backup metadata, and operator display. Local staff authentication
+uses local users, roles, and PIN sessions managed by `site-agent`; it does not
+reuse cloud memberships or cloud authentication sessions.

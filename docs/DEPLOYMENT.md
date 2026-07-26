@@ -1,280 +1,250 @@
-# YuTa Production Deployment Conventions
+# YuTa Deployment Conventions
 
-These conventions apply to YuTa apps deployed on the Luna mini server.
+## Status and authority
 
-## PostgreSQL
+This document describes the target deployment boundaries defined by
+`docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`.
 
-Production apps should use the existing PostgreSQL container unless there is a
-clear reason to provision a separate database server.
+Existing compose files still reflect parts of the legacy shared-database
+architecture and must be updated during the code phase. Do not deploy the
+legacy topology as the first real production architecture.
 
-- Existing PostgreSQL container: `luna-postgres`
-- Existing PostgreSQL Docker network: `postgres_default`
-- Do not use container IP addresses such as `172.x.x.x`; they can change.
-- Use Docker hostnames on the shared Docker network.
+## Runtime families
 
-Each app should use its own database in the shared PostgreSQL server:
+YuTa has separate cloud and restaurant-local runtime families.
 
-```txt
-luna_display
-yuta_resto
-yuta_reservation
-yuta_crm
+### Cloud
+
+```text
+apps/web
+apps/admin
+optional cloud worker
+        |
+packages/db-cloud
+        |
+managed cloud PostgreSQL
 ```
 
-Example production env:
+Cloud is multi-organization. It owns authentication, organizations,
+establishments, memberships, reputation/Google integrations, reservations,
+subscriptions, and other SaaS-only data.
+
+Cloud must contain no POS operational tables.
+
+### Restaurant local
+
+```text
+apps/yuta-pos --> apps/site-agent --> packages/db-pos --> local PostgreSQL
+                           |
+                           +--> printers/devices/backups
+```
+
+The local stack must operate without Internet or cloud availability.
+`site-agent` must never receive a cloud database connection string.
+
+### Standalone display
+
+```text
+apps/yuta-display --> apps/yuta-display/src/db --> display database
+```
+
+The display database is app-owned and independent from cloud and POS. Do not
+create `packages/db-display` unless another legitimate server-side consumer
+appears.
+
+## Database isolation
+
+Cloud, POS, and display databases must not share:
+
+- a database name;
+- a database user in real deployment;
+- credentials;
+- a Docker volume;
+- migration files;
+- a Drizzle configuration;
+- application environment files.
+
+They may use the same PostgreSQL server or Docker network on a mini server when
+operationally appropriate, but logical isolation remains mandatory.
+
+Use Docker service/container hostnames, never container IP addresses.
+
+## Environment files
+
+Keep production environment files next to the owning application and do not
+commit them.
+
+### Cloud
 
 ```env
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/luna_display
+CLOUD_DATABASE_URL=postgres://yuta_cloud:encoded_password@cloud-db:5432/yuta_cloud
+CLOUD_DATABASE_SSL=true
+AUTH_SECRET=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_TOKEN_ENCRYPTION_KEY=...
+```
+
+Only cloud server processes receive these values.
+
+### POS local server
+
+```env
+POS_DATABASE_URL=postgres://yuta_pos:encoded_password@pos-db:5432/yuta_pos
+SITE_AGENT_HOST=0.0.0.0
+SITE_AGENT_PORT=3100
+YUTA_INSTALLATION_ID=...
+YUTA_SITE_ID=...
+LOCAL_BACKUP_PATH=/var/backups/yuta-pos
+```
+
+Only `site-agent` and one-shot POS migration/maintenance services receive
+`POS_DATABASE_URL`. The POS browser/client receives no DB connection string.
+
+### Standalone display
+
+```env
+DISPLAY_DATABASE_URL=postgres://yuta_display:encoded_password@display-db:5432/yuta_display
+UPLOAD_DIR=/app/uploads/display
+```
+
+Only display server code and its migration service receive
+`DISPLAY_DATABASE_URL`.
+
+No application environment file may contain both cloud and POS database URLs.
+
+## Docker networks
+
+Local apps may join the existing external network:
+
+```env
 POSTGRES_NETWORK=postgres_default
 ```
 
-## Environment Files
-
-Keep production env files next to the app:
-
-```txt
-apps/<app-name>/.env.production
-```
-
-Do not commit `.env.production`.
-
-Run Docker Compose from the repository root and pass the env file explicitly:
-
-```bash
-docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml up -d --build <service>
-```
-
-## Docker Compose
-
-Production app compose files should join the existing PostgreSQL network:
+Example:
 
 ```yaml
 networks:
   postgres:
-    name: ${POSTGRES_NETWORK:-postgres_default}
     external: true
+    name: ${POSTGRES_NETWORK:-postgres_default}
 ```
 
-App and migration services should use that network:
+Joining the same Docker network does not authorize cross-database access.
+Create separate database users and grant each only its own database.
 
-```yaml
-services:
-  app:
-    networks:
-      - postgres
+## Compose invocation
 
-  migrate:
-    networks:
-      - postgres
-```
-
-## Migrations
-
-Use a one-shot migration service instead of running database migrations manually
-inside the app container.
-
-Always rebuild the migration image before running migrations so the latest
-migration files are included:
+Run Compose from the repository root and pass the intended environment file
+explicitly:
 
 ```bash
-docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml --profile migrate run --rm --build migrate
+docker compose \
+  --env-file apps/<app-name>/.env.production \
+  -f apps/<app-name>/docker-compose.yml \
+  <command>
 ```
 
-For Drizzle apps, make sure migration folders such as `drizzle/` are not
-excluded from the Docker build context.
-
-## Uploads
-
-If operators need to inspect uploaded files on the mini server, use a bind mount
-to the app source folder instead of a named Docker volume:
-
-```yaml
-volumes:
-  - ./public/uploads/<app>:/app/apps/<app-name>/public/uploads/<app>
-```
-
-Keep upload directories in Git with `.gitkeep`, but ignore uploaded media:
-
-```gitignore
-public/uploads/<app>/*
-!public/uploads/<app>/.gitkeep
-```
-
-## Next.js Runtime Uploads
-
-For uploaded files created at runtime, do not rely only on the static `public/`
-copy inside the production image. If a URL such as `/uploads/<app>/<filename>`
-returns `404` even though the file exists on disk, add an App Router `GET`
-route that reads from `UPLOAD_DIR` and returns the file.
-
-This keeps file serving aligned with the same runtime path used by the upload
-API.
-
-## Typical Update Flows
-
-Code-only update:
+Use a one-shot `migrate` service. Run it with `--build` so the image contains
+the latest migration files:
 
 ```bash
-cd /opt/luna/source/yuta-resto
-git pull
-docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml up -d --build <service>
+docker compose \
+  --env-file apps/<app-name>/.env.production \
+  -f apps/<app-name>/docker-compose.yml \
+  --profile migrate run --rm --build migrate
 ```
 
-Code and database update:
+Each migrate service must receive only the connection string for its own
+database boundary.
 
-```bash
-cd /opt/luna/source/yuta-resto
-git pull
-docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml --profile migrate run --rm --build migrate
-docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml up -d --build <service>
-```
+## Initial migrations
 
-## YuTa public website
+Before the first real deployment:
 
-Public website deployments should provide:
+- cloud uses `packages/db-cloud/drizzle/0000_initial.sql`;
+- POS uses `packages/db-pos/drizzle/0000_initial.sql`;
+- display uses `apps/yuta-display/drizzle/0000_initial.sql`.
 
-```env
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
-PUBLIC_FEEDBACK_IP_HASH_SALT=replace-with-a-long-random-value
-NEXT_PUBLIC_ADMIN_URL=https://admin.example.com
-```
+Do not deploy legacy shared migrations or compatibility/backfill migrations.
 
-`NEXT_PUBLIC_ADMIN_URL` powers the public website's sign-in link. Keep the
-privacy, terms, legal, data-management, contact, and Google integration routes
-publicly reachable over HTTPS on the verified production domain.
+Test every baseline against an empty database before production.
 
-## YuTa Admin authentication
+## POS deployment requirements
 
-Admin deployments must provide:
+The local POS deployment must:
 
-```env
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
-AUTH_SECRET=replace-with-at-least-32-random-characters
-NEXT_PUBLIC_ADMIN_URL=https://admin.example.com
-GOOGLE_BUSINESS_PROFILE_CLIENT_ID=replace-with-google-oauth-client-id
-GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET=replace-with-google-oauth-client-secret
-GOOGLE_BUSINESS_PROFILE_REDIRECT_URI=https://admin.example.com/api/reputation/google/oauth/callback
-REPUTATION_CREDENTIAL_ENCRYPTION_KEY=replace-with-base64-encoded-32-byte-key
-```
+- start the POS database, `site-agent`, POS client, and required printer/device
+  services;
+- expose PostgreSQL only inside the trusted Docker/LAN boundary;
+- bind `site-agent` only to configured trusted interfaces;
+- keep operational data local;
+- remain functional when cloud services and Internet are unavailable;
+- persist printer jobs and device state locally;
+- provide guarded backup and restore procedures;
+- never start a POS-to-cloud synchronization worker.
 
-`AUTH_SECRET` must be generated independently per environment and must not be
-committed. Apply database migrations through `0009_sparkling_galactus.sql`
-before starting
-an admin build that uses server-side sessions. Production seeding additionally
-requires `YUTA_SEED_ADMIN_PASSWORD`; routine application startup does not.
+Cloud admin must not expose local menu/catalog, printer, POS-user, order,
+payment, or operational-report workflows.
 
-The four Google variables are required only when the Google Business Profile
-connector is enabled. Generate `REPUTATION_CREDENTIAL_ENCRYPTION_KEY` from 32
-random bytes, keep it stable across deployments, and back it up securely.
-Changing or losing this key makes stored OAuth credentials unreadable. Register
-the redirect URI exactly in the Google Cloud OAuth client.
+## Display deployment requirements
 
-## YuTa POS
+Display remains standalone and owns its media database and uploads.
 
-`apps/yuta-pos` deploys as a standalone Next.js container and uses the shared
-`packages/db` migrations.
+- Use `DISPLAY_DATABASE_URL`, not the ambiguous `DATABASE_URL`.
+- Keep display credentials separate from POS and cloud credentials.
+- Keep runtime upload directories in the repository with `.gitkeep` only.
+- Ignore uploaded media files.
+- Mount a persistent upload volume.
+- In Next.js standalone mode, serve uploaded files through a `GET` route when
+  static-file lookup would otherwise return `404`.
 
-The approved long-term availability target is restaurant-edge operation: POS,
-PostgreSQL, and the print worker remain reachable over the restaurant network
-during an Internet outage. The detailed phase-1 and phase-2 requirements,
-acceptance tests, and deferred cloud-sync design are recorded in
-`docs/POS_OFFLINE_STRATEGY.md`. Those roadmap requirements do not replace the
-current commands below until the corresponding deployment changes are
-implemented and verified.
+App-specific display procedures remain in `apps/yuta-display/DEPLOY.md` and
+must follow these boundary rules.
 
-Production env file:
+## Backup and restore
 
-```txt
-apps/yuta-pos/.env.production
-```
+### POS
 
-Required values:
+- Back up only the POS database with POS credentials.
+- Store backups outside the primary DB disk.
+- Encrypt off-device backups.
+- Record and verify a checksum.
+- Restore only into an explicitly named drill or replacement database.
+- Require a separate restore URL such as `POS_RESTORE_DATABASE_URL`.
+- Never point a restore command at the active database without an explicit,
+  reviewed recovery procedure.
 
-```env
-DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
-POSTGRES_NETWORK=postgres_default
-POS_PORT=3003
-NEXT_PUBLIC_POS_URL=https://pos.example.com
-```
+### Display
 
-Start from `apps/yuta-pos/.env.production.example`. Optional edge-operation
-values include:
+Back up both the display database and upload volume. A database-only backup is
+insufficient because media files live outside PostgreSQL.
 
-```env
-POS_INTERNET_CHECK_URL=https://connectivity-endpoint.example.com/health
-PRINT_OUTPUT_DIR=./.tmp/prints
-PRINT_WORKER_BATCH_SIZE=10
-PRINT_WORKER_INTERVAL_MS=3000
-PRINT_WORKER_FAIL_RATE=0
-POS_BACKUP_DIR=/srv/backups/yuta-pos
-POS_BACKUP_RETENTION_DAYS=14
-```
+### Cloud
 
-Use an Internet-check endpoint controlled by the operator where possible. The
-endpoint is used only for the operator status strip; POS container readiness
-does not depend on it.
+Use the managed provider's backup, point-in-time recovery, encryption, and
+access-control facilities. Do not copy POS operational data into cloud backups.
 
-Deploy or update POS:
+## Health checks
 
-```bash
-cd /opt/luna/source/yuta-resto
-git pull
-docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml --profile migrate run --rm --build migrate
-docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml up -d --build pos print-worker
-```
+- Cloud health checks validate only cloud runtime dependencies.
+- `site-agent` health validates the local API, POS DB, and relevant device
+  subsystems.
+- POS health must not fail merely because Internet or cloud is unavailable.
+- Display health validates only display-owned dependencies.
+- Do not log credentials or full connection strings.
 
-Check status:
+## Release checklist
 
-```bash
-docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml ps pos print-worker
-docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml logs --tail=100 pos
-docker compose --env-file apps/yuta-pos/.env.production -f apps/yuta-pos/docker-compose.yml logs --tail=100 print-worker
-```
+Before a production release:
 
-The POS container is healthy only when the application can query PostgreSQL.
-The print worker is healthy only while its database-poll heartbeat is current.
-An Internet outage by itself must not make either container unhealthy.
-
-### POS Local Hostname And HTTPS
-
-Give the restaurant edge server a stable LAN address and local hostname. Route
-that hostname to the POS container through the site's HTTPS reverse proxy. POS
-terminals and kitchen displays must resolve the hostname without public DNS so
-an Internet outage does not prevent local access.
-
-The certificate must be trusted by every POS device. Installing the PWA from a
-raw LAN IP or an untrusted certificate is not an accepted production setup.
-
-### POS Database Backup
-
-The repository provides a host-side custom-format PostgreSQL backup script. The
-backup directory must be absolute and should be on storage outside the primary
-database disk.
-
-Load the production environment with the site's secret-management procedure,
-then run:
-
-```bash
-sh apps/yuta-pos/scripts/backup-db.sh
-```
-
-The script writes a timestamped `.dump` file and SHA-256 checksum, removes only
-matching YuTa POS backup files older than `POS_BACKUP_RETENTION_DAYS`, and
-refuses `/`, a relative path, or the current home directory as a target.
-
-Schedule this command from the host scheduler. Monitor its exit code and copy
-backups to a second encrypted device or location according to the restaurant's
-retention policy.
-
-### POS Database Restore Drill
-
-Never test restoration against the active production database. Create an empty
-restore-drill database, export its URL as `POS_RESTORE_DATABASE_URL`, and run:
-
-```bash
-sh apps/yuta-pos/scripts/restore-db.sh --confirm /absolute/path/to/yuta-pos-YYYYMMDDTHHMMSSZ.dump
-```
-
-The restore script requires the explicit `--confirm` flag, verifies the
-checksum when present, and may replace existing objects in the target database.
-After restoration, run current migrations and the offline acceptance checks.
+- Confirm the process receives only its permitted database URL.
+- Run the correct one-shot migration service.
+- Verify the active schema originated from its own `0000_initial`.
+- Confirm browser bundles contain no database URL.
+- Confirm cloud schema has no POS operational tables.
+- Confirm POS works with Internet/cloud disabled.
+- Confirm display reads and writes only its standalone DB.
+- Verify backup and restore procedures for local data.
+- Update this document whenever deployment topology or operational rules
+  change.

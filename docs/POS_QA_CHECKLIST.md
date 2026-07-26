@@ -2,20 +2,22 @@
 
 Use this checklist to stabilize the POS MVP before adding larger features.
 
+This checklist targets the post-reset local architecture. Cloud `apps/admin`
+must not be used for POS staff, menu/catalog, combo, printer, order, payment,
+or operational-report QA.
+
 Run QA against the local apps:
 
 ```txt
-POS:   http://localhost:3003
-Admin: http://localhost:3001
+POS:        http://localhost:3003
+Site agent: configured local URL
 ```
 
-Recommended local services:
+Target local services:
 
 ```bash
-docker compose -f docker-compose.db.dev.yml up -d
-corepack pnpm --filter @yuta/pos dev
-corepack pnpm --filter @yuta/admin dev
-corepack pnpm --filter @yuta/core print:worker:watch
+docker compose -f docker-compose.local.dev.yml up -d
+pnpm --filter @yuta/pos dev
 ```
 
 If a newly added route returns `404` in `next dev`, restart the affected dev
@@ -39,8 +41,8 @@ N/A       not applicable for this run
 | POS health endpoint is ready        | `/api/health` returns application and database availability    |        |       |
 | Local service strip is visible      | Strip distinguishes local, database, and server failure states |        |       |
 | POS dev server opens                | `http://localhost:3003` loads without error                    |        |       |
-| Admin dev server opens              | `http://localhost:3001` loads without error                    |        |       |
-| Print worker starts                 | Worker logs `print-worker polling`                             |        |       |
+| Site agent is ready                 | Local health endpoint reports POS DB readiness                 |        |       |
+| Local print worker starts           | `site-agent` reports printer queue processing ready            |        |       |
 | Seed data exists                    | POS shows menu categories/items and staff users                |        |       |
 
 ## POS Staff Selector
@@ -171,9 +173,9 @@ N/A       not applicable for this run
 
 | Case                                      | Expected Result                                                                  | Result | Notes |
 | ----------------------------------------- | -------------------------------------------------------------------------------- | -----: | ----- |
-| Kitchen send creates print job            | Admin prints page shows `kitchen_ticket`                                         |        |       |
+| Kitchen send creates print job            | Local print queue shows `kitchen_ticket`                                         |        |       |
 | Second kitchen send prints only new items | Later kitchen ticket excludes items printed by the earlier send                  |        |       |
-| Payment creates print job                 | Admin prints page shows `customer_receipt`                                       |        |       |
+| Payment creates print job                 | Local print queue shows `customer_receipt`                                       |        |       |
 | Worker processes pending jobs             | Job status changes to `printed`                                                  |        |       |
 | Mark job failed manually                  | Job status changes to `failed`                                                   |        |       |
 | Retry failed job                          | Job status changes back to `pending`                                             |        |       |
@@ -200,22 +202,22 @@ N/A       not applicable for this run
 | Stop the POS container                      | Browser reports the local server unavailable                  |             |       |
 | Restore latest backup into a drill database | Checksum, restore, migrations, and sample reads succeed       |             |       |
 
-## Admin Staff
+## Local POS Staff Management
 
 | Case                  | Expected Result                                                    | Result | Notes |
 | --------------------- | ------------------------------------------------------------------ | -----: | ----- |
-| Open `/pos/staff`     | Staff management page loads                                        |        |       |
+| Open local staff UI   | Staff management page loads                                        |        |       |
 | Create staff user     | User appears in staff list                                         |        |       |
 | Edit staff user       | Name/email/role changes are saved                                  |        |       |
 | Deactivate staff user | User becomes inactive and is hidden from POS selector              |        |       |
 | Reactivate staff user | User becomes active and appears when role is selectable            |        |       |
 | Kitchen role user     | User can be managed but is not shown in POS order creator selector |        |       |
 
-## Admin Menu
+## Local Menu Management
 
 | Case                   | Expected Result                                                   | Result | Notes |
 | ---------------------- | ----------------------------------------------------------------- | -----: | ----- |
-| Open `/pos/menu`       | Menu management page loads                                        |        |       |
+| Open local menu UI     | Menu management page loads                                        |        |       |
 | Create category        | Category appears in POS category tabs                             |        |       |
 | Create menu item       | Item appears in POS item grid when available                      |        |       |
 | Edit menu item price   | New orders use new price; old order item snapshots stay unchanged |        |       |
@@ -223,22 +225,22 @@ N/A       not applicable for this run
 | Deactivate item        | Item disappears from POS item grid                                |        |       |
 | Reactivate item        | Item appears again in POS item grid                               |        |       |
 
-## Admin Combos
+## Local Combo Management
 
 | Case                                 | Expected Result                        | Result | Notes |
 | ------------------------------------ | -------------------------------------- | -----: | ----- |
-| Open `/pos/combos`                   | Combo management page loads            |        |       |
+| Open local combo UI                  | Combo management page loads            |        |       |
 | Create combo rule                    | Rule appears in combo list             |        |       |
 | Add combo group                      | Group appears under rule               |        |       |
 | Add eligible item                    | Item can be used by combo optimizer    |        |       |
 | Combo applies at full payment        | Order total reflects discount          |        |       |
 | Combo applies at split check payment | Eligible check total reflects discount |        |       |
 
-## Admin Reports
+## Local Operational Reports
 
 | Case                       | Expected Result                              | Result | Notes |
 | -------------------------- | -------------------------------------------- | -----: | ----- |
-| Open `/pos/reports`        | Reports page loads                           |        |       |
+| Open local reports UI      | Reports page loads                           |        |       |
 | Paid revenue updates       | Paid payment amount appears in daily revenue |        |       |
 | Open order count updates   | Active orders appear in open orders count    |        |       |
 | Paid order count updates   | Paid orders appear in paid count             |        |       |
@@ -246,13 +248,12 @@ N/A       not applicable for this run
 
 ## Regression Checks
 
-| Case               | Expected Result                                       | Result | Notes |
-| ------------------ | ----------------------------------------------------- | -----: | ----- |
-| `@yuta/core` tests | `corepack pnpm --filter @yuta/core test` passes       |        |       |
-| POS typecheck      | `corepack pnpm --filter @yuta/pos typecheck` passes   |        |       |
-| Admin typecheck    | `corepack pnpm --filter @yuta/admin typecheck` passes |        |       |
-| POS build          | `corepack pnpm --filter @yuta/pos build` passes       |        |       |
-| Admin build        | `corepack pnpm --filter @yuta/admin build` passes     |        |       |
+| Case               | Expected Result                                     | Result | Notes |
+| ------------------ | --------------------------------------------------- | -----: | ----- |
+| `@yuta/core` tests | `corepack pnpm --filter @yuta/core test` passes     |        |       |
+| POS typecheck      | `corepack pnpm --filter @yuta/pos typecheck` passes |        |       |
+| POS build          | `corepack pnpm --filter @yuta/pos build` passes     |        |       |
+| Site-agent checks  | Site-agent typecheck/tests pass                     |        |       |
 
 ## QA Notes
 

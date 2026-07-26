@@ -3,7 +3,10 @@
 **Status:** Implementation-ready specification  
 **Repository:** `YUTA-RESTO` pnpm workspace  
 **Target package path:** `packages/tenant`  
-**Consumers:** all server-side YUTA applications; selected browser-safe types/helpers may be shared with clients
+**Consumers:** cloud server code in `apps/admin`, `apps/web`, and an optional
+cloud worker; selected browser-safe types/helpers may be shared with cloud
+clients. Local-only POS, display, and `site-agent` code must not import this
+package.
 
 ---
 
@@ -81,7 +84,7 @@ The package may expose small access guards based on trusted memberships, but it 
 
 ## 4. Architecture principle: pure core plus adapters
 
-`@yuta/tenant` must not import `@yuta/db` or `next`.
+`@yuta/tenant` must not import `@yuta/db-cloud`, `@yuta/db-pos`, or `next`.
 
 Instead, it defines ports/interfaces and receives implementations from applications.
 
@@ -89,7 +92,7 @@ Instead, it defines ports/interfaces and receives implementations from applicati
 apps/web or apps/admin
         │
         ├── hostname/session input
-        ├── DB-backed lookup adapter from @yuta/db
+        ├── DB-backed lookup adapter from @yuta/db-cloud
         │
         ▼
 @Yuta/tenant pure resolver
@@ -101,7 +104,7 @@ TenantContext
 This allows:
 
 - Unit testing without a database.
-- Use in Next.js, workers, API servers, and local agent.
+- Use in cloud Next.js applications, cloud workers, and cloud API servers.
 - Future database replacement without rewriting tenant rules.
 - Clear separation between trusted server data and browser input.
 
@@ -116,7 +119,7 @@ Allowed dependencies:
 
 Forbidden dependencies:
 
-- `@yuta/db`.
+- `@yuta/db`, `@yuta/db-cloud`, and `@yuta/db-pos`.
 - `next`.
 - `react`.
 - `@yuta/ui`.
@@ -125,10 +128,10 @@ Forbidden dependencies:
 Recommended graph:
 
 ```text
-apps/* ───────────────→ @yuta/tenant
-apps/* ───────────────→ @yuta/db
+apps/admin, apps/web ─→ @yuta/tenant
+cloud server code ───→ @yuta/db-cloud
 @Yuta/tenant ─────────→ zod only
-@Yuta/db ─────────────→ no dependency on @yuta/tenant required
+@Yuta/db-cloud ───────→ no dependency on @yuta/tenant required
 ```
 
 Application adapters may combine both packages:
@@ -172,8 +175,8 @@ Keep framework-specific adapters outside this package, for example:
 ```text
 apps/web/src/server/tenant/resolve-public-tenant.ts
 apps/admin/src/server/tenant/resolve-authenticated-tenant.ts
-packages/db/src/adapters/tenant-domain-lookup.ts
-packages/db/src/adapters/tenant-membership-lookup.ts
+packages/db-cloud/src/adapters/tenant-domain-lookup.ts
+packages/db-cloud/src/adapters/tenant-membership-lookup.ts
 ```
 
 ---
@@ -184,14 +187,14 @@ packages/db/src/adapters/tenant-membership-lookup.ts
 
 ```ts
 export type TenantRole =
-  | "owner"
-  | "admin"
-  | "manager"
-  | "cashier"
-  | "kitchen"
-  | "waiter"
-  | "accountant"
-  | "employee";
+  | 'owner'
+  | 'admin'
+  | 'manager'
+  | 'cashier'
+  | 'kitchen'
+  | 'waiter'
+  | 'accountant'
+  | 'employee';
 
 export type TenantContext = {
   organizationId: string;
@@ -204,16 +207,16 @@ export type TenantContext = {
 
 export type TenantActor =
   | {
-      type: "public";
+      type: 'public';
     }
   | {
-      type: "user";
+      type: 'user';
       userId: string;
       role: TenantRole;
       membershipId: string;
     }
   | {
-      type: "service";
+      type: 'service';
       serviceName: string;
     };
 ```
@@ -256,16 +259,14 @@ export type DomainTenantRecord = {
   organizationId: string;
   establishmentId: string;
   hostname: string;
-  status: "active" | "pending" | "disabled";
+  status: 'active' | 'pending' | 'disabled';
   locale: string;
   timezone: string;
   entitlements: readonly string[];
 };
 
 export interface DomainLookupPort {
-  findActiveByHostname(
-    hostname: string,
-  ): Promise<DomainTenantRecord | null>;
+  findActiveByHostname(hostname: string): Promise<DomainTenantRecord | null>;
 }
 ```
 
@@ -278,7 +279,7 @@ export type MembershipRecord = {
   organizationId: string;
   establishmentId: string | null;
   role: TenantRole;
-  status: "active" | "invited" | "suspended";
+  status: 'active' | 'invited' | 'suspended';
 };
 
 export interface MembershipLookupPort {
@@ -303,7 +304,7 @@ export interface EstablishmentLookupPort {
 }
 ```
 
-Applications implement these ports with `@yuta/db` repositories.
+Cloud applications implement these ports with `@yuta/db-cloud` repositories.
 
 ---
 
@@ -381,7 +382,7 @@ Example:
 
 ```ts
 const tenant = await resolvePublicTenant({
-  hostname: request.headers.get("host") ?? "",
+  hostname: request.headers.get('host') ?? '',
   domainLookup,
 });
 ```
@@ -486,7 +487,7 @@ Do not interpret `establishmentId = null` as automatic access to every establish
 
 ```ts
 export function requireEntitlement(
-  context: Pick<TenantContext, "entitlements">,
+  context: Pick<TenantContext, 'entitlements'>,
   entitlement: string,
 ): void;
 ```
@@ -574,7 +575,8 @@ role
 status
 ```
 
-The package does not define these Drizzle schemas. `@yuta/db` owns persistence models and implements the lookup ports.
+The package does not define these Drizzle schemas. `@yuta/db-cloud` owns
+persistence models and implements the lookup ports.
 
 ---
 
@@ -675,8 +677,8 @@ const tenant: TenantContext = {
   organizationId,
   establishmentId,
   actor: {
-    type: "service",
-    serviceName: "reservation-confirmation-worker",
+    type: 'service',
+    serviceName: 'reservation-confirmation-worker',
   },
   locale,
   timezone,
@@ -742,7 +744,8 @@ PostgreSQL Row-Level Security may be added later as defense in depth, but it doe
 - Requires establishment for local operations.
 - Rejects unavailable entitlement.
 
-Use fake in-memory lookup ports in unit tests. Database integration tests belong in `@yuta/db` or application test suites.
+Use fake in-memory lookup ports in unit tests. Database integration tests
+belong in `@yuta/db-cloud` or cloud application test suites.
 
 ---
 

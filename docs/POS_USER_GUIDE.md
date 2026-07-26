@@ -4,27 +4,26 @@ This guide describes how to use the current YuTa POS MVP for internal restaurant
 
 The app UI is in French. This documentation is in English to match the repository convention.
 
+The database architecture reset has been approved but is not yet implemented.
+The current code may still expose legacy POS management pages in cloud admin;
+those pages are deprecated and intentionally omitted from this guide. Staff,
+menu/catalog, combo, printer, and operational-report management move to a local
+UI backed by `site-agent`.
+
 ## Local URLs
 
 ```txt
 POS orders:    http://localhost:3003
 New POS order: http://localhost:3003/pos
-Admin:         http://localhost:3001
 ```
 
-Useful admin pages:
-
-```txt
-http://localhost:3001/pos/menu
-http://localhost:3001/pos/staff
-http://localhost:3001/pos/combos
-http://localhost:3001/pos/reports
-http://localhost:3001/pos/prints
-```
+The local management URL will be documented when `site-agent` and its local UI
+are implemented.
 
 ## Run Locally
 
-Start the local PostgreSQL database:
+Until the code reset replaces the legacy compose topology, start the current
+development PostgreSQL database:
 
 ```bash
 docker compose -f docker-compose.db.dev.yml up -d
@@ -36,19 +35,14 @@ Run the POS app:
 corepack pnpm --filter @yuta/pos dev
 ```
 
-Run the admin app:
-
-```bash
-corepack pnpm --filter @yuta/admin dev
-```
-
-Run the mock print worker:
+During the transition, run the legacy mock print worker:
 
 ```bash
 corepack pnpm --filter @yuta/core print:worker:watch
 ```
 
-The print worker processes `print_jobs` rows created by kitchen sends and payments.
+The legacy print worker processes `print_jobs` rows created by kitchen sends
+and payments. It moves into `site-agent` during the code reset.
 
 The QA checklist lives in:
 
@@ -466,15 +460,13 @@ The selected POS employee is stored as `paidBy` for each payment.
 
 Use the page-level `Annuler le partage` action to return to full-order payment when no split ticket has been paid yet. Once a split ticket is paid, the split cannot be cancelled.
 
-## Admin Staff
+## Local POS Staff Management
 
-Open:
+This workflow belongs to the local POS management UI backed by `site-agent`.
+It must not be exposed by the cloud `apps/admin` application. The exact local
+route will be documented when the local UI is implemented.
 
-```txt
-http://localhost:3001/pos/staff
-```
-
-Use this page to manage POS staff users:
+Use the local management screen to manage POS staff users:
 
 ```txt
 Create employee
@@ -505,15 +497,10 @@ Kitchen-only users are managed here but are not shown in the POS order creator s
 
 Do not delete users from the database. Deactivate users to preserve order and payment history.
 
-## Admin Menu
+## Local Menu Management
 
-Open:
-
-```txt
-http://localhost:3001/pos/menu
-```
-
-Use this page to manage:
+This workflow belongs to the local POS management UI backed by `site-agent`.
+Use it to manage:
 
 ```txt
 Menu categories
@@ -544,13 +531,10 @@ category, search, and grid position.
 
 Do not delete old menu items for historical correction. Toggle availability instead.
 
-## Admin Combos
+## Local Combo Management
 
-Open:
-
-```txt
-http://localhost:3001/pos/combos
-```
+Combo management belongs to the local POS management UI and uses only the
+local POS database.
 
 Combos are payment discounts, not kitchen production rules.
 
@@ -578,15 +562,10 @@ main dish, usually `Plat`.
 
 Combos are applied during payment optimization.
 
-## Admin Reports
+## Local Operational Reports
 
-Open:
-
-```txt
-http://localhost:3001/pos/reports
-```
-
-The current reports page shows:
+Operational reports are generated locally from `db-pos`. They are not cloud
+reports. The local reporting UI should show:
 
 ```txt
 Paid revenue today
@@ -597,15 +576,11 @@ Today order list
 
 Each order can be opened in POS from the report page.
 
-## Admin Prints
+## Local Print Queue
 
-Open:
+The print queue belongs to `site-agent` and the local management UI.
 
-```txt
-http://localhost:3001/pos/prints
-```
-
-This page shows recent print jobs:
+The local screen shows recent print jobs:
 
 ```txt
 pending
@@ -631,19 +606,10 @@ Reessayer
 
 When the mock worker is running, it will automatically process pending jobs.
 
-## Mock Print Worker
+## Local Mock Print Worker
 
-Run continuously:
-
-```bash
-corepack pnpm --filter @yuta/core print:worker:watch
-```
-
-Run one batch:
-
-```bash
-corepack pnpm --filter @yuta/core print:worker
-```
+The current worker in `@yuta/core` is transitional. Printer queue processing
+and device integration move into `site-agent` during the database reset.
 
 Optional environment values:
 
@@ -702,13 +668,20 @@ prominent `!!! ALLERGY ... !!!` line.
 
 `apps/yuta-display` is separate from the POS operations ecosystem and has its own database setup.
 
-POS and admin use:
+The target POS runtime uses:
 
 ```txt
-packages/db
+apps/yuta-pos
+apps/site-agent
+packages/db-pos
+packages/contracts
 packages/core
 packages/ui
 ```
+
+Cloud admin does not manage POS users, menu/catalog, printers, orders,
+payments, or operational reports. Those workflows belong to a local UI backed
+by `site-agent`.
 
 ## Current MVP Limits
 

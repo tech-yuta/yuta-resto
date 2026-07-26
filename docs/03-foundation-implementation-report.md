@@ -1,5 +1,10 @@
 # Multi-Tenant Foundation Implementation Report
 
+> **Historical report.** This records what was implemented on 2026-07-19
+> against the legacy shared `@yuta/db`. It is intentionally not rewritten as
+> current architecture. The reset target is defined in
+> `docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`.
+
 Date: 2026-07-19
 
 ## Implemented

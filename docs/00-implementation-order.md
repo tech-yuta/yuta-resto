@@ -1,5 +1,11 @@
 # YUTA Multi-Tenant Foundation — Codex Implementation Order
 
+> **Historical implementation plan.** This sequence was completed against the
+> legacy shared `@yuta/db`. It is not the current database architecture plan.
+> For new work, follow `docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`. The
+> resulting `@yuta/contracts` and cloud-only `@yuta/tenant` packages remain,
+> but their persistence adapters move to `@yuta/db-cloud`.
+
 This document coordinates the implementation of:
 
 - `packages/contracts` as `@yuta/contracts`.

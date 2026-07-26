@@ -1,5 +1,12 @@
 # YuTa POS MVP Master Specification
 
+> **Product-scope reference; legacy architecture superseded.** Business and UX
+> requirements in this document remain useful, but all references to shared
+> `packages/db`, cloud admin POS management, database deployment, and future
+> cloud synchronization are superseded by
+> `docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`, `docs/YUTA_POS.md`, and
+> `docs/POS_OFFLINE_STRATEGY.md`.
+
 ## 0. Purpose
 
 This document is the master specification for building the YuTa internal restaurant POS MVP.
@@ -544,17 +551,17 @@ For MVP, print gateway behavior can run in mock mode and write printable content
 Implement:
 
 ```ts
-createOrder({ tableLabel, orderType, createdBy })
-addOrderItem({ orderId, menuItemId, quantity, note })
-updateOrderItemQuantity({ orderItemId, quantity })
-cancelOrderItem({ orderItemId, reason })
-sendOrderToKitchen(orderId)
-markOrderItemPreparing(orderItemId)
-markOrderItemSent(orderItemId)
-markOrderItemReady(orderItemId)
-markOrderItemServed(orderItemId)
-getOpenOrders()
-getOrderDetail(orderId)
+createOrder({ tableLabel, orderType, createdBy });
+addOrderItem({ orderId, menuItemId, quantity, note });
+updateOrderItemQuantity({ orderItemId, quantity });
+cancelOrderItem({ orderItemId, reason });
+sendOrderToKitchen(orderId);
+markOrderItemPreparing(orderItemId);
+markOrderItemSent(orderItemId);
+markOrderItemReady(orderItemId);
+markOrderItemServed(orderItemId);
+getOpenOrders();
+getOrderDetail(orderId);
 ```
 
 Rules:
@@ -574,11 +581,11 @@ Rules:
 Implement:
 
 ```ts
-optimizeOrderCombos(orderId)
-clearOrderComboDiscounts(orderId)
-calculateComboDiscountsForItems(items, comboRules)
-optimizeCheckCombos(checkId)
-clearCheckComboDiscounts(checkId)
+optimizeOrderCombos(orderId);
+clearOrderComboDiscounts(orderId);
+calculateComboDiscountsForItems(items, comboRules);
+optimizeCheckCombos(checkId);
+clearCheckComboDiscounts(checkId);
 ```
 
 Rules:

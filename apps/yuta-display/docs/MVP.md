@@ -137,7 +137,7 @@ Next.js latest stable
 React latest stable
 TypeScript latest stable
 Tailwind CSS latest stable
-PostgreSQL latest stable
+PostgreSQL 17
 Drizzle ORM latest stable
 Zod latest stable
 React Hook Form latest stable
@@ -585,7 +585,7 @@ const [index, setIndex] = useState(0);
 
 async function fetchPlaylist() {
   try {
-    const result = await fetch("/api/display-media?active=true");
+    const result = await fetch('/api/display-media?active=true');
     const data = await result.json();
 
     if (Array.isArray(data)) {
@@ -694,27 +694,27 @@ Example:
 
 ```ts
 export const uiText = {
-  dashboard: "Tableau de bord",
-  media: "Médias",
-  addMedia: "Ajouter un média",
-  edit: "Modifier",
-  delete: "Supprimer",
-  active: "Actif",
-  inactive: "Inactif",
-  duration: "Durée",
+  dashboard: 'Tableau de bord',
+  media: 'Médias',
+  addMedia: 'Ajouter un média',
+  edit: 'Modifier',
+  delete: 'Supprimer',
+  active: 'Actif',
+  inactive: 'Inactif',
+  duration: 'Durée',
   sortOrder: "Ordre d'affichage",
-  status: "Statut",
-  actions: "Actions",
-  preview: "Aperçu",
+  status: 'Statut',
+  actions: 'Actions',
+  preview: 'Aperçu',
   openDisplay: "Ouvrir l'affichage",
-  noActiveMedia: "Aucun média actif",
-  fileTooLarge: "Le fichier est trop volumineux",
-  unsupportedFileFormat: "Format de fichier non autorisé",
-  mediaDeleted: "Média supprimé avec succès",
-  uploadSuccess: "Média ajouté avec succès",
-  save: "Enregistrer",
-  cancel: "Annuler",
-  confirmDelete: "Voulez-vous vraiment supprimer ce média ?",
+  noActiveMedia: 'Aucun média actif',
+  fileTooLarge: 'Le fichier est trop volumineux',
+  unsupportedFileFormat: 'Format de fichier non autorisé',
+  mediaDeleted: 'Média supprimé avec succès',
+  uploadSuccess: 'Média ajouté avec succès',
+  save: 'Enregistrer',
+  cancel: 'Annuler',
+  confirmDelete: 'Voulez-vous vraiment supprimer ce média ?',
 } as const;
 ```
 
@@ -729,7 +729,7 @@ Use a standalone build if supported by the selected Next.js version.
 Required environment variables:
 
 ```env
-DATABASE_URL=postgres://luna_admin:PASSWORD@luna-postgres:5432/luna_display
+DISPLAY_DATABASE_URL=postgres://luna_display:PASSWORD@luna-postgres:5432/luna_display
 UPLOAD_DIR=/app/public/uploads/display
 ```
 

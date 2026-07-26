@@ -1,7 +1,13 @@
 # Avis & commentaires
 
 This document tracks the Phase 1 reputation module implemented across
-`apps/admin`, `apps/web`, `packages/contracts`, and `packages/db`.
+`apps/admin`, `apps/web`, `packages/contracts`, and the cloud database
+boundary.
+
+The target persistence package is `packages/db-cloud`. References or imports
+using the legacy `packages/db` are transitional and must be replaced during
+the database architecture reset. Reputation data is cloud-only and always
+scoped by `organization_id` and, where applicable, `establishment_id`.
 
 The implementation sequence and current task status are maintained in
 `docs/REPUTATION_PHASE1_BACKLOG.md`. Update that tracker whenever Phase 1 work

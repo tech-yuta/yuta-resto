@@ -27,16 +27,16 @@ The codebase must stay simple, maintainable, and consistent with future Yuta app
 
 Use English for all technical elements:
 
-* Documentation
-* Code comments
-* Variable names
-* Function names
-* Component names
-* Service names
-* Type names
-* Database schema names
-* API field names
-* Commit messages
+- Documentation
+- Code comments
+- Variable names
+- Function names
+- Component names
+- Service names
+- Type names
+- Database schema names
+- API field names
+- Commit messages
 
 Use French for all user-facing UI text.
 
@@ -105,7 +105,7 @@ Next.js latest stable
 React latest stable
 TypeScript latest stable
 Tailwind CSS latest stable
-PostgreSQL latest stable
+PostgreSQL 17
 Drizzle ORM latest stable
 Zod latest stable
 React Hook Form latest stable
@@ -137,10 +137,10 @@ Use Server Actions when suitable.
 
 Use API routes for:
 
-* File upload
-* JSON endpoints
-* Media deletion
-* Data consumed by the TV display page
+- File upload
+- JSON endpoints
+- Media deletion
+- Data consumed by the TV display page
 
 Keep route handlers small.
 
@@ -160,10 +160,10 @@ Validate external input with Zod.
 
 External input includes:
 
-* Form data
-* Upload metadata
-* API request bodies
-* Route params
+- Form data
+- Upload metadata
+- API request bodies
+- Route params
 
 ---
 
@@ -286,12 +286,12 @@ DisplayMediaService
 Expected service methods:
 
 ```ts
-getAll()
-getActive()
-getById(id)
-create(data)
-update(id, data)
-delete(id)
+getAll();
+getActive();
+getById(id);
+create(data);
+update(id, data);
+delete id;
 ```
 
 ---
@@ -327,7 +327,7 @@ Use environment variables for configuration.
 Required environment variables:
 
 ```env
-DATABASE_URL=
+DISPLAY_DATABASE_URL=
 UPLOAD_DIR=
 ```
 
@@ -391,23 +391,23 @@ Example:
 
 ```ts
 export const uiText = {
-  dashboard: "Tableau de bord",
-  media: "Médias",
-  addMedia: "Ajouter un média",
-  edit: "Modifier",
-  delete: "Supprimer",
-  active: "Actif",
-  inactive: "Inactif",
-  duration: "Durée",
+  dashboard: 'Tableau de bord',
+  media: 'Médias',
+  addMedia: 'Ajouter un média',
+  edit: 'Modifier',
+  delete: 'Supprimer',
+  active: 'Actif',
+  inactive: 'Inactif',
+  duration: 'Durée',
   sortOrder: "Ordre d'affichage",
-  status: "Statut",
-  actions: "Actions",
-  preview: "Aperçu",
+  status: 'Statut',
+  actions: 'Actions',
+  preview: 'Aperçu',
   openDisplay: "Ouvrir l'affichage",
-  noActiveMedia: "Aucun média actif",
-  fileTooLarge: "Le fichier est trop volumineux",
-  unsupportedFileFormat: "Format de fichier non autorisé",
-  mediaDeleted: "Média supprimé avec succès",
+  noActiveMedia: 'Aucun média actif',
+  fileTooLarge: 'Le fichier est trop volumineux',
+  unsupportedFileFormat: 'Format de fichier non autorisé',
+  mediaDeleted: 'Média supprimé avec succès',
 } as const;
 ```
 
