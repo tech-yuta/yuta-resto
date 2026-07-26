@@ -73,7 +73,9 @@ export function FeedbackForm({
   const [error, setError] = useState<string | null>(null);
   const sourceTag = useMemo(() => {
     if (typeof window === 'undefined') return undefined;
-    return new URLSearchParams(window.location.search).get('source') ?? undefined;
+    return (
+      new URLSearchParams(window.location.search).get('source') ?? undefined
+    );
   }, []);
 
   function toggleTopic(topic: FeedbackTopic) {
@@ -92,10 +94,7 @@ export function FeedbackForm({
       setError('Sélectionnez une note avant de continuer.');
       return;
     }
-    if (
-      (form.customerEmail || form.customerPhone) &&
-      !form.consentToContact
-    ) {
+    if ((form.customerEmail || form.customerPhone) && !form.consentToContact) {
       setError(
         'Acceptez le consentement pour nous permettre de vous recontacter.',
       );
@@ -111,9 +110,14 @@ export function FeedbackForm({
           ...form,
           sourceTag:
             sourceTag &&
-            ['table', 'receipt', 'counter', 'click_collect', 'email', 'other'].includes(
-              sourceTag,
-            )
+            [
+              'table',
+              'receipt',
+              'counter',
+              'click_collect',
+              'email',
+              'other',
+            ].includes(sourceTag)
               ? sourceTag
               : undefined,
         }),
@@ -155,10 +159,10 @@ export function FeedbackForm({
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-action-primary text-inverse shadow-sm">
             <Store className="h-7 w-7" />
           </div>
-          <p className="mt-3 text-sm font-semibold text-secondary">
+          <p className="mt-3 text-[15px] font-semibold text-secondary">
             {establishmentName}
           </p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
             Votre avis nous aide à nous améliorer
           </h1>
           <p className="mx-auto mt-3 max-w-xl leading-7 text-secondary">
@@ -205,7 +209,7 @@ export function FeedbackForm({
                           'fill-status-rating text-status-rating',
                       )}
                     />
-                    <span className="text-xs font-semibold text-secondary">
+                    <span className="text-[13px] font-semibold text-secondary">
                       {rating}
                     </span>
                   </button>
@@ -257,7 +261,7 @@ export function FeedbackForm({
                   <h2 className="font-bold">
                     Souhaitez-vous être recontacté(e) ?
                   </h2>
-                  <p className="mt-1 text-sm text-secondary">
+                  <p className="mt-1 text-[15px] text-secondary">
                     Ces informations sont facultatives et servent uniquement à
                     répondre à votre retour.
                   </p>
@@ -315,7 +319,7 @@ export function FeedbackForm({
                 </FormField>
               </div>
 
-              <Label className="mt-5 flex cursor-pointer items-start gap-3 text-sm font-normal leading-6">
+              <Label className="mt-5 flex cursor-pointer items-start gap-3 text-[15px] font-normal leading-7">
                 <Checkbox
                   className="mt-1"
                   checked={form.consentToContact}
@@ -354,16 +358,11 @@ export function FeedbackForm({
             )}
 
             <div>
-              <Button
-                type="submit"
-                size="lg"
-                fullWidth
-                loading={isSubmitting}
-              >
+              <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
                 Envoyer mon retour
                 <ArrowRight className="h-5 w-5" />
               </Button>
-              <p className="mt-4 text-center text-xs leading-5 text-muted">
+              <p className="mt-4 text-center text-[15px] leading-7 text-secondary">
                 Vos coordonnées ne sont jamais envoyées à un service
                 d&apos;intelligence artificielle.
               </p>
@@ -386,8 +385,8 @@ function FeedbackSuccess({
     { label: 'Google', href: externalLinks.google },
     { label: 'Facebook', href: externalLinks.facebook },
     { label: 'Instagram', href: externalLinks.instagram },
-  ].filter(
-    (link): link is { label: string; href: string } => Boolean(link.href),
+  ].filter((link): link is { label: string; href: string } =>
+    Boolean(link.href),
   );
 
   return (
@@ -396,10 +395,10 @@ function FeedbackSuccess({
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-status-success-soft text-status-success">
           <CheckCircle2 className="h-9 w-9" />
         </div>
-        <p className="mt-5 text-sm font-semibold text-secondary">
+        <p className="mt-5 text-[15px] font-semibold text-secondary">
           {establishmentName}
         </p>
-        <h1 className="mt-2 text-3xl font-black">Merci pour votre retour</h1>
+        <h1 className="mt-2 text-3xl font-bold">Merci pour votre retour</h1>
         <p className="mt-3 leading-7 text-secondary">
           Votre message a bien été transmis à l&apos;équipe LUNA.
         </p>

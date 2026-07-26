@@ -22,10 +22,7 @@ export const feedbackSourceValues = ['GOOGLE', 'DIRECT'] as const;
 export const feedbackSourceSchema = z.enum(feedbackSourceValues);
 export type FeedbackSource = z.infer<typeof feedbackSourceSchema>;
 
-export const feedbackTypeValues = [
-  'PUBLIC_REVIEW',
-  'DIRECT_FEEDBACK',
-] as const;
+export const feedbackTypeValues = ['PUBLIC_REVIEW', 'DIRECT_FEEDBACK'] as const;
 export const feedbackTypeSchema = z.enum(feedbackTypeValues);
 export type FeedbackType = z.infer<typeof feedbackTypeSchema>;
 
@@ -185,6 +182,10 @@ export const generateReplySchema = z.object({
 });
 
 export const saveReplySchema = z.object({
+  content: z.string().trim().min(1).max(4_000),
+});
+
+export const createInternalNoteSchema = z.object({
   content: z.string().trim().min(1).max(4_000),
 });
 

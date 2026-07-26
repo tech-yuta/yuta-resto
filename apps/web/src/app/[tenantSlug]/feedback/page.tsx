@@ -1,11 +1,18 @@
 import { db } from '@yuta/db/client';
 import { findPublicFeedbackConfiguration } from '@yuta/db';
+import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { FeedbackForm } from './feedback-form';
 import { resolveFeedbackTenant } from '../../../server/reputation/resolve-public-feedback';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function FeedbackPage({
   params,

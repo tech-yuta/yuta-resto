@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   apiErrorSchema,
+  createInternalNoteSchema,
   createOrderInputSchema,
   createReservationInputSchema,
   cursorPaginationQuerySchema,
@@ -8,6 +9,8 @@ import {
   moneySchema,
   orderStatusSchema,
   publicFeedbackSubmissionSchema,
+  saveReplySchema,
+  updateFeedbackSchema,
 } from '../src';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -145,5 +148,24 @@ describe('@yuta/contracts', () => {
         website: 'https://spam.example',
       }).website,
     ).toBe('https://spam.example');
+  });
+
+  it('validates persistent reputation inbox mutations', () => {
+    expect(
+      updateFeedbackSchema.parse({
+        status: 'TO_PROCESS',
+        assignedToUserId: id,
+      }),
+    ).toEqual({
+      status: 'TO_PROCESS',
+      assignedToUserId: id,
+    });
+    expect(updateFeedbackSchema.safeParse({}).success).toBe(false);
+    expect(saveReplySchema.safeParse({ content: '  ' }).success).toBe(false);
+    expect(
+      createInternalNoteSchema.parse({
+        content: 'Rappeler le client demain.',
+      }).content,
+    ).toBe('Rappeler le client demain.');
   });
 });

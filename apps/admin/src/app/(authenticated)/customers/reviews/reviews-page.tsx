@@ -6,6 +6,7 @@ import type {
   FeedbackStatus,
   FeedbackUrgency,
 } from '@yuta/contracts/reputation';
+import type { AssignableReputationUser } from '@yuta/db';
 import {
   Avatar,
   Badge,
@@ -15,8 +16,10 @@ import {
   ErrorState,
   IconButton,
   Input,
+  Label,
   MetricCard,
   PageHeader,
+  Pagination,
   Select,
   SelectContent,
   SelectItem,
@@ -38,9 +41,18 @@ import {
   Settings,
   Sparkles,
   Star,
+  StickyNote,
   UserRound,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useActionState, useEffect, useState, type FormEvent } from 'react';
+import { useFormStatus } from 'react-dom';
+import {
+  createInternalNoteAction,
+  saveReplyDraftAction,
+  updateFeedbackAction,
+  type ReputationActionState,
+} from './actions';
 
 export type ReviewListRecord = {
   id: string;
@@ -52,14 +64,56 @@ export type ReviewListRecord = {
   sentiment: FeedbackSentiment | null;
   urgency: FeedbackUrgency | null;
   status: FeedbackStatus;
+  assignedToUserId: string | null;
   receivedAt: string;
   incidentId: string | null;
   replyStatus: string | null;
 };
 
+export type ReviewDetailRecord = ReviewListRecord & {
+  externalUrl: string | null;
+  analysis: {
+    summary: string;
+    topics: string[];
+    suggestedAction: string | null;
+  } | null;
+  latestReply: {
+    id: string;
+    content: string;
+    status: string;
+  } | null;
+  notes: Array<{
+    id: string;
+    content: string;
+    authorName: string;
+    createdAt: string;
+  }>;
+};
+
 export type ReviewsPageData = {
   state: 'ready' | 'unavailable';
   items: ReviewListRecord[];
+  detail: ReviewDetailRecord | null;
+  assignableUsers: AssignableReputationUser[];
+  query: {
+    source: FeedbackSource | null;
+    status: FeedbackStatus | null;
+    rating: number | null;
+    search: string;
+    sort:
+      | 'newest'
+      | 'oldest'
+      | 'rating_asc'
+      | 'rating_desc'
+      | 'urgency_desc'
+      | 'unanswered';
+  };
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
   counters: {
     total: number;
     new: number;
@@ -67,6 +121,16 @@ export type ReviewsPageData = {
     negative: number;
     withIncident: number;
   };
+  permissions: {
+    canManageFeedback: boolean;
+    canCreateReply: boolean;
+    canCreateNote: boolean;
+  };
+};
+
+const initialActionState: ReputationActionState = {
+  error: null,
+  success: null,
 };
 
 const statusLabels: Record<FeedbackStatus, string> = {
@@ -116,62 +180,36 @@ const urgencyLabels: Record<FeedbackUrgency, string> = {
   CRITICAL: 'Critique',
 };
 
-function getInitials(name: string | null): string {
-  if (!name) return 'A';
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
-}
-
-function formatRelativeDate(value: string): string {
-  const date = new Date(value);
-  const elapsedMinutes = Math.max(
-    1,
-    Math.round((Date.now() - date.getTime()) / 60_000),
-  );
-  if (elapsedMinutes < 60) return `Il y a ${elapsedMinutes} min`;
-  const hours = Math.round(elapsedMinutes / 60);
-  if (hours < 24) return `Il y a ${hours} h`;
-  const days = Math.round(hours / 24);
-  return `Il y a ${days} j`;
-}
-
-export function ReviewsPage({
-  data,
-  initialSelectedId,
-}: {
-  data: ReviewsPageData;
-  initialSelectedId?: string;
-}) {
-  const [source, setSource] = useState<'ALL' | FeedbackSource>('ALL');
-  const [status, setStatus] = useState<'ALL' | FeedbackStatus>('ALL');
-  const [rating, setRating] = useState('ALL');
-  const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState(
-    initialSelectedId &&
-      data.items.some((item) => item.id === initialSelectedId)
-      ? initialSelectedId
-      : (data.items[0]?.id ?? ''),
+export function ReviewsPage({ data }: { data: ReviewsPageData }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const currentSearchParams = useSearchParams();
+  const [search, setSearch] = useState(data.query.search);
+  const userNames = new Map(
+    data.assignableUsers.map((user) => [user.id, user.name]),
   );
 
-  const items = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase('fr');
-    return data.items.filter((item) => {
-      return (
-        (source === 'ALL' || item.source === source) &&
-        (status === 'ALL' || item.status === status) &&
-        (rating === 'ALL' || item.rating === Number(rating)) &&
-        `${item.authorName ?? ''} ${item.content ?? ''}`
-          .toLocaleLowerCase('fr')
-          .includes(normalizedQuery)
-      );
-    });
-  }, [data.items, query, rating, source, status]);
+  function updateQuery(
+    updates: Record<string, string | number | null>,
+    options?: { keepSelected?: boolean },
+  ) {
+    const params = new URLSearchParams(currentSearchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === null || value === '' || value === 'ALL') {
+        params.delete(key);
+      } else {
+        params.set(key, String(value));
+      }
+    }
+    if (!options?.keepSelected) params.delete('selected');
+    if (!Object.hasOwn(updates, 'page')) params.delete('page');
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
 
-  const selected =
-    data.items.find((item) => item.id === selectedId) ?? items[0] ?? null;
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    updateQuery({ search });
+  }
 
   return (
     <div className="flex w-full flex-col gap-5">
@@ -181,11 +219,11 @@ export function ReviewsPage({
         description="Centralisez les avis Google et les retours directs de vos clients."
         actions={
           <>
-            <Button variant="secondary">
+            <Button variant="secondary" disabled>
               <RefreshCw className="h-4 w-4" />
               Synchroniser
             </Button>
-            <Button variant="secondary">
+            <Button variant="secondary" disabled>
               <Settings className="h-4 w-4" />
               Paramètres
             </Button>
@@ -197,7 +235,7 @@ export function ReviewsPage({
         <Card padding="none">
           <ErrorState
             title="Les avis sont momentanément indisponibles"
-            description="Vérifiez la base locale, appliquez la migration et relancez le seed."
+            description="Vérifiez la base locale, appliquez les migrations et relancez le seed."
           />
         </Card>
       )}
@@ -234,14 +272,12 @@ export function ReviewsPage({
 
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.85fr)]">
             <Card padding="none" className="overflow-hidden">
-              <div className="grid gap-2 border-b border-border-default p-4 sm:grid-cols-2 lg:grid-cols-[145px_145px_135px_minmax(180px,1fr)]">
+              <div className="grid gap-2 border-b border-border-default p-4 sm:grid-cols-2 lg:grid-cols-[145px_145px_135px_165px_minmax(180px,1fr)]">
                 <Select
-                  value={source}
-                  onValueChange={(value) =>
-                    setSource(value as 'ALL' | FeedbackSource)
-                  }
+                  value={data.query.source ?? 'ALL'}
+                  onValueChange={(value) => updateQuery({ source: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Source">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -251,12 +287,10 @@ export function ReviewsPage({
                   </SelectContent>
                 </Select>
                 <Select
-                  value={status}
-                  onValueChange={(value) =>
-                    setStatus(value as 'ALL' | FeedbackStatus)
-                  }
+                  value={data.query.status ?? 'ALL'}
+                  onValueChange={(value) => updateQuery({ status: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Statut">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -268,8 +302,11 @@ export function ReviewsPage({
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={rating} onValueChange={setRating}>
-                  <SelectTrigger>
+                <Select
+                  value={data.query.rating ? String(data.query.rating) : 'ALL'}
+                  onValueChange={(value) => updateQuery({ rating: value })}
+                >
+                  <SelectTrigger aria-label="Note">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -281,18 +318,50 @@ export function ReviewsPage({
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="relative">
+                <Select
+                  value={data.query.sort}
+                  onValueChange={(value) => updateQuery({ sort: value })}
+                >
+                  <SelectTrigger aria-label="Tri">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Plus récents</SelectItem>
+                    <SelectItem value="oldest">Plus anciens</SelectItem>
+                    <SelectItem value="rating_asc">
+                      Notes croissantes
+                    </SelectItem>
+                    <SelectItem value="rating_desc">
+                      Notes décroissantes
+                    </SelectItem>
+                    <SelectItem value="urgency_desc">
+                      Urgence prioritaire
+                    </SelectItem>
+                    <SelectItem value="unanswered">
+                      Sans réponse d'abord
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <form onSubmit={submitSearch} className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <Input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
                     placeholder="Rechercher un avis…"
-                    className="pl-10"
+                    className="pl-10 pr-20"
                   />
-                </div>
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2"
+                  >
+                    Chercher
+                  </Button>
+                </form>
               </div>
 
-              {items.length === 0 ? (
+              {data.items.length === 0 ? (
                 <EmptyState
                   icon={<Inbox className="mx-auto h-8 w-8" />}
                   title="Aucun avis trouvé"
@@ -300,14 +369,19 @@ export function ReviewsPage({
                 />
               ) : (
                 <div className="divide-y divide-border-default">
-                  {items.map((item) => (
+                  {data.items.map((item) => (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => setSelectedId(item.id)}
+                      onClick={() =>
+                        updateQuery(
+                          { selected: item.id },
+                          { keepSelected: true },
+                        )
+                      }
                       className={cn(
                         'grid w-full gap-3 p-4 text-left transition-colors hover:bg-surface-muted sm:grid-cols-[auto_minmax(0,1fr)_auto]',
-                        selected?.id === item.id && 'bg-surface-selected',
+                        data.detail?.id === item.id && 'bg-surface-selected',
                       )}
                     >
                       <div className="flex items-start gap-3">
@@ -337,6 +411,12 @@ export function ReviewsPage({
                               {sentimentLabels[item.sentiment]}
                             </Badge>
                           )}
+                          {item.assignedToUserId && (
+                            <Badge size="sm" tone="info" variant="outline">
+                              {userNames.get(item.assignedToUserId) ??
+                                'Assigné'}
+                            </Badge>
+                          )}
                           {item.incidentId && (
                             <Badge size="sm" tone="danger" variant="outline">
                               Incident
@@ -356,10 +436,40 @@ export function ReviewsPage({
                   ))}
                 </div>
               )}
+
+              {data.pagination.totalItems > 0 && (
+                <Pagination
+                  page={data.pagination.page}
+                  pageCount={data.pagination.totalPages}
+                  previousLabel="Précédent"
+                  nextLabel="Suivant"
+                  pageLabel={(page, pageCount) =>
+                    `Page ${page} sur ${pageCount}`
+                  }
+                  className="border-t border-border-default p-4"
+                  onPrevious={() =>
+                    updateQuery(
+                      { page: data.pagination.page - 1 },
+                      { keepSelected: false },
+                    )
+                  }
+                  onNext={() =>
+                    updateQuery(
+                      { page: data.pagination.page + 1 },
+                      { keepSelected: false },
+                    )
+                  }
+                />
+              )}
             </Card>
 
-            {selected ? (
-              <ReviewDetail review={selected} />
+            {data.detail ? (
+              <ReviewDetail
+                key={data.detail.id}
+                review={data.detail}
+                assignableUsers={data.assignableUsers}
+                permissions={data.permissions}
+              />
             ) : (
               <Card padding="none">
                 <EmptyState
@@ -375,12 +485,33 @@ export function ReviewsPage({
   );
 }
 
-function ReviewDetail({ review }: { review: ReviewListRecord }) {
-  const [reply, setReply] = useState(
-    review.source === 'GOOGLE'
-      ? `Bonjour,\n\nMerci d'avoir pris le temps de partager votre expérience. Votre retour est précieux pour notre équipe.\n\nL'équipe LUNA`
-      : '',
+function ReviewDetail({
+  review,
+  assignableUsers,
+  permissions,
+}: {
+  review: ReviewDetailRecord;
+  assignableUsers: AssignableReputationUser[];
+  permissions: ReviewsPageData['permissions'];
+}) {
+  const [managementState, managementAction] = useActionState(
+    updateFeedbackAction,
+    initialActionState,
   );
+  const [replyState, replyAction] = useActionState(
+    saveReplyDraftAction,
+    initialActionState,
+  );
+  const [noteState, noteAction] = useActionState(
+    createInternalNoteAction,
+    initialActionState,
+  );
+  const [reply, setReply] = useState(review.latestReply?.content ?? '');
+  const [note, setNote] = useState('');
+
+  useEffect(() => {
+    if (noteState.success) setNote('');
+  }, [noteState.success]);
 
   return (
     <Card padding="none" className="overflow-hidden xl:sticky xl:top-0">
@@ -396,9 +527,11 @@ function ReviewDetail({ review }: { review: ReviewListRecord }) {
             </p>
           </div>
         </div>
-        {review.source === 'GOOGLE' && (
-          <IconButton variant="ghost" aria-label="Ouvrir l'avis sur Google">
-            <ExternalLink className="h-4 w-4" />
+        {review.source === 'GOOGLE' && review.externalUrl && (
+          <IconButton asChild variant="ghost" aria-label="Ouvrir sur Google">
+            <a href={review.externalUrl} target="_blank" rel="noreferrer">
+              <ExternalLink className="h-4 w-4" />
+            </a>
           </IconButton>
         )}
       </div>
@@ -426,6 +559,59 @@ function ReviewDetail({ review }: { review: ReviewListRecord }) {
         </div>
       </section>
 
+      <form
+        action={managementAction}
+        className="grid gap-3 border-t border-border-default p-4 sm:grid-cols-2"
+      >
+        <input type="hidden" name="feedbackId" value={review.id} />
+        <div className="grid gap-2">
+          <Label htmlFor={`feedback-status-${review.id}`}>Statut</Label>
+          <Select
+            name="status"
+            defaultValue={review.status}
+            disabled={!permissions.canManageFeedback}
+          >
+            <SelectTrigger id={`feedback-status-${review.id}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor={`feedback-assignee-${review.id}`}>Responsable</Label>
+          <Select
+            name="assignedToUserId"
+            defaultValue={review.assignedToUserId ?? 'UNASSIGNED'}
+            disabled={!permissions.canManageFeedback}
+          >
+            <SelectTrigger id={`feedback-assignee-${review.id}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="UNASSIGNED">Non attribué</SelectItem>
+              {assignableUsers.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="sm:col-span-2">
+          <ActionMessage state={managementState} />
+          <MutationSubmit
+            label="Enregistrer le traitement"
+            disabled={!permissions.canManageFeedback}
+          />
+        </div>
+      </form>
+
       <section className="border-t border-border-default p-4">
         <h2 className="flex items-center gap-2 font-bold text-brand-800">
           <Sparkles className="h-4 w-4" />
@@ -448,15 +634,7 @@ function ReviewDetail({ review }: { review: ReviewListRecord }) {
             <p className="text-xs text-muted">Urgence</p>
             <div className="mt-2">
               {review.urgency ? (
-                <Badge
-                  tone={
-                    review.urgency === 'CRITICAL' || review.urgency === 'HIGH'
-                      ? 'danger'
-                      : review.urgency === 'MEDIUM'
-                        ? 'warning'
-                        : 'neutral'
-                  }
-                >
+                <Badge tone={urgencyTone(review.urgency)}>
                   {urgencyLabels[review.urgency]}
                 </Badge>
               ) : (
@@ -464,6 +642,21 @@ function ReviewDetail({ review }: { review: ReviewListRecord }) {
               )}
             </div>
           </div>
+          {review.analysis && (
+            <div className="sm:col-span-2">
+              <p className="text-xs text-muted">Résumé</p>
+              <p className="mt-1 text-sm">{review.analysis.summary}</p>
+              {review.analysis.topics.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {review.analysis.topics.map((topic) => (
+                    <Badge key={topic} size="sm" variant="outline">
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {(review.urgency === 'HIGH' || review.urgency === 'CRITICAL') && (
           <div className="mt-3 flex items-start gap-2 rounded-lg border border-status-danger bg-status-danger-soft p-3 text-sm text-status-danger">
@@ -473,37 +666,94 @@ function ReviewDetail({ review }: { review: ReviewListRecord }) {
         )}
       </section>
 
-      {review.source === 'GOOGLE' ? (
-        <section className="border-t border-border-default p-4">
+      {review.source === 'GOOGLE' && (
+        <form
+          action={replyAction}
+          className="border-t border-border-default p-4"
+        >
+          <input type="hidden" name="feedbackId" value={review.id} />
           <div className="flex items-center justify-between gap-3">
             <h2 className="flex items-center gap-2 font-bold text-brand-800">
               <Bot className="h-4 w-4" />
-              Réponse suggérée
+              Brouillon de réponse
             </h2>
-            {review.replyStatus && (
-              <Badge variant="outline">{review.replyStatus}</Badge>
+            {review.latestReply && (
+              <Badge variant="outline">{review.latestReply.status}</Badge>
             )}
           </div>
           <Textarea
+            name="content"
             value={reply}
             onChange={(event) => setReply(event.target.value)}
-            className="mt-3 min-h-44 leading-6"
+            placeholder="Rédigez une réponse manuelle…"
+            className="mt-3 min-h-40 leading-6"
+            maxLength={4_000}
+            disabled={!permissions.canCreateReply}
           />
           <p className="mt-2 text-xs text-muted">
-            Vérifiez toujours le contenu avant publication.
+            Le brouillon est enregistré dans YUTA. La publication Google sera
+            activée avec le connecteur.
           </p>
+          <ActionMessage state={replyState} />
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Button variant="secondary" disabled>
-              <FilePenLine className="h-4 w-4" />
-              Enregistrer
-            </Button>
-            <Button disabled>
+            <ReplySubmit
+              disabled={
+                !permissions.canCreateReply || reply.trim().length === 0
+              }
+            />
+            <Button type="button" disabled>
               <Send className="h-4 w-4" />
               Publier sur Google
             </Button>
           </div>
-        </section>
-      ) : (
+        </form>
+      )}
+
+      <section className="border-t border-border-default p-4">
+        <h2 className="flex items-center gap-2 font-bold text-brand-800">
+          <StickyNote className="h-4 w-4" />
+          Notes internes
+        </h2>
+        {review.notes.length > 0 ? (
+          <div className="mt-3 grid gap-2">
+            {review.notes.map((internalNote) => (
+              <div
+                key={internalNote.id}
+                className="rounded-lg bg-surface-muted p-3"
+              >
+                <p className="text-sm leading-5">{internalNote.content}</p>
+                <p className="mt-2 text-xs text-muted">
+                  {internalNote.authorName} ·{' '}
+                  {formatAbsoluteDate(internalNote.createdAt)}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted">
+            Aucune note interne pour cet avis.
+          </p>
+        )}
+        <form action={noteAction} className="mt-3">
+          <input type="hidden" name="feedbackId" value={review.id} />
+          <Textarea
+            name="content"
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Ajouter une note visible uniquement par l'équipe…"
+            maxLength={4_000}
+            disabled={!permissions.canCreateNote}
+          />
+          <ActionMessage state={noteState} />
+          <div className="mt-3 flex justify-end">
+            <NoteSubmit
+              disabled={!permissions.canCreateNote || note.trim().length === 0}
+            />
+          </div>
+        </form>
+      </section>
+
+      {review.source === 'DIRECT' && (
         <section className="border-t border-border-default p-4">
           <Button variant="secondary" fullWidth disabled>
             <UserRound className="h-4 w-4" />
@@ -513,6 +763,75 @@ function ReviewDetail({ review }: { review: ReviewListRecord }) {
       )}
     </Card>
   );
+}
+
+function MutationSubmit({
+  label,
+  disabled,
+}: {
+  label: string;
+  disabled: boolean;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      variant="secondary"
+      size="sm"
+      loading={pending}
+      disabled={disabled || pending}
+    >
+      {label}
+    </Button>
+  );
+}
+
+function ReplySubmit({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      variant="secondary"
+      loading={pending}
+      disabled={disabled || pending}
+    >
+      <FilePenLine className="h-4 w-4" />
+      Enregistrer
+    </Button>
+  );
+}
+
+function NoteSubmit({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      variant="secondary"
+      size="sm"
+      loading={pending}
+      disabled={disabled || pending}
+    >
+      Ajouter la note
+    </Button>
+  );
+}
+
+function ActionMessage({ state }: { state: ReputationActionState }) {
+  if (state.error) {
+    return (
+      <p className="mt-2 text-xs font-medium text-status-danger" role="alert">
+        {state.error}
+      </p>
+    );
+  }
+  if (state.success) {
+    return (
+      <p className="mt-2 text-xs font-medium text-status-success" role="status">
+        {state.success}
+      </p>
+    );
+  }
+  return null;
 }
 
 function SourceMark({ source }: { source: FeedbackSource }) {
@@ -538,4 +857,40 @@ function Rating({ value }: { value: number }) {
       <Star className="h-3.5 w-3.5 fill-status-rating text-status-rating" />
     </span>
   );
+}
+
+function getInitials(name: string | null): string {
+  if (!name) return 'A';
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+}
+
+function formatRelativeDate(value: string): string {
+  const date = new Date(value);
+  const elapsedMinutes = Math.max(
+    1,
+    Math.round((Date.now() - date.getTime()) / 60_000),
+  );
+  if (elapsedMinutes < 60) return `Il y a ${elapsedMinutes} min`;
+  const hours = Math.round(elapsedMinutes / 60);
+  if (hours < 24) return `Il y a ${hours} h`;
+  return `Il y a ${Math.round(hours / 24)} j`;
+}
+
+function formatAbsoluteDate(value: string): string {
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+function urgencyTone(
+  urgency: FeedbackUrgency,
+): 'danger' | 'warning' | 'neutral' {
+  if (urgency === 'CRITICAL' || urgency === 'HIGH') return 'danger';
+  if (urgency === 'MEDIUM') return 'warning';
+  return 'neutral';
 }

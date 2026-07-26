@@ -3,6 +3,10 @@
 This document tracks the Phase 1 reputation module implemented across
 `apps/admin`, `apps/web`, `packages/contracts`, and `packages/db`.
 
+The implementation sequence and current task status are maintained in
+`docs/REPUTATION_PHASE1_BACKLOG.md`. Update that tracker whenever Phase 1 work
+is completed, added, deferred, or reordered.
+
 ## Product surfaces
 
 - Admin inbox: `/customers/reviews` in `apps/admin`.
@@ -88,18 +92,57 @@ server validates the target and rotates the session before reloading the inbox,
 so review queries always use the newly authenticated organization and
 establishment scope.
 
+The inbox filters, sorts, and paginates through server-backed URL parameters.
+Managers can persist status and assignment changes, save or edit a manual
+Google reply draft, and add internal notes. These mutations validate input with
+shared contracts, repeat authorization checks on the server, and create
+reputation audit events. Employees can read and act only on feedback assigned
+to their own user account.
+
 No production development-tenant fallback remains in the admin application.
 Organization, establishment, role, entitlement, and permission values are never
 accepted from the browser. See `docs/AUTHENTICATION.md`.
 
+## Google Business Profile connector
+
+Owners and administrators configure Google Business Profile from
+`/settings/integrations`. The OAuth start and callback routes bind a signed,
+short-lived state value to the current user, organization, and establishment.
+The callback rejects mismatched or expired state before storing credentials.
+
+Access and refresh tokens are encrypted with AES-256-GCM before database
+storage. Tokens are never returned to the browser or included in application
+logs. Access tokens are refreshed server-side when they approach expiration.
+The account and location selected in the UI are fetched from Google again before
+the connector is marked `CONNECTED`.
+
+Admin environments require:
+
+```env
+GOOGLE_BUSINESS_PROFILE_CLIENT_ID=...
+GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET=...
+GOOGLE_BUSINESS_PROFILE_REDIRECT_URI=https://admin.example.com/api/reputation/google/oauth/callback
+REPUTATION_CREDENTIAL_ENCRYPTION_KEY=...
+```
+
+Generate `REPUTATION_CREDENTIAL_ENCRYPTION_KEY` as 32 random bytes encoded with
+base64. Never reuse `AUTH_SECRET` as the credential-encryption key. Register the
+redirect URI exactly in Google Cloud, request Business Profile API access, and
+enable the Account Management and Business Information APIs. The connector uses
+the non-deprecated `https://www.googleapis.com/auth/business.manage` scope.
+
+Current connector boundary: OAuth, credential storage, account discovery,
+location discovery, selection, token refresh, and recovery UI are implemented.
+Review import, synchronization scheduling, and Google reply reconciliation are
+the next connector tasks.
+
 ## Remaining Phase 1 work
 
-- Google OAuth, encrypted credential service, review synchronization, and reply
-  publication.
+- Google review synchronization and reply publication.
 - AI analysis and reply services with versioned prompts and strict structured
   output validation.
-- Admin mutation flows, incidents, notifications, audit timeline, analytics,
-  jobs, and connector monitoring. Each mutation must use the implemented
-  server-side permission boundary.
+- Incidents, notifications, audit timeline, analytics, jobs, and connector
+  monitoring. Each mutation must use the implemented server-side permission
+  boundary.
 - QR PNG/SVG downloads.
 - Integration and end-to-end tests for external connectors.

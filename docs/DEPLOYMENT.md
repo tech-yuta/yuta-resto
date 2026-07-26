@@ -129,6 +129,20 @@ docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/doc
 docker compose --env-file apps/<app-name>/.env.production -f apps/<app-name>/docker-compose.yml up -d --build <service>
 ```
 
+## YuTa public website
+
+Public website deployments should provide:
+
+```env
+DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
+PUBLIC_FEEDBACK_IP_HASH_SALT=replace-with-a-long-random-value
+NEXT_PUBLIC_ADMIN_URL=https://admin.example.com
+```
+
+`NEXT_PUBLIC_ADMIN_URL` powers the public website's sign-in link. Keep the
+privacy, terms, legal, data-management, contact, and Google integration routes
+publicly reachable over HTTPS on the verified production domain.
+
 ## YuTa Admin authentication
 
 Admin deployments must provide:
@@ -137,12 +151,23 @@ Admin deployments must provide:
 DATABASE_URL=postgres://yuta:encoded_password@luna-postgres:5432/yuta_resto
 AUTH_SECRET=replace-with-at-least-32-random-characters
 NEXT_PUBLIC_ADMIN_URL=https://admin.example.com
+GOOGLE_BUSINESS_PROFILE_CLIENT_ID=replace-with-google-oauth-client-id
+GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET=replace-with-google-oauth-client-secret
+GOOGLE_BUSINESS_PROFILE_REDIRECT_URI=https://admin.example.com/api/reputation/google/oauth/callback
+REPUTATION_CREDENTIAL_ENCRYPTION_KEY=replace-with-base64-encoded-32-byte-key
 ```
 
 `AUTH_SECRET` must be generated independently per environment and must not be
-committed. Apply database migration `0008_elite_the_twelve.sql` before starting
+committed. Apply database migrations through `0009_sparkling_galactus.sql`
+before starting
 an admin build that uses server-side sessions. Production seeding additionally
 requires `YUTA_SEED_ADMIN_PASSWORD`; routine application startup does not.
+
+The four Google variables are required only when the Google Business Profile
+connector is enabled. Generate `REPUTATION_CREDENTIAL_ENCRYPTION_KEY` from 32
+random bytes, keep it stable across deployments, and back it up securely.
+Changing or losing this key makes stored OAuth credentials unreadable. Register
+the redirect URI exactly in the Google Cloud OAuth client.
 
 ## YuTa POS
 

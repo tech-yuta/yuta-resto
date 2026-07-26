@@ -24,6 +24,9 @@ pnpm dev
 
 Open `http://localhost:3000` for the public website.
 
+Public website routes, Google integration disclosures, and production content
+requirements are documented in `docs/PUBLIC_WEBSITE.md`.
+
 Useful app scripts:
 
 ```bash

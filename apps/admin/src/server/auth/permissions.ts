@@ -4,21 +4,25 @@ import { TenantError, type TenantContext, type TenantRole } from '@yuta/tenant';
 
 export type ReputationPermission =
   | 'reputation.read'
+  | 'reputation.feedback.manage'
   | 'reputation.reply.create'
   | 'reputation.reply.publish'
   | 'reputation.incident.create'
   | 'reputation.incident.manage'
   | 'reputation.analytics.read'
+  | 'reputation.note.create'
   | 'reputation.settings.manage'
   | 'reputation.connector.manage';
 
 const permissionRoles: Record<ReputationPermission, readonly TenantRole[]> = {
   'reputation.read': ['owner', 'admin', 'manager', 'employee'],
+  'reputation.feedback.manage': ['owner', 'admin', 'manager'],
   'reputation.reply.create': ['owner', 'admin', 'manager', 'employee'],
   'reputation.reply.publish': ['owner', 'admin', 'manager'],
   'reputation.incident.create': ['owner', 'admin', 'manager', 'employee'],
   'reputation.incident.manage': ['owner', 'admin', 'manager'],
   'reputation.analytics.read': ['owner', 'admin', 'manager'],
+  'reputation.note.create': ['owner', 'admin', 'manager', 'employee'],
   'reputation.settings.manage': ['owner', 'admin'],
   'reputation.connector.manage': ['owner', 'admin'],
 };
