@@ -483,3 +483,20 @@ The cloud consumer cutover is also complete:
 - the cloud schema and reputation repository integration suite pass against a
   disposable PostgreSQL database;
 - the legacy `packages/db` package and migration history have been deleted.
+
+The clean package baselines are now verified:
+
+- `db-cloud/drizzle/0000_initial.sql` creates exactly the 17 cloud tables and
+  records one Drizzle migration;
+- `db-pos/drizzle/0000_initial.sql` creates exactly the 16 POS tables and
+  records one Drizzle migration;
+- neither baseline contains database-generated UUID defaults;
+- both baselines migrate an empty PostgreSQL database successfully;
+- cloud and POS seeds succeed twice on the migrated databases;
+- cloud `5/5`, db-pos `4/4`, and site-agent `10/10` guarded tests pass against
+  those databases.
+
+The remaining database-baseline checkpoint is the standalone display app:
+rename its runtime/CLI/Compose variable to `DISPLAY_DATABASE_URL`, replace
+`0000_loud_exodus.sql` with `0000_initial.sql`, and verify its fresh install
+independently.

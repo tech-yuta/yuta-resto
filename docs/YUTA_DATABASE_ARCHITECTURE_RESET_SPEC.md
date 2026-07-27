@@ -1358,9 +1358,9 @@ The refactor is complete only when all conditions below are true.
 ### Reset
 
 - [ ] Existing development DB data was discarded.
-- [ ] Existing migration history was removed.
-- [ ] No transitional migration/backfill code remains.
-- [ ] Each active DB package has one clean `0000_initial` baseline before first deployment.
+- [x] Existing migration history was removed.
+- [x] No transitional migration/backfill code remains.
+- [x] Each active DB package has one clean `0000_initial` baseline before first deployment.
 - [ ] A fresh environment can be recreated from code and migrations.
 
 ### Code boundaries

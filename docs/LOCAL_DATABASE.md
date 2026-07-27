@@ -83,10 +83,9 @@ service validates `POS_DATABASE_URL` at startup and exposes `/health`; it does
 not receive `CLOUD_DATABASE_URL`. The POS health endpoint now checks this local
 API instead of opening a database connection for its connectivity probe.
 
-## Schema workflow during the reset
+## Schema workflow
 
-While the new schemas are being designed, use disposable development
-databases and schema push commands:
+Use schema push only for disposable design databases:
 
 ```bash
 pnpm db:cloud:push
@@ -97,15 +96,20 @@ pnpm --filter @yuta/display db:push
 Do not generate a chain of compatibility migrations from the legacy shared
 schema. Do not backfill legacy development data.
 
-After the target schemas are accepted:
+The cloud and POS target schemas now have committed clean baselines:
 
-1. Reset all disposable development databases.
-2. Delete temporary generated migrations.
-3. Generate `packages/db-cloud/drizzle/0000_initial.sql`.
-4. Generate `packages/db-pos/drizzle/0000_initial.sql`.
-5. Generate `apps/yuta-display/drizzle/0000_initial.sql`.
-6. Create fresh databases using migrations only.
-7. Run architecture, database, and integration tests.
+- `packages/db-cloud/drizzle/0000_initial.sql` creates the 17-table cloud
+  boundary;
+- `packages/db-pos/drizzle/0000_initial.sql` creates the 16-table local POS
+  boundary;
+- both baselines have been applied with `db:migrate` to empty PostgreSQL
+  databases;
+- both seeds are idempotent and their guarded integration suites pass on those
+  migrated databases.
+
+The remaining baseline task is to rename the standalone display connection to
+`DISPLAY_DATABASE_URL` and regenerate its app-owned migration as
+`apps/yuta-display/drizzle/0000_initial.sql`.
 
 ## Root scripts
 
