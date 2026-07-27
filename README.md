@@ -31,6 +31,8 @@ data must never be written to or synchronized with the cloud database.
 
 - [`docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`](docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md) -
   authoritative database and runtime-boundary specification.
+- [`docs/YUTA_DATABASE_ARCHITECTURE_AUDIT.md`](docs/YUTA_DATABASE_ARCHITECTURE_AUDIT.md) -
+  current schema/consumer inventory and pre-reset entity classification.
 - [`docs/YUTA_POS.md`](docs/YUTA_POS.md) - POS product behavior and target local
   architecture.
 - [`docs/POS_OFFLINE_STRATEGY.md`](docs/POS_OFFLINE_STRATEGY.md) - offline and

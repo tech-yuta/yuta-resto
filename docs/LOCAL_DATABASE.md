@@ -95,9 +95,11 @@ The code reset must provide:
 db:cloud:push
 db:cloud:generate
 db:cloud:migrate
+db:cloud:seed
 db:pos:push
 db:pos:generate
 db:pos:migrate
+db:pos:seed
 db:reset:dev
 architecture:check
 ```
@@ -134,27 +136,61 @@ Remove-Item Env:CONFIRM_DB_RESET
 
 ## Seed ownership
 
-Cloud seed data may include:
+The new packages now expose independent seed commands:
 
-- a demo organization;
-- a demo establishment;
-- a cloud owner user and membership;
-- demo feature flags;
-- clearly marked mock reviews.
+```bash
+pnpm db:cloud:seed
+pnpm db:pos:seed
+```
 
-POS seed data may include:
+The cloud seed requires `CLOUD_DATABASE_URL`. It creates or updates:
 
-- a local restaurant profile;
-- tables, categories, products, and combo rules;
-- local employee roles;
-- printer placeholders;
-- sample development orders.
+- the initial organization and establishment;
+- the development hostname and cloud entitlements;
+- one cloud owner account and membership;
+- the initial reputation settings.
+
+Set `YUTA_CLOUD_SEED_ADMIN_PASSWORD` to override the development password. It
+is mandatory when `NODE_ENV=production`.
+
+The POS seed requires `POS_DATABASE_URL`. It creates or updates:
+
+- local admin, staff, and kitchen identities;
+- categories and products;
+- combo rules and their item groups.
+
+The POS seed does not create cloud users, tenant memberships, reputation data,
+sample orders, payment history, print jobs, or device credentials. Local PIN
+authentication will be added with `site-agent`; the current seed does not
+invent a temporary password model.
+
+Both seeds generate new business IDs with UUIDv7 in application code and are
+idempotent through stable natural keys.
 
 Display seed data may include placeholder media records only when the
 corresponding local files exist.
 
 Never seed Google OAuth tokens. Never use the cloud organization seed to
 initialize POS data.
+
+## Integration-test guard
+
+Database integration tests are boundary-specific and disabled by default. Run
+them only against disposable databases with the matching URL and an explicit
+confirmation:
+
+```powershell
+$env:YUTA_ALLOW_DATABASE_INTEGRATION_TESTS = 'true'
+$env:CLOUD_DATABASE_URL = 'postgres://.../yuta_cloud_test'
+pnpm test:db-cloud
+
+$env:POS_DATABASE_URL = 'postgres://.../yuta_pos_test'
+pnpm test:db-pos
+
+Remove-Item Env:YUTA_ALLOW_DATABASE_INTEGRATION_TESTS
+```
+
+Never set the integration-test confirmation flag in a production environment.
 
 ## Fresh-install verification
 

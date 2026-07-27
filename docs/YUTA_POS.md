@@ -315,3 +315,8 @@ A single local installation record may identify the restaurant/site for
 licensing, backup metadata, and operator display. Local staff authentication
 uses local users, roles, and PIN sessions managed by `site-agent`; it does not
 reuse cloud memberships or cloud authentication sessions.
+
+The current `@yuta/db-pos` development seed creates local admin, staff, and
+kitchen identities plus catalog/combo fixtures. It intentionally creates no
+cloud membership and no temporary local password. PIN credentials and sessions
+remain part of the `site-agent` implementation phase.

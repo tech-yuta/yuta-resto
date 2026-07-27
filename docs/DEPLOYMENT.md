@@ -170,6 +170,12 @@ Do not deploy legacy shared migrations or compatibility/backfill migrations.
 
 Test every baseline against an empty database before production.
 
+Cloud and POS seed jobs are separate maintenance operations. A cloud seed job
+receives only `CLOUD_DATABASE_URL`; a POS seed job receives only
+`POS_DATABASE_URL`. Do not include either seed in normal application startup,
+and do not run development fixtures automatically during production
+deployment.
+
 ## POS deployment requirements
 
 The local POS deployment must:
