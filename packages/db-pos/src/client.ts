@@ -13,3 +13,4 @@ export function createPosDatabaseClient(
 }
 
 export type PosDatabaseClient = ReturnType<typeof createPosDatabaseClient>;
+export type PosDatabaseExecutor = Omit<PosDatabaseClient, '$client'>;

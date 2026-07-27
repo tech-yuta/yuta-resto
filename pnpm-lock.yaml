@@ -73,6 +73,40 @@ importers:
         specifier: ^4.0.15
         version: 4.1.9(@types/node@26.0.0)(vite@8.1.0(@types/node@26.0.0)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.101.0)(tsx@4.22.4))
 
+  apps/site-agent:
+    dependencies:
+      '@yuta/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@yuta/db-pos':
+        specifier: workspace:*
+        version: link:../../packages/db-pos
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
+      drizzle-orm:
+        specifier: ^0.43.1
+        version: 0.43.1(postgres@3.4.9)
+      uuid:
+        specifier: ^14.0.1
+        version: 14.0.1
+      zod:
+        specifier: ^3.25.67
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^26.0.0
+        version: 26.0.0
+      tsx:
+        specifier: ^4.20.6
+        version: 4.22.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.0.15
+        version: 4.1.9(@types/node@26.0.0)(vite@8.1.0(@types/node@26.0.0)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.101.0)(tsx@4.22.4))
+
   apps/web:
     dependencies:
       '@yuta/contracts':
@@ -185,6 +219,9 @@ importers:
 
   apps/yuta-pos:
     dependencies:
+      '@yuta/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@yuta/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -231,6 +268,9 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      vitest:
+        specifier: ^4.0.15
+        version: 4.1.9(@types/node@26.0.0)(vite@8.1.0(@types/node@26.0.0)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.101.0)(tsx@4.22.4))
 
   packages/auth:
     dependencies:

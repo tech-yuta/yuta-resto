@@ -6,7 +6,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 type HealthResponse = {
   status: 'available' | 'unavailable';
-  database: 'available' | 'unavailable';
+  siteAgent?: 'ok' | 'degraded' | 'unavailable';
+  database: 'available' | 'unavailable' | 'unknown';
   internet: 'available' | 'unavailable' | 'unknown';
 };
 
@@ -26,7 +27,9 @@ export function PosConnectivityStatus() {
       const response = await fetch('/api/health', { cache: 'no-store' });
       const health = (await response.json()) as HealthResponse;
 
-      if (health.database !== 'available') {
+      if (health.siteAgent === 'unavailable') {
+        setState('server-unavailable');
+      } else if (health.database !== 'available') {
         setState('database-unavailable');
       } else if (health.internet === 'unavailable') {
         setState('local-only');

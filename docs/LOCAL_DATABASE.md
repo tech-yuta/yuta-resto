@@ -63,6 +63,22 @@ production.
   expose them to application bundles.
 - Validate runtime environment variables with Zod at startup.
 
+The initial local API uses:
+
+```env
+SITE_AGENT_HOST=127.0.0.1
+SITE_AGENT_PORT=3004
+SITE_AGENT_ALLOWED_ORIGIN=http://localhost:3003
+
+# Server-side URL used by apps/yuta-pos; never expose it as NEXT_PUBLIC_*
+SITE_AGENT_URL=http://127.0.0.1:3004
+```
+
+Run `pnpm dev:site-agent` after the POS database schema is available. The
+service validates `POS_DATABASE_URL` at startup and exposes `/health`; it does
+not receive `CLOUD_DATABASE_URL`. The POS health endpoint now checks this local
+API instead of opening a database connection for its connectivity probe.
+
 ## Schema workflow during the reset
 
 While the new schemas are being designed, use disposable development
@@ -186,6 +202,7 @@ pnpm test:db-cloud
 
 $env:POS_DATABASE_URL = 'postgres://.../yuta_pos_test'
 pnpm test:db-pos
+pnpm test:site-agent
 
 Remove-Item Env:YUTA_ALLOW_DATABASE_INTEGRATION_TESTS
 ```

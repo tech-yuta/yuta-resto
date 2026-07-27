@@ -70,7 +70,9 @@ server, an Internet outage does not stop local operations. The restaurant LAN,
 edge server, and database must still be available. Browser-only order entry
 while the edge server is unreachable is not supported.
 
-Every POS screen shows a service strip below the main header:
+Every POS screen shows a service strip below the main header. This connectivity
+probe obtains the local database state from `site-agent`; the browser receives
+no database URL:
 
 ```txt
 En ligne             local server, database, and configured Internet check work

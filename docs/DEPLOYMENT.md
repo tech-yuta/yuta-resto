@@ -93,6 +93,8 @@ Only cloud server processes receive these values.
 POS_DATABASE_URL=postgres://yuta_pos:encoded_password@pos-db:5432/yuta_pos
 SITE_AGENT_HOST=0.0.0.0
 SITE_AGENT_PORT=3100
+SITE_AGENT_ALLOWED_ORIGIN=https://pos.restaurant.local
+SITE_AGENT_URL=http://site-agent:3100
 YUTA_INSTALLATION_ID=...
 YUTA_SITE_ID=...
 LOCAL_BACKUP_PATH=/var/backups/yuta-pos
@@ -100,6 +102,11 @@ LOCAL_BACKUP_PATH=/var/backups/yuta-pos
 
 Only `site-agent` and one-shot POS migration/maintenance services receive
 `POS_DATABASE_URL`. The POS browser/client receives no DB connection string.
+The server side of `apps/yuta-pos` receives `SITE_AGENT_URL`; do not expose it
+as a `NEXT_PUBLIC_*` variable.
+`SITE_AGENT_ALLOWED_ORIGIN` must be the exact POS client origin; do not use a
+wildcard origin. Bind `SITE_AGENT_HOST=0.0.0.0` only inside the trusted local
+container or LAN boundary.
 
 ### Standalone display
 

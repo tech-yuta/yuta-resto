@@ -1,6 +1,8 @@
-import { db } from '@yuta/db/client';
-import { sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+import {
+  SiteAgentClientError,
+  siteAgentClient,
+} from '../../../lib/site-agent-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,12 +12,29 @@ export async function GET() {
   const checkedAt = new Date().toISOString();
 
   try {
-    await db.execute(sql`select 1`);
-  } catch {
+    const health = await siteAgentClient.getHealth();
+    if (health.status !== 'ok' || health.database !== 'ready') {
+      return NextResponse.json(
+        {
+          status: 'unavailable',
+          siteAgent: health.status,
+          database: health.database,
+          internet: 'unknown' satisfies InternetStatus,
+          checkedAt,
+        },
+        { status: 503 },
+      );
+    }
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         status: 'unavailable',
-        database: 'unavailable',
+        siteAgent: 'unavailable',
+        database: 'unknown',
+        errorCode:
+          error instanceof SiteAgentClientError
+            ? error.code
+            : 'SITE_AGENT_UNREACHABLE',
         internet: 'unknown' satisfies InternetStatus,
         checkedAt,
       },
@@ -28,6 +47,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: 'available',
+      siteAgent: 'ok',
       database: 'available',
       internet,
       checkedAt,

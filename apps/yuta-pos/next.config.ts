@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  transpilePackages: ['@yuta/ui', '@yuta/core', '@yuta/db'],
+  transpilePackages: ['@yuta/ui', '@yuta/core', '@yuta/db', '@yuta/contracts'],
   async headers() {
     return [
       {

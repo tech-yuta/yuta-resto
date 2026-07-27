@@ -9,6 +9,7 @@ services:
       - '${POS_PORT:-3003}:3000'
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      SITE_AGENT_URL: ${SITE_AGENT_URL}
       NEXT_PUBLIC_POS_URL: ${NEXT_PUBLIC_POS_URL:-http://localhost:3003}
     networks:
       - postgres

@@ -412,6 +412,58 @@ The seed and integration-test foundation is now split by boundary:
   until that repository is rewritten for `db-cloud`; it is not re-exported or
   imported by either new package.
 
-The next implementation slice is `apps/site-agent` plus local API contracts.
-It must become the only runtime owner of `@yuta/db-pos` before POS consumers are
-moved.
+The initial `apps/site-agent` and local API contract slice is now present:
+
+- `@yuta/contracts/local-pos` defines versioned local users, catalog, order,
+  kitchen, payment, split-check, and print-job transport schemas;
+- new idempotent commands require UUIDv7 keys;
+- `apps/site-agent` validates its local-only environment and imports
+  `@yuta/db-pos`, never `@yuta/db-cloud`;
+- health, local-user, catalog, order-list, and order-creation routes are
+  implemented under `/api/v1`;
+- exact-origin CORS prevents arbitrary browser origins from using the local
+  agent;
+- speculative table-map and physical-printer resources remain absent.
+
+Order-item and kitchen persistence are now implemented in `site-agent`:
+
+- order detail, item creation, item editing, cancellation, restore, and kitchen
+  status commands use `@yuta/db-pos`;
+- new order items and kitchen print jobs receive application-generated
+  UUIDv7 IDs;
+- send-to-kitchen uses an order row lock and one transaction for allergy
+  acknowledgement, status changes, ticket snapshotting, and print-job
+  creation;
+- replaying a kitchen UUIDv7 idempotency key returns its existing result, while
+  cross-command reuse is rejected.
+
+The combo calculation engine has been extracted into
+`site-agent` and covered for fixed and base-item-plus-delta pricing, repeated
+quantities, deterministic matching, and no unit reuse. Its `db-pos` adapter
+rebuilds order and check discount snapshots with UUIDv7 IDs.
+
+The financial persistence slice is now implemented in `site-agent`:
+
+- equal and item-based splits use UUIDv7 check/check-item IDs;
+- item-based checks calculate and persist their own combo allocations;
+- payment capture locks the order, validates remaining amounts and staff
+  identity, and rejects mismatched idempotency replays;
+- completed order/check payments create a receipt snapshot and print job in the
+  same transaction;
+- print jobs can be listed and moved through printing, printed, failed, and
+  retry states.
+
+The `db-pos` schema tests and the `site-agent` financial transaction tests have
+now passed against a disposable PostgreSQL database. The first POS client
+migration slice is complete: `/api/health` uses a validated server-side
+`SITE_AGENT_URL` client and probes `site-agent` instead of the legacy database.
+The client adapter now also covers local users, catalog, order list/detail,
+order creation, item mutations, item commands, cancellation, and kitchen send.
+Order and item responses expose the serialized allergy and lifecycle snapshots
+used by the existing screens; these mappings pass the database-backed
+site-agent integration suite. Catalog responses now include nested combo rules,
+groups, and eligible items, and the POS client covers the financial
+summary/split/payment endpoints. Operational cutover remains disabled until
+the pages and actions can switch together, because order-entry and payment
+share the same order IDs and staff selection. This keeps the transition from
+writing one database and reading the other.

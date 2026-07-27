@@ -139,6 +139,82 @@ Commands use UUIDv7 idempotency keys supplied through the local API. Replaying
 the same command returns the existing result; reusing a key with different
 input is rejected.
 
+### Site-agent API status
+
+`apps/site-agent` is now scaffolded as a local Node HTTP service. Its defaults
+are:
+
+```env
+SITE_AGENT_HOST=127.0.0.1
+SITE_AGENT_PORT=3004
+SITE_AGENT_ALLOWED_ORIGIN=http://localhost:3003
+SITE_AGENT_URL=http://127.0.0.1:3004
+```
+
+Start it with:
+
+```bash
+pnpm dev:site-agent
+```
+
+The initial implemented API is:
+
+```text
+GET  /health
+GET  /api/v1/local-users
+GET  /api/v1/catalog
+GET  /api/v1/orders
+POST /api/v1/orders
+GET  /api/v1/orders/:orderId
+POST /api/v1/orders/:orderId/items
+POST /api/v1/orders/:orderId/commands
+PATCH /api/v1/order-items/:orderItemId
+POST /api/v1/order-items/:orderItemId/commands
+GET  /api/v1/orders/:orderId/payment-summary
+POST /api/v1/orders/:orderId/checks/equal
+POST /api/v1/orders/:orderId/checks/by-items
+DELETE /api/v1/orders/:orderId/checks
+POST /api/v1/orders/:orderId/payments
+POST /api/v1/orders/:orderId/checks/:checkId/payments
+GET  /api/v1/print-jobs
+POST /api/v1/print-jobs/:printJobId/commands
+```
+
+Request and response schemas live under `@yuta/contracts/local-pos`. Contracts
+also define the existing order-item, kitchen, split-payment, payment-capture,
+and print-job commands so those workflows can move without inventing a second
+transport model.
+
+Order-item editing, cancellation/restore, kitchen status changes, allergy
+confirmation, order cancellation, and send-to-kitchen are now implemented in
+`site-agent`. Kitchen sends lock the order, require a UUIDv7 idempotency key,
+acknowledge pending allergy warnings, snapshot the ticket payload, and create
+the kitchen print job in one transaction.
+
+Payment capture, split checks, combo allocation, receipt creation, and
+print-job maintenance are now implemented in `site-agent`. Financial mutations
+lock the order and run in one transaction. Full-order and check payments
+validate UUIDv7 replay input; a fully paid target creates its receipt snapshot
+and print job in the same transaction.
+
+The new financial integration tests have passed against a disposable
+PostgreSQL database. The POS connectivity/health slice now calls
+`site-agent /health` through a validated server-side client and no longer opens
+the database directly for that probe. The same client now validates the
+staff/catalog/order/item/kitchen endpoints, and the order-detail contracts
+carry the allergy acknowledgement and lifecycle snapshots required by the
+existing UI. Catalog responses include active and inactive combo-rule
+snapshots, and the client also covers payment summary, equal/item splits,
+split cancellation, and order/check payment capture. These operational methods
+are not enabled in the UI yet: cutover must switch the complete workflow
+atomically so live data is not split between the legacy and POS databases. Do
+not operate both persistence paths for the same command.
+
+There is intentionally no `/tables` or `/printers` resource. The current POS
+uses free-text table labels and printer-name snapshots; physical table maps and
+printer configuration remain deferred until a real local workflow requires
+them.
+
 POS setup and reporting are local workflows, not cloud admin workflows:
 
 ```txt

@@ -3,7 +3,12 @@
 **Status:** Implementation-ready specification  
 **Repository:** `YUTA-RESTO` pnpm workspace  
 **Target package path:** `packages/contracts`  
-**Consumers:** `apps/admin`, `apps/web`, `apps/yuta-pos`, `apps/yuta-display`, and future `apps/api`, `apps/worker`, `apps/local-agent`
+**Consumers:** `apps/admin`, `apps/web`, `apps/yuta-pos`,
+`apps/yuta-display`, `apps/site-agent`, and future cloud workers
+
+The database/runtime boundaries in
+`docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md` take precedence. In
+particular, contracts must not introduce POS-to-cloud synchronization.
 
 ---
 
@@ -31,7 +36,7 @@ Examples of application boundaries:
 - `apps/yuta-pos` → order API.
 - API → `apps/yuta-display` realtime event.
 - API → background worker job.
-- Cloud → local agent synchronization.
+- `apps/yuta-pos` → local `apps/site-agent` API.
 
 ---
 
@@ -129,12 +134,11 @@ packages/contracts/
 │   │   ├── order-response.ts
 │   │   └── order-events.ts
 │   │
+│   ├── local-pos/
+│   │   └── index.ts
+│   │
 │   ├── display/
 │   │   └── kitchen-display-events.ts
-│   │
-│   ├── sync/
-│   │   ├── sync-envelope.ts
-│   │   └── sync-result.ts
 │   │
 │   └── index.ts
 │
@@ -163,8 +167,8 @@ Recommended `package.json`:
     "./common": "./src/common/index.ts",
     "./reservations": "./src/reservations/index.ts",
     "./orders": "./src/orders/index.ts",
-    "./display": "./src/display/index.ts",
-    "./sync": "./src/sync/index.ts"
+    "./local-pos": "./src/local-pos/index.ts",
+    "./display": "./src/display/index.ts"
   },
   "dependencies": {
     "zod": "workspace:*"
@@ -390,6 +394,14 @@ If admin needs more fields, define a separate `adminReservationResponseSchema` r
 ## 9. Order contracts
 
 Initial order contracts should focus on fields shared by POS, API, and display.
+
+Local operational commands between `apps/yuta-pos` and `apps/site-agent` use
+the separate `@yuta/contracts/local-pos` export. They use free-text
+`tableLabel`, local staff IDs, integer minor-unit amounts, and UUIDv7
+idempotency keys. They do not carry cloud `organizationId` or
+`establishmentId`. Order-detail responses include serialized allergy
+acknowledgement and lifecycle timestamps because the POS item-entry and kitchen
+screens must render those snapshots without reading the database directly.
 
 ```ts
 export const orderStatusSchema = z.enum([

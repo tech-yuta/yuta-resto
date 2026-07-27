@@ -1,0 +1,26 @@
+{
+  "name": "@yuta/site-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@yuta/contracts": "workspace:*",
+    "@yuta/db-pos": "workspace:*",
+    "drizzle-orm": "^0.43.1",
+    "dotenv": "^16.5.0",
+    "uuid": "^14.0.1",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.0.15"
+  }
+}

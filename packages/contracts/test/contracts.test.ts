@@ -2,15 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   apiErrorSchema,
   createInternalNoteSchema,
+  createLocalOrderInputSchema,
   createOrderInputSchema,
   createReservationInputSchema,
   cursorPaginationQuerySchema,
   kitchenOrderCreatedEventSchema,
   moneySchema,
+  localOrderCommandSchema,
+  localPosApiBasePath,
   orderStatusSchema,
   publicFeedbackSubmissionSchema,
   saveReplySchema,
   updateFeedbackSchema,
+  uuidV7Schema,
 } from '../src';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -19,6 +23,42 @@ describe('@yuta/contracts', () => {
   it('keeps the current POS lifecycle', () => {
     expect(orderStatusSchema.parse('sent')).toBe('sent');
     expect(orderStatusSchema.safeParse('submitted').success).toBe(false);
+  });
+
+  it('validates the local site-agent API boundary', () => {
+    const uuidV7 = '01981f90-8e60-7000-8000-000000000001';
+
+    expect(localPosApiBasePath).toBe('/api/v1');
+    expect(uuidV7Schema.parse(uuidV7)).toBe(uuidV7);
+    expect(uuidV7Schema.safeParse(id).success).toBe(false);
+    expect(
+      createLocalOrderInputSchema.parse({
+        tableLabel: 'Table 12',
+        orderType: 'dine_in',
+        staffUserId: id,
+      }),
+    ).toEqual({
+      tableLabel: 'Table 12',
+      orderType: 'dine_in',
+      staffUserId: id,
+    });
+    expect(
+      localOrderCommandSchema.safeParse({
+        action: 'send_to_kitchen',
+        idempotencyKey: id,
+        staffUserId: id,
+      }).success,
+    ).toBe(false);
+    const sendCommand = localOrderCommandSchema.parse({
+      action: 'send_to_kitchen',
+      idempotencyKey: uuidV7,
+      staffUserId: id,
+    });
+    expect(sendCommand.action).toBe('send_to_kitchen');
+    if (sendCommand.action !== 'send_to_kitchen') {
+      throw new Error('Expected a send-to-kitchen command.');
+    }
+    expect(sendCommand.allergyAcknowledged).toBe(false);
   });
 
   it('validates strict common and order contracts', () => {

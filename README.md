@@ -10,8 +10,8 @@ TypeScript, Tailwind CSS, and shared workspace packages.
   establishments, reputation, reservations, and cloud configuration.
 - `apps/yuta-pos` - local-only restaurant POS client for orders, payments,
   tables, and service workflows.
-- `apps/site-agent` - target local API, persistence, realtime, printer, and
-  device boundary for the POS.
+- `apps/site-agent` - local API and persistence boundary for the POS; realtime,
+  printer, and device integrations are added here as their workflows move.
 - `apps/yuta-display` - standalone local digital signage app with an app-owned
   database.
 - `packages/ui` - shared UI components, app-shell primitives, and design tokens.
@@ -62,5 +62,6 @@ Useful app scripts:
 ```bash
 pnpm dev:admin
 pnpm dev:pos
+pnpm dev:site-agent
 pnpm dev:display
 ```

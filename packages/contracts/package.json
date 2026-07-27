@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./common": "./src/common/index.ts",
+    "./local-pos": "./src/local-pos/index.ts",
     "./orders": "./src/orders/index.ts",
     "./reputation": "./src/reputation/index.ts",
     "./reservations": "./src/reservations/index.ts",
