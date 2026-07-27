@@ -18,7 +18,7 @@ packages/ui         — Shared UI component library (@yuta/ui)
 
 Future apps may include: `yuta-staff`, `yuta-reservation`, `yuta-crm`.
 
-The repository is transitioning away from the legacy shared `packages/db`.
+The legacy shared `packages/db` has been removed.
 The authoritative target architecture is
 `docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`.
 

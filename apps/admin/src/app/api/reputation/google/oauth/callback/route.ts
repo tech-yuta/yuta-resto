@@ -1,7 +1,7 @@
-import { upsertGoogleReputationConnectorCredentials } from '@yuta/db';
-import { db } from '@yuta/db/client';
+import { upsertGoogleReputationConnectorCredentials } from '@yuta/db-cloud';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { cloudDatabase as db } from '../../../../../../server/cloud-database';
 import { requireReputationPermission } from '../../../../../../server/auth/permissions';
 import {
   getAuthSecret,

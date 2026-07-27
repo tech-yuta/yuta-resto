@@ -1,12 +1,12 @@
 'use server';
 
-import { selectGoogleReputationLocation } from '@yuta/db';
-import { db } from '@yuta/db/client';
+import { selectGoogleReputationLocation } from '@yuta/db-cloud';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { requireReputationPermission } from '../../../../server/auth/permissions';
 import { requireReputationTenant } from '../../../../server/auth/session';
+import { cloudDatabase as db } from '../../../../server/cloud-database';
 import { getGoogleConnectorAccessToken } from '../../../../server/reputation/google-connector-access';
 import {
   listGoogleBusinessAccounts,

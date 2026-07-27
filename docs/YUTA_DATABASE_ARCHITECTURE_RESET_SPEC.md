@@ -1340,20 +1340,20 @@ The refactor is complete only when all conditions below are true.
 
 ### Structure
 
-- [ ] `packages/db` has been removed.
-- [ ] `packages/db-cloud` exists.
-- [ ] `packages/db-pos` exists.
-- [ ] `packages/db-display` has not been created without a second legitimate consumer.
-- [ ] The standalone display schema remains app-owned under `apps/yuta-display/src/db`.
-- [ ] `apps/site-agent` exists or a clearly documented temporary local backend boundary exists.
+- [x] `packages/db` has been removed.
+- [x] `packages/db-cloud` exists.
+- [x] `packages/db-pos` exists.
+- [x] `packages/db-display` has not been created without a second legitimate consumer.
+- [x] The standalone display schema remains app-owned under `apps/yuta-display/src/db`.
+- [x] `apps/site-agent` exists or a clearly documented temporary local backend boundary exists.
 
 ### Data boundaries
 
-- [ ] Cloud schema contains no POS operational tables.
-- [ ] POS schema contains no cloud OAuth, Google Business Profile, subscription, or tenant membership tables.
-- [ ] POS has no cloud DB connection.
-- [ ] There is no POS-to-cloud operational data synchronization.
-- [ ] Local apps do not depend on `packages/tenant`.
+- [x] Cloud schema contains no POS operational tables.
+- [x] POS schema contains no cloud OAuth, Google Business Profile, subscription, or tenant membership tables.
+- [x] POS has no cloud DB connection.
+- [x] There is no POS-to-cloud operational data synchronization.
+- [x] Local apps do not depend on `packages/tenant`.
 
 ### Reset
 
@@ -1365,16 +1365,16 @@ The refactor is complete only when all conditions below are true.
 
 ### Code boundaries
 
-- [ ] `core` is database-independent.
-- [ ] `contracts` is database-independent.
-- [ ] Client bundles do not include DB clients or connection strings.
+- [x] `core` is database-independent.
+- [x] `contracts` is database-independent.
+- [x] Client bundles do not include DB clients or connection strings.
 - [ ] Forbidden imports are checked in CI.
 
 ### Runtime
 
-- [ ] Admin/web use the cloud DB.
-- [ ] POS uses the local server and local POS DB only.
-- [ ] Display uses either the local POS API or its own justified local DB.
+- [x] Admin/web use the cloud DB.
+- [x] POS uses the local server and local POS DB only.
+- [x] Display uses either the local POS API or its own justified local DB.
 - [ ] Local POS continues to work when cloud/Internet is unavailable.
 
 ---

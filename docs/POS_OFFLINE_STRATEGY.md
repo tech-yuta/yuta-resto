@@ -61,21 +61,17 @@ apps/site-agent
 Stopping the Internet connection, cloud database, `apps/admin`, or `apps/web`
 must not prevent local POS operation.
 
-## Current transitional state
+## Current implementation state
 
 The current POS is an installable level-one PWA, not a browser-offline POS.
 
 - The service worker caches the manifest, icons, and immutable Next.js assets.
 - Page navigation and operational actions require the local Next.js server.
-- Some code still accesses the legacy `packages/db` directly.
-- A database-backed mock print worker exists.
+- POS UI code accesses operational data only through `site-agent`.
+- Print-job persistence and state transitions are owned by `site-agent`;
+  physical printer transport remains pending.
 - Backup, guarded restore, and health checks exist.
-- `apps/site-agent` and `packages/db-pos` have not yet replaced the legacy
-  database boundary.
-
-Do not describe direct legacy DB access as the accepted architecture. During
-the reset, move persistence, transaction ownership, printing, health, and
-device integration into `site-agent`.
+- `apps/site-agent` and `packages/db-pos` own the local database boundary.
 
 ## Local transaction requirements
 

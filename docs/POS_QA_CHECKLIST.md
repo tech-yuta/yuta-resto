@@ -176,28 +176,27 @@ N/A       not applicable for this run
 | Kitchen send creates print job            | Local print queue shows `kitchen_ticket`                                         |        |       |
 | Second kitchen send prints only new items | Later kitchen ticket excludes items printed by the earlier send                  |        |       |
 | Payment creates print job                 | Local print queue shows `customer_receipt`                                       |        |       |
-| Worker processes pending jobs             | Job status changes to `printed`                                                  |        |       |
+| Printer adapter processes pending jobs    | Job status changes to `printed`                                                  |        |       |
 | Mark job failed manually                  | Job status changes to `failed`                                                   |        |       |
 | Retry failed job                          | Job status changes back to `pending`                                             |        |       |
-| Optional output dir writes files          | Text file is created when `PRINT_WORKER_OUTPUT_DIR` is set                       |        |       |
 | Kitchen send is atomic                    | Forced print insert failure leaves the item pending and creates no job           |        |       |
 | Final payment is atomic                   | Forced receipt insert failure leaves no payment and does not mark the order paid |        |       |
 | Kitchen retry is idempotent               | Replaying one command UUID creates one kitchen ticket job                        |        |       |
 | Payment retry is idempotent               | Replaying one command UUID creates one payment and one receipt job               |        |       |
 | Concurrent full payments are serialized   | Only one competing full payment succeeds for an order                            |        |       |
 | Cancellation versus payment is serialized | The order ends cancelled without payment or paid with one payment                |        |       |
-| Print worker heartbeat is healthy         | Docker reports `print-worker` healthy after successful database polling          |        |       |
+| Site-agent heartbeat is healthy           | Site-agent health reports the local database available                           |        |       |
 
 ## Edge Offline Acceptance
 
 | Check                                       | Expected result                                               | Pass / Fail | Notes |
 | ------------------------------------------- | ------------------------------------------------------------- | ----------- | ----- |
-| Disconnect the Internet uplink only         | POS and print-worker containers remain healthy                |             |       |
+| Disconnect the Internet uplink only         | POS and site-agent services remain healthy                    |             |       |
 | Open a new POS page over the LAN            | Page loads from the restaurant edge server                    |             |       |
 | Create and edit an order                    | Writes succeed against local PostgreSQL                       |             |       |
 | Send a new batch to kitchen                 | Kitchen screen receives it and one print job is created       |             |       |
 | Record an allowed local payment             | Payment persists and final receipt job is created once        |             |       |
-| Restart POS and print-worker containers     | Existing order remains available and pending jobs resume      |             |       |
+| Restart POS and site-agent services          | Existing order remains available and pending jobs resume      |             |       |
 | Disconnect PostgreSQL                       | Health endpoint and service strip report database unavailable |             |       |
 | Stop the POS container                      | Browser reports the local server unavailable                  |             |       |
 | Restore latest backup into a drill database | Checksum, restore, migrations, and sample reads succeed       |             |       |

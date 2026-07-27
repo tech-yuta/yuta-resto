@@ -1,10 +1,10 @@
 'use server';
 
-import { createOrderService, OrderServiceError } from '@yuta/core';
-import { db } from '@yuta/db/client';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getSelectedStaffUser } from '../_pos-helpers';
+import { posApi } from '../../lib/pos-api';
+import { SiteAgentClientError } from '../../lib/site-agent-client';
 
 const orderItemIdFormSchema = z.object({
   orderItemId: z.string().uuid(),
@@ -16,10 +16,10 @@ export async function markOrderItemPreparingAction(
   const values = orderItemIdFormSchema.parse({
     orderItemId: formData.get('orderItemId'),
   });
-  const orderService = createOrderService(db);
-
   await runKitchenStatusAction(() =>
-    orderService.markOrderItemPreparing(values.orderItemId),
+    posApi.executeOrderItemCommand(values.orderItemId, {
+      action: 'mark_preparing',
+    }),
   );
 }
 
@@ -29,10 +29,10 @@ export async function markOrderItemSentAction(
   const values = orderItemIdFormSchema.parse({
     orderItemId: formData.get('orderItemId'),
   });
-  const orderService = createOrderService(db);
-
   await runKitchenStatusAction(() =>
-    orderService.markOrderItemSent(values.orderItemId),
+    posApi.executeOrderItemCommand(values.orderItemId, {
+      action: 'mark_sent',
+    }),
   );
 }
 
@@ -42,10 +42,10 @@ export async function markOrderItemReadyAction(
   const values = orderItemIdFormSchema.parse({
     orderItemId: formData.get('orderItemId'),
   });
-  const orderService = createOrderService(db);
-
   await runKitchenStatusAction(() =>
-    orderService.markOrderItemReady(values.orderItemId),
+    posApi.executeOrderItemCommand(values.orderItemId, {
+      action: 'mark_ready',
+    }),
   );
 }
 
@@ -56,12 +56,10 @@ export async function confirmOrderItemAllergyAction(
     orderItemId: formData.get('orderItemId'),
   });
   const staffUser = await getSelectedStaffUser();
-  const orderService = createOrderService(db);
-
   await runKitchenStatusAction(() =>
-    orderService.confirmOrderItemAllergy({
-      orderItemId: values.orderItemId,
-      confirmedBy: staffUser.id,
+    posApi.executeOrderItemCommand(values.orderItemId, {
+      action: 'confirm_allergy',
+      staffUserId: staffUser.id,
     }),
   );
 }
@@ -72,7 +70,10 @@ async function runKitchenStatusAction(
   try {
     await operation();
   } catch (error) {
-    if (error instanceof OrderServiceError && error.code === 'invalid_status') {
+    if (
+      error instanceof SiteAgentClientError &&
+      error.code === 'INVALID_ITEM_STATUS'
+    ) {
       revalidatePath('/kitchen');
       return;
     }

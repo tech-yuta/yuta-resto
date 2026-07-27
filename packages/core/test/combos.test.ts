@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calculateComboDiscounts,
   type ComboCalculationRule,
-} from '../src/services/combo-calculator';
+} from '../src/combos';
 
 const date = new Date('2026-07-27T12:00:00.000Z');
 const fixedRule: ComboCalculationRule = {
@@ -35,7 +35,7 @@ const fixedRule: ComboCalculationRule = {
   ],
 };
 
-describe('site-agent combo calculator', () => {
+describe('shared combo calculator', () => {
   it('matches repeated quantities without reusing units', () => {
     const discounts = calculateComboDiscounts(
       [

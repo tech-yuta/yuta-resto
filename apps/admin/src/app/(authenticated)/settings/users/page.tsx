@@ -1,11 +1,11 @@
-import { createTenantUserRepository } from '@yuta/db';
-import { db } from '@yuta/db/client';
+import { createTenantUserRepository } from '@yuta/db-cloud';
 import { requireUserManagementTenant } from '../../../../server/auth/session';
+import { cloudDatabase } from '../../../../server/cloud-database';
 import { UsersPage } from './users-page';
 
 export const dynamic = 'force-dynamic';
 
-const tenantUserRepository = createTenantUserRepository(db);
+const tenantUserRepository = createTenantUserRepository(cloudDatabase);
 
 export default async function SettingsUsersPage() {
   const { session, tenant } = await requireUserManagementTenant();

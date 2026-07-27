@@ -1,8 +1,5 @@
 import { allergySummary, getServiceDayWindow } from '@yuta/core';
-import { db } from '@yuta/db/client';
-import { orderItems, orders } from '@yuta/db/schema';
 import { Badge, Button, Card, SegmentedNav, Separator } from '@yuta/ui';
-import { and, asc, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import {
   ChefHat,
   Check,
@@ -27,6 +24,7 @@ import {
 import { PosPageShell } from '../components/PosPageShell';
 import { AllergyAlert } from '../components/AllergyAlert';
 import { KitchenAutoRefresh } from './KitchenAutoRefresh';
+import { posApi, type PosOrder, type PosOrderItem } from '../../lib/pos-api';
 
 type KitchenPageProps = {
   searchParams: Promise<{
@@ -37,7 +35,7 @@ type KitchenPageProps = {
 
 type Station = 'kitchen' | 'bar' | 'dessert';
 type KitchenStatusFilter = 'sent' | 'preparing' | 'ready';
-type OrderStatus = typeof orders.$inferSelect.status;
+type OrderStatus = PosOrder['status'];
 
 const kitchenQueueLimit = 100;
 
@@ -62,64 +60,45 @@ export default async function KitchenPage({ searchParams }: KitchenPageProps) {
   const selectedStation = parseStation(station);
   const selectedStatus = parseStatusFilter(status);
   const serviceDay = getServiceDayWindow(new Date());
-  const [itemRows, stationItemRows, allStationItemRows] = await Promise.all([
-    db
-      .select({
-        item: orderItems,
-        order: orders,
-      })
-      .from(orderItems)
-      .innerJoin(orders, eq(orderItems.orderId, orders.id))
-      .where(
-        and(
-          eq(orderItems.status, selectedStatus),
-          eq(orderItems.kitchenStationSnapshot, selectedStation),
-          gte(orders.createdAt, serviceDay.start),
-          lt(orders.createdAt, serviceDay.end),
-        ),
-      )
-      .orderBy(
-        ...(selectedStatus === 'ready'
-          ? [desc(orderItems.readyAt), desc(orderItems.createdAt)]
-          : [asc(orderItems.sentAt), asc(orderItems.createdAt)]),
-      )
-      .limit(kitchenQueueLimit),
-    db
-      .select({
-        item: orderItems,
-      })
-      .from(orderItems)
-      .innerJoin(orders, eq(orderItems.orderId, orders.id))
-      .where(
-        and(
-          inArray(orderItems.status, ['sent', 'preparing', 'ready']),
-          eq(orderItems.kitchenStationSnapshot, selectedStation),
-          gte(orders.createdAt, serviceDay.start),
-          lt(orders.createdAt, serviceDay.end),
-        ),
-      ),
-    db
-      .select({
-        item: orderItems,
-      })
-      .from(orderItems)
-      .innerJoin(orders, eq(orderItems.orderId, orders.id))
-      .where(
-        and(
-          inArray(orderItems.status, ['sent', 'preparing', 'ready']),
-          inArray(orderItems.kitchenStationSnapshot, [
-            'kitchen',
-            'bar',
-            'dessert',
-          ]),
-          gte(orders.createdAt, serviceDay.start),
-          lt(orders.createdAt, serviceDay.end),
-        ),
-      ),
-  ]);
-  const items = itemRows.map((row) => ({ ...row.item, order: row.order }));
-  const stationItems = stationItemRows.map((row) => row.item);
-  const allStationItems = allStationItemRows.map((row) => row.item);
+  const details = await posApi.listOrderDetails(kitchenQueueLimit);
+  const serviceItems = details
+    .filter(
+      ({ order }) =>
+        order.createdAt >= serviceDay.start && order.createdAt < serviceDay.end,
+    )
+    .flatMap(({ order, items }) => items.map((item) => ({ ...item, order })))
+    .filter(
+      (item) =>
+        item.status === 'sent' ||
+        item.status === 'preparing' ||
+        item.status === 'ready',
+    );
+  const items = serviceItems
+    .filter(
+      (item) =>
+        item.status === selectedStatus &&
+        item.kitchenStationSnapshot === selectedStation,
+    )
+    .toSorted((left, right) => {
+      const leftDate =
+        selectedStatus === 'ready'
+          ? (left.readyAt ?? left.createdAt)
+          : (left.sentAt ?? left.createdAt);
+      const rightDate =
+        selectedStatus === 'ready'
+          ? (right.readyAt ?? right.createdAt)
+          : (right.sentAt ?? right.createdAt);
+      return selectedStatus === 'ready'
+        ? rightDate.getTime() - leftDate.getTime()
+        : leftDate.getTime() - rightDate.getTime();
+    })
+    .slice(0, kitchenQueueLimit);
+  const stationItems = serviceItems.filter(
+    (item) => item.kitchenStationSnapshot === selectedStation,
+  );
+  const allStationItems = serviceItems.filter((item) =>
+    ['kitchen', 'bar', 'dessert'].includes(item.kitchenStationSnapshot),
+  );
   const groups = groupItemsByOrder(items);
   const counts = countItemsByStatus(stationItems);
   const stationStatusCounts = countItemsByStationAndStatus(allStationItems);
@@ -424,13 +403,8 @@ function nextStatusForStation(
   return selectedStatus;
 }
 
-function groupItemsByOrder<T extends { order: typeof orders.$inferSelect }>(
-  items: T[],
-) {
-  const groups = new Map<
-    string,
-    { order: typeof orders.$inferSelect; items: T[] }
-  >();
+function groupItemsByOrder<T extends { order: PosOrder }>(items: T[]) {
+  const groups = new Map<string, { order: PosOrder; items: T[] }>();
 
   for (const item of items) {
     const group = groups.get(item.order.id);
@@ -444,7 +418,7 @@ function groupItemsByOrder<T extends { order: typeof orders.$inferSelect }>(
   return Array.from(groups.values());
 }
 
-function countItemsByStatus(items: Array<typeof orderItems.$inferSelect>) {
+function countItemsByStatus(items: PosOrderItem[]) {
   return {
     sent: items.filter((item) => item.status === 'sent').length,
     preparing: items.filter((item) => item.status === 'preparing').length,
@@ -462,9 +436,7 @@ function countOpenWorkItemsByStation(
   } satisfies Record<Station, number>;
 }
 
-function countItemsByStationAndStatus(
-  items: Array<typeof orderItems.$inferSelect>,
-) {
+function countItemsByStationAndStatus(items: PosOrderItem[]) {
   const counts = {
     kitchen: { sent: 0, preparing: 0, ready: 0 },
     bar: { sent: 0, preparing: 0, ready: 0 },
@@ -492,7 +464,7 @@ function countItemsByStationAndStatus(
   return counts;
 }
 
-function renderStatusBadge(status: typeof orderItems.$inferSelect.status) {
+function renderStatusBadge(status: PosOrderItem['status']) {
   if (status === 'preparing') {
     return (
       <Badge tone="warning" variant="soft">
@@ -555,10 +527,7 @@ function renderOrderStatusBadge(status: OrderStatus) {
   return null;
 }
 
-function renderKitchenActions(
-  item: typeof orderItems.$inferSelect,
-  orderStatus: OrderStatus,
-) {
+function renderKitchenActions(item: PosOrderItem, orderStatus: OrderStatus) {
   if (orderStatus === 'cancelled') {
     return (
       <div className="rounded-lg border border-border-default bg-surface-muted px-3 py-2 text-sm font-semibold text-primary/60">
@@ -625,9 +594,7 @@ function renderKitchenActions(
   );
 }
 
-function prepareActionButtonClass(
-  status: typeof orderItems.$inferSelect.status,
-): string {
+function prepareActionButtonClass(status: PosOrderItem['status']): string {
   if (status === 'preparing') {
     return 'border-status-info-border bg-status-info-soft text-status-info hover:bg-status-info-soft/80';
   }
@@ -635,7 +602,7 @@ function prepareActionButtonClass(
   return 'bg-status-warning text-inverse hover:bg-status-warning/90';
 }
 
-function groupTimeLabel(items: Array<typeof orderItems.$inferSelect>): string {
+function groupTimeLabel(items: PosOrderItem[]): string {
   const firstDate = items
     .map((item) => item.sentAt ?? item.readyAt ?? item.createdAt)
     .toSorted((left, right) => left.getTime() - right.getTime())[0];

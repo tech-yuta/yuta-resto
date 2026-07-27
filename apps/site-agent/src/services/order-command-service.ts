@@ -12,6 +12,8 @@ import {
   checks,
   localUsers,
   menuItems,
+  orderDiscountItems,
+  orderDiscounts,
   orderItems,
   orders,
   payments,
@@ -43,16 +45,9 @@ const knownAllergenCodes = new Set([
 export function createOrderCommandService(db: PosDatabaseExecutor) {
   async function getOrderDetail(orderId: string) {
     const order = await getRequiredOrder(db, orderId);
-    const items = await db
-      .select()
-      .from(orderItems)
-      .where(eq(orderItems.orderId, orderId))
-      .orderBy(asc(orderItems.createdAt), asc(orderItems.id));
-
-    return localOrderDetailResponseSchema.parse({
-      order: toOrderSummary(order),
-      items: items.map(toOrderItem),
-    });
+    return localOrderDetailResponseSchema.parse(
+      await loadOrderDetail(db, order),
+    );
   }
 
   async function addOrderItem(orderId: string, input: AddLocalOrderItemInput) {
@@ -703,12 +698,57 @@ async function refreshOrderStatus(
 }
 
 async function loadOrderDetail(db: PosDatabaseExecutor, order: Order) {
-  const items = await db
-    .select()
-    .from(orderItems)
-    .where(eq(orderItems.orderId, order.id))
-    .orderBy(asc(orderItems.createdAt), asc(orderItems.id));
-  return { order: toOrderSummary(order), items: items.map(toOrderItem) };
+  const [items, discountRows] = await Promise.all([
+    db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.orderId, order.id))
+      .orderBy(asc(orderItems.createdAt), asc(orderItems.id)),
+    db
+      .select()
+      .from(orderDiscounts)
+      .where(eq(orderDiscounts.orderId, order.id))
+      .orderBy(asc(orderDiscounts.createdAt), asc(orderDiscounts.id)),
+  ]);
+  const discountItemRows =
+    discountRows.length === 0
+      ? []
+      : await db
+          .select({
+            orderDiscountId: orderDiscountItems.orderDiscountId,
+            quantityApplied: orderDiscountItems.quantityApplied,
+            orderItemId: orderItems.id,
+            itemNameSnapshot: orderItems.itemNameSnapshot,
+          })
+          .from(orderDiscountItems)
+          .innerJoin(
+            orderItems,
+            eq(orderDiscountItems.orderItemId, orderItems.id),
+          )
+          .where(
+            inArray(
+              orderDiscountItems.orderDiscountId,
+              discountRows.map((discount) => discount.id),
+            ),
+          );
+  return {
+    order: toOrderSummary(order),
+    items: items.map(toOrderItem),
+    discounts: discountRows.map((discount) => ({
+      id: discount.id,
+      nameSnapshot: discount.nameSnapshot,
+      discountCents: discount.discountCents,
+      items: discountItemRows
+        .filter((item) => item.orderDiscountId === discount.id)
+        .map((item) => ({
+          quantityApplied: item.quantityApplied,
+          orderItem: {
+            id: item.orderItemId,
+            itemNameSnapshot: item.itemNameSnapshot,
+          },
+        })),
+    })),
+  };
 }
 
 function toOrderItem(item: OrderItem) {

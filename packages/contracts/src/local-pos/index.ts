@@ -239,10 +239,30 @@ export const localOrderItemSchema = z
     updatedAt: isoDateTimeSchema,
   })
   .strict();
+export const localOrderDiscountItemSchema = z
+  .object({
+    quantityApplied: z.number().int().positive(),
+    orderItem: z
+      .object({
+        id: identifierSchema,
+        itemNameSnapshot: z.string().min(1),
+      })
+      .strict(),
+  })
+  .strict();
+export const localOrderDiscountSchema = z
+  .object({
+    id: identifierSchema,
+    nameSnapshot: z.string().min(1),
+    discountCents: z.number().int().nonnegative(),
+    items: z.array(localOrderDiscountItemSchema),
+  })
+  .strict();
 export const localOrderDetailResponseSchema = z
   .object({
     order: localOrderSummarySchema,
     items: z.array(localOrderItemSchema),
+    discounts: z.array(localOrderDiscountSchema),
   })
   .strict();
 export const localOrderItemResponseSchema = z
@@ -370,6 +390,44 @@ export const createLocalChecksByItemsInputSchema = z
   .strict();
 
 export const localCheckStatusSchema = z.enum(['open', 'paid', 'void']);
+export const localCheckItemSchema = z
+  .object({
+    id: identifierSchema,
+    quantity: z.number().int().positive(),
+    amountCentsSnapshot: z.number().int().nonnegative(),
+    orderItem: z
+      .object({
+        id: identifierSchema,
+        itemNameSnapshot: z.string().min(1),
+        unitPriceCentsSnapshot: z.number().int().nonnegative(),
+      })
+      .strict(),
+  })
+  .strict();
+export const localCheckDiscountItemSchema = z
+  .object({
+    quantityApplied: z.number().int().positive(),
+    checkItem: z
+      .object({
+        id: identifierSchema,
+        orderItem: z
+          .object({
+            id: identifierSchema,
+            itemNameSnapshot: z.string().min(1),
+          })
+          .strict(),
+      })
+      .strict(),
+  })
+  .strict();
+export const localCheckDiscountSchema = z
+  .object({
+    id: identifierSchema,
+    nameSnapshot: z.string().min(1),
+    discountCents: z.number().int().nonnegative(),
+    items: z.array(localCheckDiscountItemSchema),
+  })
+  .strict();
 export const localCheckSchema = z
   .object({
     id: identifierSchema,
@@ -380,6 +438,8 @@ export const localCheckSchema = z
     subtotalCents: z.number().int().nonnegative(),
     discountCents: z.number().int().nonnegative(),
     totalCents: z.number().int().nonnegative(),
+    items: z.array(localCheckItemSchema),
+    discounts: z.array(localCheckDiscountSchema),
     createdAt: isoDateTimeSchema,
   })
   .strict();
@@ -454,6 +514,7 @@ export const localKitchenSendResponseSchema = z
   .object({
     order: localOrderSummarySchema,
     items: z.array(localOrderItemSchema),
+    discounts: z.array(localOrderDiscountSchema),
     printJob: localPrintJobSchema,
     replayed: z.boolean(),
   })

@@ -4,9 +4,9 @@ import {
   findFeedbackDetail,
   listAssignableReputationUsers,
   listFeedback,
-} from '@yuta/db';
-import { db } from '@yuta/db/client';
+} from '@yuta/db-cloud';
 import { requireReputationTenant } from '../../../../server/auth/session';
+import { cloudDatabase as db } from '../../../../server/cloud-database';
 import {
   ReviewsPage,
   type ReviewDetailRecord,

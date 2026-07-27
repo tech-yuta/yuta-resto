@@ -9,23 +9,11 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "print:worker": "tsx src/print-worker-cli.ts",
-    "print:worker:watch": "tsx src/print-worker-cli.ts --watch",
-    "print:worker:healthcheck": "tsx src/print-worker-healthcheck.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "@yuta/contracts": "workspace:*",
-    "@yuta/db": "workspace:*",
-    "drizzle-orm": "^0.43.1",
-    "zod": "^3.25.67"
-  },
   "devDependencies": {
     "@types/node": "^26.0.0",
-    "dotenv": "^16.5.0",
-    "postgres": "^3.4.7",
-    "tsx": "^4.20.6",
     "typescript": "^6.0.3",
     "vitest": "^4.0.15"
   }

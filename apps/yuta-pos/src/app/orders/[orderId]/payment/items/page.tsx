@@ -1,12 +1,10 @@
-import { createComboService, formatEuros } from '@yuta/core';
-import { db } from '@yuta/db/client';
-import { orders } from '@yuta/db/schema';
+import { formatEuros } from '@yuta/core';
 import { Badge, Button, Card, Input, Label } from '@yuta/ui';
-import { eq } from 'drizzle-orm';
 import { Users } from 'lucide-react';
 import Link from 'next/link';
 import { createChecksByItemsAction } from '../../../../actions';
 import { PosPageShell } from '../../../../components/PosPageShell';
+import { posApi } from '../../../../../lib/pos-api';
 
 type SplitItemsPageProps = {
   params: Promise<{
@@ -26,21 +24,7 @@ export default async function SplitItemsPage({
 }: SplitItemsPageProps) {
   const { orderId } = await params;
   const { clients, error } = await searchParams;
-  const comboService = createComboService(db);
-
-  await comboService.optimizeOrderCombos(orderId);
-
-  const order = await db.query.orders.findFirst({
-    where: eq(orders.id, orderId),
-    with: {
-      items: true,
-      checks: true,
-    },
-  });
-
-  if (!order) {
-    throw new Error('Order not found.');
-  }
+  const { order } = await posApi.getPaymentViewData(orderId);
 
   const activeItems = order.items.filter((item) => item.status !== 'cancelled');
   const activeChecks = order.checks.filter((check) => check.status !== 'void');

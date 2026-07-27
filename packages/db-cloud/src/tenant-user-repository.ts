@@ -1,7 +1,8 @@
 import { hashPassword } from '@yuta/auth';
 import type { TenantRole } from '@yuta/tenant';
 import { and, asc, count, eq, inArray, isNull, ne } from 'drizzle-orm';
-import type { DbClient } from './client';
+import { v7 as uuidv7 } from 'uuid';
+import type { CloudDatabaseClient } from './client';
 import {
   authAuditEvents,
   authSessions,
@@ -51,7 +52,9 @@ export class TenantUserError extends Error {
   }
 }
 
-export function createTenantUserRepository(repositoryDb: DbClient) {
+export function createTenantUserRepository(
+  repositoryDb: CloudDatabaseClient,
+) {
   async function listManageableEstablishments(input: {
     organizationId: string;
     establishmentId?: string;
@@ -160,9 +163,12 @@ export function createTenantUserRepository(repositoryDb: DbClient) {
         );
       }
 
-      let user = await transaction.query.users.findFirst({
-        where: eq(users.email, input.email),
-      });
+      const [existingUser] = await transaction
+        .select()
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
+      let user = existingUser;
       const created = !user;
       if (user && !user.isActive) {
         throw new TenantUserError(
@@ -174,9 +180,9 @@ export function createTenantUserRepository(repositoryDb: DbClient) {
         const [createdUser] = await transaction
           .insert(users)
           .values({
+            id: uuidv7(),
             name: input.name,
             email: input.email,
-            role: legacyUserRole(input.role),
             passwordHash: await hashPassword(input.password),
             isActive: true,
           })
@@ -217,6 +223,7 @@ export function createTenantUserRepository(repositoryDb: DbClient) {
         await transaction
           .insert(tenantMemberships)
           .values({
+            id: uuidv7(),
             userId: user.id,
             organizationId: input.organizationId,
             establishmentId,
@@ -234,6 +241,7 @@ export function createTenantUserRepository(repositoryDb: DbClient) {
       }
 
       await transaction.insert(authAuditEvents).values({
+        id: uuidv7(),
         event: created ? 'tenant.user.created' : 'tenant.user.attached',
         actorUserId: input.actorUserId,
         subjectUserId: user.id,
@@ -355,6 +363,7 @@ export function createTenantUserRepository(repositoryDb: DbClient) {
       }
 
       await transaction.insert(authAuditEvents).values({
+        id: uuidv7(),
         event: 'tenant.membership.updated',
         actorUserId: input.actorUserId,
         subjectUserId: target.membership.userId,
@@ -406,13 +415,4 @@ function assertRoleCanBeAssigned(
       'ROLE_NOT_ALLOWED',
     );
   }
-}
-
-function legacyUserRole(
-  role: TenantRole,
-): 'admin' | 'manager' | 'staff' | 'kitchen' {
-  if (role === 'owner' || role === 'admin') return 'admin';
-  if (role === 'manager') return 'manager';
-  if (role === 'kitchen') return 'kitchen';
-  return 'staff';
 }

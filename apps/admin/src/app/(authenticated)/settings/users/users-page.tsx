@@ -4,7 +4,7 @@ import type {
   ManageableEstablishment,
   OrganizationUser,
   OrganizationUserMembership,
-} from '@yuta/db';
+} from '@yuta/db-cloud';
 import type { TenantRole } from '@yuta/tenant';
 import {
   Avatar,
@@ -49,10 +49,6 @@ const roleLabels: Record<TenantRole, string> = {
   owner: 'Propriétaire',
   admin: 'Administrateur',
   manager: 'Responsable',
-  cashier: 'Caisse',
-  kitchen: 'Cuisine',
-  waiter: 'Service',
-  accountant: 'Comptabilité',
   employee: 'Employé',
 };
 

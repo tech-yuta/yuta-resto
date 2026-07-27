@@ -19,7 +19,8 @@ import {
   lt,
   sql,
 } from 'drizzle-orm';
-import type { DbClient } from './client';
+import { v7 as uuidv7 } from 'uuid';
+import type { CloudDatabaseClient } from './client';
 import {
   authLoginAttempts,
   authSessions,
@@ -41,12 +42,13 @@ export type SignInResult = {
   session: AuthenticatedSession;
 };
 
-export function createAuthRepository(repositoryDb: DbClient) {
+export function createAuthRepository(repositoryDb: CloudDatabaseClient) {
   async function recordLoginAttempt(
     keyHash: string,
     succeeded: boolean,
   ): Promise<void> {
     await repositoryDb.insert(authLoginAttempts).values({
+      id: uuidv7(),
       keyHash,
       succeeded,
     });
@@ -85,9 +87,11 @@ export function createAuthRepository(repositoryDb: DbClient) {
   }): Promise<SignInResult> {
     await enforceLoginRateLimit(input.rateLimitKeyHash);
 
-    const user = await repositoryDb.query.users.findFirst({
-      where: eq(users.email, input.email),
-    });
+    const [user] = await repositoryDb
+      .select()
+      .from(users)
+      .where(eq(users.email, input.email))
+      .limit(1);
     if (!user?.passwordHash || !user.isActive) {
       await hashPassword(input.password);
       await recordLoginAttempt(input.rateLimitKeyHash, false);
@@ -142,6 +146,7 @@ export function createAuthRepository(repositoryDb: DbClient) {
     const [storedSession] = await repositoryDb
       .insert(authSessions)
       .values({
+        id: uuidv7(),
         userId: user.id,
         organizationId: membership.organizationId,
         establishmentId: membership.establishmentId,
@@ -177,38 +182,50 @@ export function createAuthRepository(repositoryDb: DbClient) {
     token: string,
   ): Promise<AuthenticatedSession | null> {
     if (!token) return null;
-    const result = await repositoryDb.query.authSessions.findFirst({
-      where: and(
-        eq(authSessions.tokenHash, hashSessionToken(token)),
-        isNull(authSessions.revokedAt),
-        gt(authSessions.expiresAt, new Date()),
-      ),
-      with: { user: true },
-    });
+    const [result] = await repositoryDb
+      .select({
+        session: authSessions,
+        userName: users.name,
+        userEmail: users.email,
+        userIsActive: users.isActive,
+        userAuthVersion: users.authVersion,
+      })
+      .from(authSessions)
+      .innerJoin(users, eq(users.id, authSessions.userId))
+      .where(
+        and(
+          eq(authSessions.tokenHash, hashSessionToken(token)),
+          isNull(authSessions.revokedAt),
+          gt(authSessions.expiresAt, new Date()),
+        ),
+      )
+      .limit(1);
     if (
       !result ||
-      !result.user.isActive ||
-      !result.user.email ||
-      result.user.authVersion !== result.authVersion
+      !result.userIsActive ||
+      result.userAuthVersion !== result.session.authVersion
     ) {
       return null;
     }
 
-    if (Date.now() - result.lastSeenAt.getTime() > SESSION_TOUCH_INTERVAL_MS) {
+    if (
+      Date.now() - result.session.lastSeenAt.getTime() >
+      SESSION_TOUCH_INTERVAL_MS
+    ) {
       await repositoryDb
         .update(authSessions)
         .set({ lastSeenAt: new Date() })
-        .where(eq(authSessions.id, result.id));
+        .where(eq(authSessions.id, result.session.id));
     }
 
     return {
-      id: result.id,
-      userId: result.userId,
-      userName: result.user.name,
-      userEmail: result.user.email,
-      organizationId: result.organizationId,
-      establishmentId: result.establishmentId,
-      expiresAt: result.expiresAt,
+      id: result.session.id,
+      userId: result.session.userId,
+      userName: result.userName,
+      userEmail: result.userEmail,
+      organizationId: result.session.organizationId,
+      establishmentId: result.session.establishmentId,
+      expiresAt: result.session.expiresAt,
     };
   }
 
@@ -336,6 +353,7 @@ export function createAuthRepository(repositoryDb: DbClient) {
       const [storedSession] = await transaction
         .insert(authSessions)
         .values({
+          id: uuidv7(),
           userId: current.userId,
           organizationId: membership.organizationId,
           establishmentId: membership.establishmentId,
@@ -382,6 +400,7 @@ export function createAuthRepository(repositoryDb: DbClient) {
   async function createPasswordResetToken(userId: string): Promise<string> {
     const token = createSessionToken();
     await repositoryDb.insert(passwordResetTokens).values({
+      id: uuidv7(),
       userId,
       tokenHash: hashSessionToken(token),
       expiresAt: new Date(Date.now() + RESET_TOKEN_DURATION_MS),
@@ -393,13 +412,17 @@ export function createAuthRepository(repositoryDb: DbClient) {
     token: string;
     password: string;
   }): Promise<void> {
-    const resetToken = await repositoryDb.query.passwordResetTokens.findFirst({
-      where: and(
-        eq(passwordResetTokens.tokenHash, hashSessionToken(input.token)),
-        isNull(passwordResetTokens.consumedAt),
-        gt(passwordResetTokens.expiresAt, new Date()),
-      ),
-    });
+    const [resetToken] = await repositoryDb
+      .select()
+      .from(passwordResetTokens)
+      .where(
+        and(
+          eq(passwordResetTokens.tokenHash, hashSessionToken(input.token)),
+          isNull(passwordResetTokens.consumedAt),
+          gt(passwordResetTokens.expiresAt, new Date()),
+        ),
+      )
+      .limit(1);
     if (!resetToken) {
       throw new AuthError('Invalid reset token.', 'RESET_TOKEN_INVALID');
     }

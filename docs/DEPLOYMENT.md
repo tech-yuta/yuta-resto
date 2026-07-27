@@ -197,6 +197,12 @@ The local POS deployment must:
 - provide guarded backup and restore procedures;
 - never start a POS-to-cloud synchronization worker.
 
+`apps/yuta-pos/docker-compose.yml` now builds only the POS client service. It
+requires `SITE_AGENT_URL` and joins the external trusted local network; it has
+no database credential, legacy print worker, or shared-database migration
+service. Deploy `site-agent` and the one-shot `@yuta/db-pos` migration service
+as separate local services.
+
 Cloud admin must not expose local menu/catalog, printer, POS-user, order,
 payment, or operational-report workflows.
 

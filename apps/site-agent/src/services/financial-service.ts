@@ -9,6 +9,8 @@ import {
 } from '@yuta/contracts/local-pos';
 import type { PosDatabaseExecutor } from '@yuta/db-pos/client';
 import {
+  checkDiscountItems,
+  checkDiscounts,
   checkItems,
   checks,
   localUsers,
@@ -20,7 +22,7 @@ import {
   type Order,
   type Payment,
 } from '@yuta/db-pos/schema';
-import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { HttpError } from '../http';
 import { createComboPersistenceService } from './combo-persistence-service';
@@ -57,7 +59,7 @@ export function createFinancialService(db: PosDatabaseExecutor) {
         .set({ paymentMode: 'split_equally' })
         .where(eq(orders.id, orderId));
       return localChecksResponseSchema.parse({
-        checks: created.map(toCheck),
+        checks: created.map((check) => toCheck(check)),
       });
     });
   }
@@ -155,7 +157,7 @@ export function createFinancialService(db: PosDatabaseExecutor) {
         .set({ paymentMode: 'split_by_items' })
         .where(eq(orders.id, orderId));
       return localChecksResponseSchema.parse({
-        checks: created.map(toCheck),
+        checks: created.map((check) => toCheck(check)),
       });
     });
   }
@@ -338,8 +340,16 @@ export function createFinancialService(db: PosDatabaseExecutor) {
   }
 
   async function getPaymentSummary(orderId: string) {
-    const [order, checkRows, paymentRows] = await Promise.all([
-      getRequiredOrder(db, orderId),
+    let order = await getRequiredOrder(db, orderId);
+    if (
+      order.paymentMode === 'single' &&
+      order.status !== 'paid' &&
+      order.status !== 'cancelled'
+    ) {
+      await createComboPersistenceService(db).optimizeOrder(orderId);
+      order = await getRequiredOrder(db, orderId);
+    }
+    const [checkRows, paymentRows] = await Promise.all([
       db
         .select()
         .from(checks)
@@ -351,12 +361,104 @@ export function createFinancialService(db: PosDatabaseExecutor) {
         .where(eq(payments.orderId, orderId))
         .orderBy(asc(payments.createdAt), asc(payments.id)),
     ]);
+    const checkItemRows =
+      checkRows.length === 0
+        ? []
+        : await db
+            .select({
+              id: checkItems.id,
+              checkId: checkItems.checkId,
+              quantity: checkItems.quantity,
+              amountCentsSnapshot: checkItems.amountCentsSnapshot,
+              orderItemId: orderItems.id,
+              itemNameSnapshot: orderItems.itemNameSnapshot,
+              unitPriceCentsSnapshot: orderItems.unitPriceCentsSnapshot,
+            })
+            .from(checkItems)
+            .innerJoin(orderItems, eq(checkItems.orderItemId, orderItems.id))
+            .where(
+              inArray(
+                checkItems.checkId,
+                checkRows.map((check) => check.id),
+              ),
+            );
+    const checkDiscountRows =
+      checkRows.length === 0
+        ? []
+        : await db
+            .select()
+            .from(checkDiscounts)
+            .where(
+              inArray(
+                checkDiscounts.checkId,
+                checkRows.map((check) => check.id),
+              ),
+            )
+            .orderBy(asc(checkDiscounts.createdAt), asc(checkDiscounts.id));
+    const checkDiscountItemRows =
+      checkDiscountRows.length === 0
+        ? []
+        : await db
+            .select({
+              checkDiscountId: checkDiscountItems.checkDiscountId,
+              quantityApplied: checkDiscountItems.quantityApplied,
+              checkItemId: checkItems.id,
+              orderItemId: orderItems.id,
+              itemNameSnapshot: orderItems.itemNameSnapshot,
+            })
+            .from(checkDiscountItems)
+            .innerJoin(
+              checkItems,
+              eq(checkDiscountItems.checkItemId, checkItems.id),
+            )
+            .innerJoin(orderItems, eq(checkItems.orderItemId, orderItems.id))
+            .where(
+              inArray(
+                checkDiscountItems.checkDiscountId,
+                checkDiscountRows.map((discount) => discount.id),
+              ),
+            );
     const paidCents = paymentRows
       .filter((payment) => payment.status === 'paid')
       .reduce((sum, payment) => sum + payment.amountCents, 0);
     return localPaymentSummaryResponseSchema.parse({
       order: toOrderSummary(order),
-      checks: checkRows.map(toCheck),
+      checks: checkRows.map((check) =>
+        toCheck(
+          check,
+          checkItemRows
+            .filter((item) => item.checkId === check.id)
+            .map((item) => ({
+              id: item.id,
+              quantity: item.quantity,
+              amountCentsSnapshot: item.amountCentsSnapshot,
+              orderItem: {
+                id: item.orderItemId,
+                itemNameSnapshot: item.itemNameSnapshot,
+                unitPriceCentsSnapshot: item.unitPriceCentsSnapshot,
+              },
+            })),
+          checkDiscountRows
+            .filter((discount) => discount.checkId === check.id)
+            .map((discount) => ({
+              id: discount.id,
+              nameSnapshot: discount.nameSnapshot,
+              discountCents: discount.discountCents,
+              items: checkDiscountItemRows
+                .filter((item) => item.checkDiscountId === discount.id)
+                .map((item) => ({
+                  quantityApplied: item.quantityApplied,
+                  checkItem: {
+                    id: item.checkItemId,
+                    orderItem: {
+                      id: item.orderItemId,
+                      itemNameSnapshot: item.itemNameSnapshot,
+                    },
+                  },
+                })),
+            })),
+        ),
+      ),
       payments: paymentRows.map(toPayment),
       paidCents,
       remainingCents: Math.max(0, order.totalCents - paidCents),
@@ -596,7 +698,34 @@ export function splitCents(total: number, parts: number): number[] {
   );
 }
 
-function toCheck(check: Check) {
+function toCheck(
+  check: Check,
+  items: Array<{
+    id: string;
+    quantity: number;
+    amountCentsSnapshot: number;
+    orderItem: {
+      id: string;
+      itemNameSnapshot: string;
+      unitPriceCentsSnapshot: number;
+    };
+  }> = [],
+  discounts: Array<{
+    id: string;
+    nameSnapshot: string;
+    discountCents: number;
+    items: Array<{
+      quantityApplied: number;
+      checkItem: {
+        id: string;
+        orderItem: {
+          id: string;
+          itemNameSnapshot: string;
+        };
+      };
+    }>;
+  }> = [],
+) {
   return {
     id: check.id,
     orderId: check.orderId,
@@ -606,6 +735,8 @@ function toCheck(check: Check) {
     subtotalCents: check.subtotalCents,
     discountCents: check.discountCents,
     totalCents: check.totalCents,
+    items,
+    discounts,
     createdAt: check.createdAt.toISOString(),
   };
 }

@@ -1,8 +1,5 @@
-import { allergySummary, createOrderService, formatEuros } from '@yuta/core';
-import { db } from '@yuta/db/client';
-import { payments } from '@yuta/db/schema';
+import { allergySummary, formatEuros } from '@yuta/core';
 import { Badge, Button, Card, Separator, cn } from '@yuta/ui';
-import { and, eq } from 'drizzle-orm';
 import {
   Clock,
   CreditCard,
@@ -16,12 +13,13 @@ import {
   User,
 } from 'lucide-react';
 import Link from 'next/link';
-import { randomUUID } from 'node:crypto';
+import { v7 as uuidv7 } from 'uuid';
 import type { ReactNode } from 'react';
 import { cancelOrderAction } from '../../actions';
 import { PosPageShell } from '../../components/PosPageShell';
 import { AllergyAlert } from '../../components/AllergyAlert';
 import { SendToKitchenButton } from '../../components/SendToKitchenButton';
+import { posApi, type PosOrderDetail } from '../../../lib/pos-api';
 
 type OrderPageProps = {
   params: Promise<{
@@ -29,17 +27,22 @@ type OrderPageProps = {
   }>;
 };
 
-type OrderDetail = Awaited<
-  ReturnType<ReturnType<typeof createOrderService>['getOrderDetail']>
->;
+type OrderDetail = PosOrderDetail['order'] & {
+  items: PosOrderDetail['items'];
+  discounts: PosOrderDetail['discounts'];
+};
 
 export default async function OrderPage({ params }: OrderPageProps) {
   const { orderId } = await params;
-  const orderService = createOrderService(db);
-  const order = await orderService.getOrderDetail(orderId);
-  const paidPayments = await db.query.payments.findMany({
-    where: and(eq(payments.orderId, order.id), eq(payments.status, 'paid')),
-  });
+  const paymentView = await posApi.getPaymentViewData(orderId);
+  const order: OrderDetail = {
+    ...paymentView.order,
+    items: paymentView.order.items,
+    discounts: paymentView.order.discounts,
+  };
+  const paidPayments = paymentView.order.payments.filter(
+    (payment) => payment.status === 'paid',
+  );
   const activeItems = order.items.filter((item) => item.status !== 'cancelled');
   const pendingItemCount = order.items.filter(
     (item) => item.status === 'pending',
@@ -178,7 +181,7 @@ function SendOrderButton({
   return (
     <SendToKitchenButton
       orderId={order.id}
-      idempotencyKey={randomUUID()}
+      idempotencyKey={uuidv7()}
       disabled={disabled}
       hasAllergy={order.hasAllergy}
       allergyNote={order.allergyNote}

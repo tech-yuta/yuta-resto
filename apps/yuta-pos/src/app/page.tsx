@@ -1,8 +1,5 @@
 import { formatEuros, startOfToday } from '@yuta/core';
-import { db } from '@yuta/db/client';
-import { orders } from '@yuta/db/schema';
 import { Badge, Button, Card, Input, SegmentedNav, Separator } from '@yuta/ui';
-import { and, desc, eq, gte, inArray, or } from 'drizzle-orm';
 import {
   ChefHat,
   Clock,
@@ -20,6 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { PosMobileFab, PosPageShell } from './components/PosPageShell';
+import { posApi } from '../lib/pos-api';
 
 type OrdersHomePageProps = {
   searchParams: Promise<{
@@ -156,26 +154,38 @@ export default async function OrdersHomePage({
 }
 
 async function getOrders(selectedView: OrderView, today: Date) {
-  return db.query.orders.findMany({
-    where:
-      selectedView === 'open'
-        ? inArray(orders.status, [
-            'draft',
-            'sent',
-            'preparing',
-            'ready',
-            'served',
-          ])
-        : selectedView === 'paid_today'
-          ? and(eq(orders.status, 'paid'), gte(orders.paidAt, today))
-          : or(gte(orders.createdAt, today), gte(orders.paidAt, today)),
-    orderBy: [
-      desc(selectedView === 'paid_today' ? orders.paidAt : orders.createdAt),
-    ],
-    with: {
-      items: true,
-    },
-  });
+  const details = await posApi.listOrderDetails();
+  return details
+    .map((detail) => ({ ...detail.order, items: detail.items }))
+    .filter((order) => {
+      if (selectedView === 'open') {
+        return ['draft', 'sent', 'preparing', 'ready', 'served'].includes(
+          order.status,
+        );
+      }
+      if (selectedView === 'paid_today') {
+        return (
+          order.status === 'paid' &&
+          order.paidAt !== null &&
+          order.paidAt >= today
+        );
+      }
+      return (
+        order.createdAt >= today ||
+        (order.paidAt !== null && order.paidAt >= today)
+      );
+    })
+    .toSorted((left, right) => {
+      const leftDate =
+        selectedView === 'paid_today'
+          ? (left.paidAt ?? left.createdAt)
+          : left.createdAt;
+      const rightDate =
+        selectedView === 'paid_today'
+          ? (right.paidAt ?? right.createdAt)
+          : right.createdAt;
+      return rightDate.getTime() - leftDate.getTime();
+    });
 }
 
 function MobileOrderList({ orders: orderRows }: { orders: OrderRow[] }) {

@@ -1,5 +1,4 @@
-import { db } from '@yuta/db/client';
-import { users } from '@yuta/db/schema';
+import type { LocalUser } from '@yuta/contracts/local-pos';
 import {
   Alert,
   AlertDescription,
@@ -15,13 +14,13 @@ import {
   SelectValue,
   Textarea,
 } from '@yuta/ui';
-import { and, asc, eq, inArray } from 'drizzle-orm';
 import { ChefHat, ClipboardList } from 'lucide-react';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { selectedStaffCookieName, staffSelectableRoles } from '../_pos-helpers';
 import { createOrderAction } from '../actions';
 import { PosPageShell } from '../components/PosPageShell';
+import { posApi } from '../../lib/pos-api';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,13 +31,14 @@ const orderTypes = [
 ] as const;
 
 export default async function PosHome() {
-  const staffUsers = await db.query.users.findMany({
-    where: and(
-      eq(users.isActive, true),
-      inArray(users.role, [...staffSelectableRoles]),
-    ),
-    orderBy: [asc(users.name)],
-  });
+  const { users } = await posApi.listLocalUsers();
+  const staffUsers = users.filter(
+    (user) =>
+      user.isActive &&
+      staffSelectableRoles.includes(
+        user.role as (typeof staffSelectableRoles)[number],
+      ),
+  );
   const cookieStore = await cookies();
   const selectedStaffUserId = cookieStore.get(selectedStaffCookieName)?.value;
   const defaultStaffUserId = getDefaultStaffUserId(
@@ -173,7 +173,7 @@ export default async function PosHome() {
 }
 
 function getDefaultStaffUserId(
-  staffUsers: Array<typeof users.$inferSelect>,
+  staffUsers: LocalUser[],
   selectedStaffUserId: string | undefined,
 ): string | undefined {
   if (

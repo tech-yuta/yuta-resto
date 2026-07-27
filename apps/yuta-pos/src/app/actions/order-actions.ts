@@ -1,11 +1,5 @@
 'use server';
 
-import {
-  createOrderService,
-  createPosService,
-  OrderServiceError,
-} from '@yuta/core';
-import { db } from '@yuta/db/client';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -13,6 +7,7 @@ import {
   getSelectableStaffUserById,
   getSelectedStaffUser,
 } from '../_pos-helpers';
+import { posApi } from '../../lib/pos-api';
 
 const createOrderFormSchema = z.object({
   tableLabel: z.string().trim().min(1).max(255),
@@ -80,13 +75,11 @@ export async function createOrderAction(formData: FormData): Promise<void> {
   const staffUser = values.staffUserId
     ? await getSelectableStaffUserById(values.staffUserId)
     : await getSelectedStaffUser();
-  const orderService = createOrderService(db);
-  const order = await orderService.createOrder({
+  const { order } = await posApi.createOrder({
     tableLabel: values.tableLabel,
     orderType: values.orderType,
-    createdBy: staffUser.id,
+    staffUserId: staffUser.id,
     note: values.note,
-    hasAllergy: false,
   });
 
   redirect(`/orders/${order.id}/items`);
@@ -97,10 +90,7 @@ export async function addOrderItemAction(formData: FormData): Promise<void> {
     orderId: formData.get('orderId'),
     menuItemId: formData.get('menuItemId'),
   });
-  const orderService = createOrderService(db);
-
-  await orderService.addOrderItem({
-    orderId: values.orderId,
+  await posApi.addOrderItem(values.orderId, {
     menuItemId: values.menuItemId,
     quantity: 1,
   });
@@ -119,10 +109,11 @@ export async function sendOrderToKitchenAction(
 
   const staffUser = await getSelectedStaffUser();
 
-  await createPosService(db).sendToKitchen({
-    ...values,
+  await posApi.executeOrderCommand(values.orderId, {
+    action: 'send_to_kitchen',
+    idempotencyKey: values.idempotencyKey,
     allergyAcknowledged: formData.get('allergyAcknowledged') === 'true',
-    allergyAcknowledgedBy: staffUser.id,
+    staffUserId: staffUser.id,
   });
 
   revalidatePath(`/orders/${values.orderId}`);
@@ -147,8 +138,7 @@ export async function updateOrderItemInstructionsAction(
     allergyNote: formData.get('allergyNote') || undefined,
   });
 
-  await createOrderService(db).updateOrderItemInstructions({
-    orderItemId: values.orderItemId,
+  await posApi.updateOrderItem(values.orderItemId, {
     note: values.note,
     selectedInstructionCodes: values.selectedInstructionCodes,
     selectedVariants: values.selectedVariants,
@@ -177,8 +167,8 @@ export async function cancelOrderAction(formData: FormData): Promise<void> {
   const values = orderIdFormSchema.parse({
     orderId: formData.get('orderId'),
   });
-  await createPosService(db).cancelOrder({
-    orderId: values.orderId,
+  await posApi.executeOrderCommand(values.orderId, {
+    action: 'cancel',
     reason: 'POS order cancellation',
   });
 
@@ -197,10 +187,7 @@ export async function updateOrderItemQuantityAction(
     orderItemId: formData.get('orderItemId'),
     quantity: formData.get('quantity'),
   });
-  const orderService = createOrderService(db);
-
-  await orderService.updateOrderItemQuantity({
-    orderItemId: values.orderItemId,
+  await posApi.updateOrderItem(values.orderItemId, {
     quantity: values.quantity,
   });
 
@@ -216,9 +203,9 @@ export async function removePendingOrderItemAction(
     orderId: formData.get('orderId'),
     orderItemId: formData.get('orderItemId'),
   });
-  const orderService = createOrderService(db);
-
-  await orderService.removePendingOrderItem(values.orderItemId);
+  await posApi.executeOrderItemCommand(values.orderItemId, {
+    action: 'remove_pending',
+  });
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/items`);
@@ -230,10 +217,8 @@ export async function cancelOrderItemAction(formData: FormData): Promise<void> {
     orderId: formData.get('orderId'),
     orderItemId: formData.get('orderItemId'),
   });
-  const orderService = createOrderService(db);
-
-  await orderService.cancelOrderItem({
-    orderItemId: values.orderItemId,
+  await posApi.executeOrderItemCommand(values.orderItemId, {
+    action: 'cancel',
     reason: 'POS item cancellation',
   });
 
@@ -250,10 +235,8 @@ export async function restoreOrderItemAction(
     orderId: formData.get('orderId'),
     orderItemId: formData.get('orderItemId'),
   });
-  const orderService = createOrderService(db);
-
-  await orderService.restoreOrderItem({
-    orderItemId: values.orderItemId,
+  await posApi.executeOrderItemCommand(values.orderItemId, {
+    action: 'restore',
   });
 
   revalidatePath(`/orders/${values.orderId}`);

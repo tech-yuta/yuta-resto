@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-: "${DATABASE_URL:?DATABASE_URL is required}"
+: "${POS_DATABASE_URL:?POS_DATABASE_URL is required}"
 : "${POS_BACKUP_DIR:?POS_BACKUP_DIR must be an absolute backup directory}"
 
 case "$POS_BACKUP_DIR" in
@@ -41,9 +41,9 @@ trap cleanup_partial EXIT HUP INT TERM
 
 docker run --rm \
   --network "$POSTGRES_NETWORK" \
-  --env DATABASE_URL \
+  --env POS_DATABASE_URL \
   postgres:17-alpine \
-  pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges \
+  pg_dump "$POS_DATABASE_URL" --format=custom --no-owner --no-privileges \
   > "$partial_file"
 
 mv -- "$partial_file" "$backup_file"

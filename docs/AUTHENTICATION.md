@@ -4,9 +4,9 @@ YuTa Admin uses server-side, database-backed sessions. Authentication is
 implemented by `@yuta/auth`, the cloud database boundary, and the server
 boundary in `apps/admin/src/server/auth`.
 
-The target persistence package is `@yuta/db-cloud`. Current imports from the
-legacy `@yuta/db` are transitional and must be replaced during the database
-architecture reset.
+Authentication persistence and tenant lookup adapters are implemented in
+`@yuta/db-cloud`. Admin server code creates the cloud client from
+`CLOUD_DATABASE_URL`; the removed legacy `@yuta/db` package is not used.
 
 Cloud authentication is not used by `apps/yuta-pos`, `apps/site-agent`, or
 `apps/yuta-display`. POS staff authentication is local and uses local users,

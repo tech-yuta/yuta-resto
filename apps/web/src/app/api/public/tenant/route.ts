@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { ApiError } from '@yuta/contracts/common';
-import { db } from '@yuta/db/client';
 import {
   createDomainLookup,
   findScopedEstablishment,
-} from '@yuta/db/tenant-adapters';
+} from '@yuta/db-cloud';
 import { resolvePublicTenant, TenantError } from '@yuta/tenant';
+import { cloudDatabase as db } from '../../../../server/cloud-database';
 
 export const dynamic = 'force-dynamic';
 

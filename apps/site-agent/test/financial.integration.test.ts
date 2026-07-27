@@ -208,6 +208,22 @@ integrationTest('site-agent financial transaction integration', () => {
         items: [expect.objectContaining({ menuItemId: drinkItemId })],
       }),
     ]);
+    const singleSummary = await service.getPaymentSummary(orderId);
+    expect(singleSummary.order.totalCents).toBe(1400);
+    const discountedDetail = await service.getOrderDetail(orderId);
+    expect(discountedDetail.discounts).toEqual([
+      expect.objectContaining({
+        discountCents: 300,
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            orderItem: expect.objectContaining({ id: mainOrderItemId }),
+          }),
+          expect.objectContaining({
+            orderItem: expect.objectContaining({ id: drinkOrderItemId }),
+          }),
+        ]),
+      }),
+    ]);
 
     const split = await service.createChecksByItems(orderId, {
       checks: [
@@ -221,6 +237,37 @@ integrationTest('site-agent financial transaction integration', () => {
       ],
     });
     expect(split.checks[0]?.totalCents).toBe(1400);
+    const summary = await service.getPaymentSummary(orderId);
+    expect(summary.checks[0]?.items).toEqual([
+      expect.objectContaining({
+        quantity: 1,
+        orderItem: expect.objectContaining({ id: mainOrderItemId }),
+      }),
+      expect.objectContaining({
+        quantity: 1,
+        orderItem: expect.objectContaining({ id: drinkOrderItemId }),
+      }),
+    ]);
+    expect(summary.checks[0]?.discounts).toEqual([
+      expect.objectContaining({
+        nameSnapshot: `Integration Combo ${ruleId}`,
+        discountCents: 300,
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            quantityApplied: 1,
+            checkItem: expect.objectContaining({
+              orderItem: expect.objectContaining({ id: mainOrderItemId }),
+            }),
+          }),
+          expect.objectContaining({
+            quantityApplied: 1,
+            checkItem: expect.objectContaining({
+              orderItem: expect.objectContaining({ id: drinkOrderItemId }),
+            }),
+          }),
+        ]),
+      }),
+    ]);
 
     const input = {
       checkId: split.checks[0].id,

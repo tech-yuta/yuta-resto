@@ -3,9 +3,9 @@ import 'server-only';
 import {
   findGoogleReputationConnectorCredentials,
   updateGoogleReputationConnectorAccessToken,
-} from '@yuta/db';
-import { db } from '@yuta/db/client';
+} from '@yuta/db-cloud';
 import type { TenantContext } from '@yuta/tenant';
+import { cloudDatabase as db } from '../cloud-database';
 import { decryptCredential, encryptCredential } from './credential-crypto';
 import {
   GoogleBusinessProfileApiError,

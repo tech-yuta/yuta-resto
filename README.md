@@ -17,14 +17,13 @@ TypeScript, Tailwind CSS, and shared workspace packages.
 - `packages/ui` - shared UI components, app-shell primitives, and design tokens.
 - `packages/core` - database-independent domain logic and registries.
 - `packages/contracts` - transport DTOs, events, and Zod contracts.
-- `packages/db-cloud` - target cloud SaaS database package.
-- `packages/db-pos` - target local POS database package owned at runtime by
+- `packages/db-cloud` - cloud SaaS database package.
+- `packages/db-pos` - local POS database package owned at runtime by
   `site-agent`.
 
-The repository is currently migrating from the legacy shared `packages/db`.
-See
+The legacy shared `packages/db` has been removed. See
 [`docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`](docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md)
-for the authoritative target architecture and migration status. POS operational
+for the authoritative architecture and remaining reset status. POS operational
 data must never be written to or synchronized with the cloud database.
 
 ## Architecture Documentation

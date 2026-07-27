@@ -23,18 +23,15 @@ importers:
       '@yuta/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@yuta/db':
+      '@yuta/db-cloud':
         specifier: workspace:*
-        version: link:../../packages/db
+        version: link:../../packages/db-cloud
       '@yuta/tenant':
         specifier: workspace:*
         version: link:../../packages/tenant
       '@yuta/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      drizzle-orm:
-        specifier: ^0.43.1
-        version: 0.43.1(postgres@3.4.9)
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.2.7)
@@ -78,6 +75,9 @@ importers:
       '@yuta/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@yuta/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@yuta/db-pos':
         specifier: workspace:*
         version: link:../../packages/db-pos
@@ -115,9 +115,9 @@ importers:
       '@yuta/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@yuta/db':
+      '@yuta/db-cloud':
         specifier: workspace:*
-        version: link:../../packages/db
+        version: link:../../packages/db-cloud
       '@yuta/tenant':
         specifier: workspace:*
         version: link:../../packages/tenant
@@ -225,15 +225,9 @@ importers:
       '@yuta/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@yuta/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@yuta/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      drizzle-orm:
-        specifier: ^0.43.1
-        version: 0.43.1(postgres@3.4.9)
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.2.7)
@@ -246,6 +240,9 @@ importers:
       react-dom:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
+      uuid:
+        specifier: ^14.0.1
+        version: 14.0.1
       zod:
         specifier: ^3.25.67
         version: 3.25.76
@@ -302,69 +299,10 @@ importers:
         version: 4.1.9(@types/node@26.0.0)(vite@8.1.0(@types/node@26.0.0)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.101.0)(tsx@4.22.4))
 
   packages/core:
-    dependencies:
-      '@yuta/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      '@yuta/db':
-        specifier: workspace:*
-        version: link:../db
-      drizzle-orm:
-        specifier: ^0.43.1
-        version: 0.43.1(postgres@3.4.9)
-      zod:
-        specifier: ^3.25.67
-        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^26.0.0
         version: 26.0.0
-      dotenv:
-        specifier: ^16.5.0
-        version: 16.6.1
-      postgres:
-        specifier: ^3.4.7
-        version: 3.4.9
-      tsx:
-        specifier: ^4.20.6
-        version: 4.22.4
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.0.15
-        version: 4.1.9(@types/node@26.0.0)(vite@8.1.0(@types/node@26.0.0)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.101.0)(tsx@4.22.4))
-
-  packages/db:
-    dependencies:
-      '@yuta/auth':
-        specifier: workspace:*
-        version: link:../auth
-      '@yuta/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      '@yuta/tenant':
-        specifier: workspace:*
-        version: link:../tenant
-      drizzle-orm:
-        specifier: ^0.43.1
-        version: 0.43.1(postgres@3.4.9)
-      postgres:
-        specifier: ^3.4.7
-        version: 3.4.9
-    devDependencies:
-      '@types/node':
-        specifier: ^26.0.0
-        version: 26.0.0
-      dotenv:
-        specifier: ^16.5.0
-        version: 16.6.1
-      drizzle-kit:
-        specifier: ^0.31.1
-        version: 0.31.10
-      tsx:
-        specifier: ^4.20.6
-        version: 4.22.4
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -377,6 +315,12 @@ importers:
       '@yuta/auth':
         specifier: workspace:*
         version: link:../auth
+      '@yuta/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@yuta/tenant':
+        specifier: workspace:*
+        version: link:../tenant
       drizzle-orm:
         specifier: ^0.43.1
         version: 0.43.1(postgres@3.4.9)
@@ -543,11 +487,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}

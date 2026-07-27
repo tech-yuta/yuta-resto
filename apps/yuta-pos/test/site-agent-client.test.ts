@@ -152,13 +152,21 @@ describe('yuta-pos site-agent client', () => {
       .mockResolvedValueOnce(Response.json({ categories: [], comboRules: [] }))
       .mockResolvedValueOnce(Response.json({ orders: [orderSnapshot] }))
       .mockResolvedValueOnce(
-        Response.json({ order: orderSnapshot, items: [orderItemSnapshot] }),
+        Response.json({
+          order: orderSnapshot,
+          items: [orderItemSnapshot],
+          discounts: [],
+        }),
       )
       .mockResolvedValueOnce(Response.json({ item: orderItemSnapshot }))
       .mockResolvedValueOnce(Response.json({ item: orderItemSnapshot }))
       .mockResolvedValueOnce(Response.json({ item: orderItemSnapshot }))
       .mockResolvedValueOnce(
-        Response.json({ order: orderSnapshot, items: [orderItemSnapshot] }),
+        Response.json({
+          order: orderSnapshot,
+          items: [orderItemSnapshot],
+          discounts: [],
+        }),
       );
     const client = createSiteAgentClient({
       baseUrl: 'http://site-agent.test',

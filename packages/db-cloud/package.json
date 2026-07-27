@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@yuta/auth": "workspace:*",
+    "@yuta/contracts": "workspace:*",
+    "@yuta/tenant": "workspace:*",
     "drizzle-orm": "^0.43.1",
     "postgres": "^3.4.7",
     "uuid": "^14.0.1",

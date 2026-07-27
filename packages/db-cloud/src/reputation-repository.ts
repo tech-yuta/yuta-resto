@@ -16,12 +16,11 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
-import type { DbClient } from './client';
+import { v7 as uuidv7 } from 'uuid';
+import type { CloudDatabaseClient } from './client';
 import {
   directCustomerFeedback,
   establishments,
-  feedbackAnalyses,
-  feedbackIncidents,
   feedbackInternalNotes,
   feedbackItems,
   feedbackReplies,
@@ -33,19 +32,13 @@ import {
   users,
 } from './schema';
 
+type DbClient = CloudDatabaseClient;
+
 export type AssignableReputationUser = {
   id: string;
   name: string;
   email: string | null;
-  role:
-    | 'owner'
-    | 'admin'
-    | 'manager'
-    | 'cashier'
-    | 'kitchen'
-    | 'waiter'
-    | 'accountant'
-    | 'employee';
+  role: 'owner' | 'admin' | 'manager' | 'employee';
 };
 
 export type ReputationRepositoryErrorCode =
@@ -73,7 +66,6 @@ export type ReputationConnectorSummary = {
     | 'DISCONNECTED'
     | 'CONNECTING'
     | 'CONNECTED'
-    | 'SYNCING'
     | 'ERROR'
     | 'AUTH_EXPIRED';
   tokenExpiresAt: Date | null;
@@ -142,22 +134,29 @@ export async function findPublicFeedbackConfiguration(
   context: PublicTenantContext,
   slug: string,
 ): Promise<PublicFeedbackConfiguration | null> {
-  const result = await repositoryDb.query.reputationSettings.findFirst({
-    where: and(
-      eq(reputationSettings.organizationId, context.organizationId),
-      eq(reputationSettings.establishmentId, context.establishmentId),
-      eq(reputationSettings.publicFeedbackSlug, slug),
-    ),
-  });
+  const [result] = await repositoryDb
+    .select()
+    .from(reputationSettings)
+    .where(
+      and(
+        eq(reputationSettings.organizationId, context.organizationId),
+        eq(reputationSettings.establishmentId, context.establishmentId),
+        eq(reputationSettings.publicFeedbackSlug, slug),
+      ),
+    )
+    .limit(1);
   if (!result) return null;
 
-  const establishment = await repositoryDb.query.establishments.findFirst({
-    where: and(
-      eq(establishments.organizationId, context.organizationId),
-      eq(establishments.id, context.establishmentId),
-    ),
-    columns: { name: true },
-  });
+  const [establishment] = await repositoryDb
+    .select({ name: establishments.name })
+    .from(establishments)
+    .where(
+      and(
+        eq(establishments.organizationId, context.organizationId),
+        eq(establishments.id, context.establishmentId),
+      ),
+    )
+    .limit(1);
   if (!establishment) return null;
 
   return {
@@ -222,6 +221,7 @@ export async function createPublicFeedback(
     const [feedback] = await transaction
       .insert(feedbackItems)
       .values({
+        id: uuidv7(),
         organizationId: context.organizationId,
         establishmentId: context.establishmentId,
         source: 'DIRECT',
@@ -240,6 +240,7 @@ export async function createPublicFeedback(
       .returning({ id: feedbackItems.id });
 
     await transaction.insert(directCustomerFeedback).values({
+      id: uuidv7(),
       organizationId: context.organizationId,
       establishmentId: context.establishmentId,
       feedbackItemId: feedback.id,
@@ -301,17 +302,7 @@ export async function listFeedback(
           ilike(feedbackItems.content, `%${query.search}%`),
         )
       : undefined,
-    query.hasIncident === true
-      ? sql`exists (
-          select 1 from ${feedbackIncidents}
-          where ${feedbackIncidents.feedbackItemId} = ${feedbackItems.id}
-        )`
-      : query.hasIncident === false
-        ? sql`not exists (
-            select 1 from ${feedbackIncidents}
-            where ${feedbackIncidents.feedbackItemId} = ${feedbackItems.id}
-          )`
-        : undefined,
+    query.hasIncident === true ? sql`false` : undefined,
   ].filter((filter) => filter !== undefined);
   const where = and(...filters);
   const orderBy =
@@ -351,13 +342,7 @@ export async function listFeedback(
       assignedToUserId: feedbackItems.assignedToUserId,
       publishedAt: feedbackItems.publishedAt,
       receivedAt: feedbackItems.receivedAt,
-      incidentId: sql<string | null>`(
-        select ${feedbackIncidents.id}
-        from ${feedbackIncidents}
-        where ${feedbackIncidents.feedbackItemId} = ${feedbackItems.id}
-        order by ${feedbackIncidents.createdAt} desc
-        limit 1
-      )`,
+      incidentId: sql<string | null>`null`,
       replyId: sql<string | null>`(
         select ${feedbackReplies.id}
         from ${feedbackReplies}
@@ -398,12 +383,7 @@ export async function listFeedback(
         )
       )`,
       negative: sql<number>`count(*) filter (where ${feedbackItems.sentiment} = 'NEGATIVE')`,
-      withIncident: sql<number>`count(*) filter (
-        where exists (
-          select 1 from ${feedbackIncidents}
-          where ${feedbackIncidents.feedbackItemId} = ${feedbackItems.id}
-        )
-      )`,
+      withIncident: sql<number>`0`,
     })
     .from(feedbackItems)
     .where(
@@ -439,50 +419,44 @@ export async function findFeedbackDetail(
   feedbackId: string,
 ) {
   const establishmentId = requireAdminEstablishment(context);
-  return repositoryDb.query.feedbackItems.findFirst({
-    where: and(
-      eq(feedbackItems.id, feedbackId),
-      eq(feedbackItems.organizationId, context.organizationId),
-      eq(feedbackItems.establishmentId, establishmentId),
-      feedbackVisibilityCondition(context),
-    ),
-    with: {
-      analysis: true,
-      replies: {
-        orderBy: [desc(feedbackReplies.createdAt)],
-      },
-      incidents: {
-        orderBy: [desc(feedbackIncidents.createdAt)],
-      },
-      notes: {
-        orderBy: [desc(feedbackInternalNotes.createdAt)],
-      },
-    },
-  });
-}
-
-export async function findFeedbackAnalysis(
-  repositoryDb: DbClient,
-  context: TenantContext,
-  feedbackId: string,
-) {
-  const establishmentId = requireAdminEstablishment(context);
-  return repositoryDb
-    .select({ analysis: feedbackAnalyses })
-    .from(feedbackAnalyses)
-    .innerJoin(
-      feedbackItems,
-      eq(feedbackItems.id, feedbackAnalyses.feedbackItemId),
-    )
+  const [feedback] = await repositoryDb
+    .select()
+    .from(feedbackItems)
     .where(
       and(
-        eq(feedbackAnalyses.feedbackItemId, feedbackId),
+        eq(feedbackItems.id, feedbackId),
         eq(feedbackItems.organizationId, context.organizationId),
         eq(feedbackItems.establishmentId, establishmentId),
         feedbackVisibilityCondition(context),
       ),
     )
     .limit(1);
+  if (!feedback) return undefined;
+
+  const [replies, notes] = await Promise.all([
+    repositoryDb
+      .select()
+      .from(feedbackReplies)
+      .where(eq(feedbackReplies.feedbackItemId, feedback.id))
+      .orderBy(desc(feedbackReplies.createdAt)),
+    repositoryDb
+      .select()
+      .from(feedbackInternalNotes)
+      .where(eq(feedbackInternalNotes.feedbackItemId, feedback.id))
+      .orderBy(desc(feedbackInternalNotes.createdAt)),
+  ]);
+
+  return {
+    ...feedback,
+    analysis: null as {
+      summary: string;
+      topics: string[];
+      suggestedAction: string | null;
+    } | null,
+    incidents: [] as Array<{ id: string }>,
+    replies,
+    notes,
+  };
 }
 
 export async function listAssignableReputationUsers(
@@ -515,13 +489,17 @@ export async function findGoogleReputationConnector(
   context: TenantContext,
 ): Promise<ReputationConnectorSummary | null> {
   const establishmentId = requireAdminEstablishment(context);
-  const connector = await repositoryDb.query.reputationConnectors.findFirst({
-    where: and(
-      eq(reputationConnectors.organizationId, context.organizationId),
-      eq(reputationConnectors.establishmentId, establishmentId),
-      eq(reputationConnectors.provider, 'GOOGLE'),
-    ),
-  });
+  const [connector] = await repositoryDb
+    .select()
+    .from(reputationConnectors)
+    .where(
+      and(
+        eq(reputationConnectors.organizationId, context.organizationId),
+        eq(reputationConnectors.establishmentId, establishmentId),
+        eq(reputationConnectors.provider, 'GOOGLE'),
+      ),
+    )
+    .limit(1);
   if (!connector) return null;
   return {
     id: connector.id,
@@ -544,15 +522,18 @@ export async function findGoogleReputationConnectorCredentials(
   context: TenantContext,
 ) {
   const establishmentId = requireAdminEstablishment(context);
-  return (
-    (await repositoryDb.query.reputationConnectors.findFirst({
-      where: and(
+  const [connector] = await repositoryDb
+    .select()
+    .from(reputationConnectors)
+    .where(
+      and(
         eq(reputationConnectors.organizationId, context.organizationId),
         eq(reputationConnectors.establishmentId, establishmentId),
         eq(reputationConnectors.provider, 'GOOGLE'),
       ),
-    })) ?? null
-  );
+    )
+    .limit(1);
+  return connector ?? null;
 }
 
 export async function upsertGoogleReputationConnectorCredentials(
@@ -571,6 +552,7 @@ export async function upsertGoogleReputationConnectorCredentials(
     const [connector] = await transaction
       .insert(reputationConnectors)
       .values({
+        id: uuidv7(),
         organizationId: context.organizationId,
         establishmentId,
         provider: 'GOOGLE',
@@ -602,6 +584,7 @@ export async function upsertGoogleReputationConnectorCredentials(
       })
       .returning();
     await transaction.insert(reputationAuditEvents).values({
+      id: uuidv7(),
       organizationId: context.organizationId,
       entityType: 'CONNECTOR',
       entityId: connector.id,
@@ -686,6 +669,7 @@ export async function selectGoogleReputationLocation(
       );
     }
     await transaction.insert(reputationAuditEvents).values({
+      id: uuidv7(),
       organizationId: context.organizationId,
       entityType: 'CONNECTOR',
       entityId: connector.id,
@@ -713,14 +697,18 @@ export async function updateFeedback(
 ) {
   const establishmentId = requireAdminEstablishment(context);
   return repositoryDb.transaction(async (transaction) => {
-    const feedback = await transaction.query.feedbackItems.findFirst({
-      where: and(
-        eq(feedbackItems.id, input.feedbackId),
-        eq(feedbackItems.organizationId, context.organizationId),
-        eq(feedbackItems.establishmentId, establishmentId),
-        feedbackVisibilityCondition(context),
-      ),
-    });
+    const [feedback] = await transaction
+      .select()
+      .from(feedbackItems)
+      .where(
+        and(
+          eq(feedbackItems.id, input.feedbackId),
+          eq(feedbackItems.organizationId, context.organizationId),
+          eq(feedbackItems.establishmentId, establishmentId),
+          feedbackVisibilityCondition(context),
+        ),
+      )
+      .limit(1);
     if (!feedback) {
       throw new ReputationRepositoryError(
         'Feedback not found.',
@@ -763,6 +751,7 @@ export async function updateFeedback(
       .returning();
 
     await transaction.insert(reputationAuditEvents).values({
+      id: uuidv7(),
       organizationId: context.organizationId,
       entityType: 'FEEDBACK',
       entityId: feedback.id,
@@ -791,14 +780,18 @@ export async function saveFeedbackReplyDraft(
 ) {
   const establishmentId = requireAdminEstablishment(context);
   return repositoryDb.transaction(async (transaction) => {
-    const feedback = await transaction.query.feedbackItems.findFirst({
-      where: and(
-        eq(feedbackItems.id, input.feedbackId),
-        eq(feedbackItems.organizationId, context.organizationId),
-        eq(feedbackItems.establishmentId, establishmentId),
-        feedbackVisibilityCondition(context),
-      ),
-    });
+    const [feedback] = await transaction
+      .select()
+      .from(feedbackItems)
+      .where(
+        and(
+          eq(feedbackItems.id, input.feedbackId),
+          eq(feedbackItems.organizationId, context.organizationId),
+          eq(feedbackItems.establishmentId, establishmentId),
+          feedbackVisibilityCondition(context),
+        ),
+      )
+      .limit(1);
     if (!feedback) {
       throw new ReputationRepositoryError(
         'Feedback not found.',
@@ -812,18 +805,17 @@ export async function saveFeedbackReplyDraft(
       );
     }
 
-    const existingDraft = await transaction.query.feedbackReplies.findFirst({
-      where: and(
-        eq(feedbackReplies.feedbackItemId, feedback.id),
-        inArray(feedbackReplies.status, [
-          'AI_SUGGESTION',
-          'DRAFT',
-          'READY',
-          'FAILED',
-        ]),
-      ),
-      orderBy: [desc(feedbackReplies.createdAt)],
-    });
+    const [existingDraft] = await transaction
+      .select()
+      .from(feedbackReplies)
+      .where(
+        and(
+          eq(feedbackReplies.feedbackItemId, feedback.id),
+          inArray(feedbackReplies.status, ['DRAFT', 'READY', 'FAILED']),
+        ),
+      )
+      .orderBy(desc(feedbackReplies.createdAt))
+      .limit(1);
     const [reply] = existingDraft
       ? await transaction
           .update(feedbackReplies)
@@ -840,6 +832,7 @@ export async function saveFeedbackReplyDraft(
       : await transaction
           .insert(feedbackReplies)
           .values({
+            id: uuidv7(),
             organizationId: context.organizationId,
             feedbackItemId: feedback.id,
             content: input.content,
@@ -855,6 +848,7 @@ export async function saveFeedbackReplyDraft(
       .set({ status: 'DRAFTED' })
       .where(eq(feedbackItems.id, feedback.id));
     await transaction.insert(reputationAuditEvents).values({
+      id: uuidv7(),
       organizationId: context.organizationId,
       entityType: 'REPLY',
       entityId: reply.id,
@@ -881,14 +875,18 @@ export async function createFeedbackInternalNote(
 ) {
   const establishmentId = requireAdminEstablishment(context);
   return repositoryDb.transaction(async (transaction) => {
-    const feedback = await transaction.query.feedbackItems.findFirst({
-      where: and(
-        eq(feedbackItems.id, input.feedbackId),
-        eq(feedbackItems.organizationId, context.organizationId),
-        eq(feedbackItems.establishmentId, establishmentId),
-        feedbackVisibilityCondition(context),
-      ),
-    });
+    const [feedback] = await transaction
+      .select()
+      .from(feedbackItems)
+      .where(
+        and(
+          eq(feedbackItems.id, input.feedbackId),
+          eq(feedbackItems.organizationId, context.organizationId),
+          eq(feedbackItems.establishmentId, establishmentId),
+          feedbackVisibilityCondition(context),
+        ),
+      )
+      .limit(1);
     if (!feedback) {
       throw new ReputationRepositoryError(
         'Feedback not found.',
@@ -898,6 +896,7 @@ export async function createFeedbackInternalNote(
     const [note] = await transaction
       .insert(feedbackInternalNotes)
       .values({
+        id: uuidv7(),
         organizationId: context.organizationId,
         feedbackItemId: feedback.id,
         content: input.content,
@@ -905,6 +904,7 @@ export async function createFeedbackInternalNote(
       })
       .returning();
     await transaction.insert(reputationAuditEvents).values({
+      id: uuidv7(),
       organizationId: context.organizationId,
       entityType: 'FEEDBACK',
       entityId: feedback.id,

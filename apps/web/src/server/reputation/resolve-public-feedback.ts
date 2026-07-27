@@ -1,12 +1,14 @@
-import { db } from '@yuta/db/client';
-import { findDevelopmentFeedbackTenantBySlug } from '@yuta/db';
-import { createDomainLookup } from '@yuta/db/tenant-adapters';
+import {
+  createDomainLookup,
+  findDevelopmentFeedbackTenantBySlug,
+} from '@yuta/db-cloud';
 import {
   normalizeHostname,
   resolvePublicTenant,
   TenantError,
   type PublicTenantContext,
 } from '@yuta/tenant';
+import { cloudDatabase as db } from '../cloud-database';
 
 function isLocalHostname(hostname: string): boolean {
   try {

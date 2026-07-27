@@ -1,7 +1,7 @@
-import { db } from '@yuta/db/client';
-import { findPublicFeedbackConfiguration } from '@yuta/db';
+import { findPublicFeedbackConfiguration } from '@yuta/db-cloud';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import { cloudDatabase as db } from '../../../server/cloud-database';
 import { notFound } from 'next/navigation';
 import { FeedbackForm } from './feedback-form';
 import { resolveFeedbackTenant } from '../../../server/reputation/resolve-public-feedback';

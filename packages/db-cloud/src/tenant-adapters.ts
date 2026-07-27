@@ -8,7 +8,7 @@ import type {
   PublicTenantContext,
   TenantContext,
 } from '@yuta/tenant';
-import type { DbClient } from './client';
+import type { CloudDatabaseClient } from './client';
 import {
   establishments,
   organizations,
@@ -17,7 +17,7 @@ import {
   tenantMemberships,
 } from './schema';
 
-export function createDomainLookup(db: DbClient): DomainLookupPort {
+export function createDomainLookup(db: CloudDatabaseClient): DomainLookupPort {
   return {
     async findActiveByHostname(hostname): Promise<DomainTenantRecord | null> {
       const rows = await db
@@ -65,7 +65,9 @@ export function createDomainLookup(db: DbClient): DomainLookupPort {
   };
 }
 
-export function createMembershipLookup(db: DbClient): MembershipLookupPort {
+export function createMembershipLookup(
+  db: CloudDatabaseClient,
+): MembershipLookupPort {
   return {
     async findActiveMembership(input): Promise<MembershipRecord | null> {
       const conditions = [
@@ -115,7 +117,7 @@ export function createMembershipLookup(db: DbClient): MembershipLookupPort {
 }
 
 export function createEstablishmentLookup(
-  db: DbClient,
+  db: CloudDatabaseClient,
 ): EstablishmentLookupPort {
   return {
     async belongsToOrganization(input) {
@@ -136,7 +138,7 @@ export function createEstablishmentLookup(
 }
 
 export async function findScopedEstablishment(
-  db: DbClient,
+  db: CloudDatabaseClient,
   context: TenantContext | PublicTenantContext,
 ) {
   if (!context.establishmentId) return null;
@@ -155,7 +157,7 @@ export async function findScopedEstablishment(
 }
 
 export async function findAuthenticatedTenantMetadata(
-  db: DbClient,
+  db: CloudDatabaseClient,
   scope: { organizationId: string; establishmentId: string },
 ): Promise<{
   locale: string;
@@ -194,7 +196,7 @@ export async function findAuthenticatedTenantMetadata(
 }
 
 async function getEntitlements(
-  db: DbClient,
+  db: CloudDatabaseClient,
   organizationId: string,
   establishmentId: string,
 ): Promise<string[]> {

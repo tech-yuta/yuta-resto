@@ -4,10 +4,6 @@ export const tenantRoleSchema = z.enum([
   'owner',
   'admin',
   'manager',
-  'cashier',
-  'kitchen',
-  'waiter',
-  'accountant',
   'employee',
 ]);
 export type TenantRole = z.infer<typeof tenantRoleSchema>;

@@ -1,17 +1,12 @@
 'use server';
 
-import {
-  createPosService,
-  PaymentServiceError,
-  parseEuroAmountToCents,
-} from '@yuta/core';
-import { db } from '@yuta/db/client';
-import { orderItems } from '@yuta/db/schema';
-import { and, eq, ne } from 'drizzle-orm';
+import { parseEuroAmountToCents } from '@yuta/core';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { getSelectedStaffUser } from '../_pos-helpers';
+import { posApi } from '../../lib/pos-api';
+import { SiteAgentClientError } from '../../lib/site-agent-client';
 
 const moneyCentsSchema = z.preprocess(
   (v) => (typeof v === 'string' ? parseEuroAmountToCents(v) : null),
@@ -65,20 +60,19 @@ export async function payFullOrderAction(formData: FormData): Promise<void> {
     formData,
     orderId,
   );
-  const posService = createPosService(db);
-
   try {
-    await posService.payFullOrder({
-      orderId: values.orderId,
+    await posApi.payOrder(values.orderId, {
       method: values.method,
       amountCents: values.amountCents,
       tenderedCents: values.tenderedCents,
-      paidBy: (await getSelectedStaffUser()).name,
+      staffUserId: (await getSelectedStaffUser()).id,
       idempotencyKey: values.idempotencyKey,
     });
   } catch (error) {
-    if (error instanceof PaymentServiceError) {
-      redirect(`/orders/${values.orderId}/payment?error=${error.code}`);
+    if (error instanceof SiteAgentClientError) {
+      redirect(
+        `/orders/${values.orderId}/payment?error=${paymentErrorCode(error.code)}`,
+      );
     }
 
     throw error;
@@ -97,10 +91,7 @@ export async function splitOrderEquallyAction(
     parts: formData.get('parts'),
   });
   const shouldReturnToPayment = formData.get('returnTo') === 'payment';
-  await createPosService(db).splitOrderEqually({
-    orderId: values.orderId,
-    parts: values.parts,
-  });
+  await posApi.splitOrderEqually(values.orderId, values.parts);
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath(`/orders/${values.orderId}/payment`);
@@ -118,10 +109,12 @@ export async function cancelOrderSplitAction(
     orderId: formData.get('orderId'),
   });
   try {
-    await createPosService(db).cancelOrderSplit(values.orderId);
+    await posApi.cancelOrderSplit(values.orderId);
   } catch (error) {
-    if (error instanceof PaymentServiceError) {
-      redirect(`/orders/${values.orderId}/payment?error=${error.code}`);
+    if (error instanceof SiteAgentClientError) {
+      redirect(
+        `/orders/${values.orderId}/payment?error=${paymentErrorCode(error.code)}`,
+      );
     }
 
     throw error;
@@ -139,21 +132,20 @@ export async function payCheckAction(formData: FormData): Promise<void> {
     formData,
     orderId,
   );
-  const posService = createPosService(db);
-
   try {
-    await posService.payCheck({
-      orderId: values.orderId,
+    await posApi.payCheck(values.orderId, {
       checkId: values.checkId,
       method: values.method,
       amountCents: values.amountCents,
       tenderedCents: values.tenderedCents,
-      paidBy: (await getSelectedStaffUser()).name,
+      staffUserId: (await getSelectedStaffUser()).id,
       idempotencyKey: values.idempotencyKey,
     });
   } catch (error) {
-    if (error instanceof PaymentServiceError) {
-      redirect(`/orders/${values.orderId}/payment?error=${error.code}`);
+    if (error instanceof SiteAgentClientError) {
+      redirect(
+        `/orders/${values.orderId}/payment?error=${paymentErrorCode(error.code)}`,
+      );
     }
 
     throw error;
@@ -224,12 +216,9 @@ export async function createChecksByItemsAction(
     );
   }
 
-  const activeItems = await db.query.orderItems.findMany({
-    where: and(
-      eq(orderItems.orderId, values.orderId),
-      ne(orderItems.status, 'cancelled'),
-    ),
-  });
+  const activeItems = (
+    await posApi.getOrderDetail(values.orderId)
+  ).items.filter((item) => item.status !== 'cancelled');
   const activeQuantityByItemId = new Map(
     activeItems.map((item) => [item.id, item.quantity]),
   );
@@ -262,8 +251,7 @@ export async function createChecksByItemsAction(
     }
   }
 
-  await createPosService(db).createChecksByItems({
-    orderId: values.orderId,
+  await posApi.createChecksByItems(values.orderId, {
     checks: filteredChecks,
   });
 
@@ -274,6 +262,17 @@ export async function createChecksByItemsAction(
       ? `/orders/${values.orderId}/payment?paymentDialog=item-split`
       : `/orders/${values.orderId}/payment`,
   );
+}
+
+function paymentErrorCode(code: string): string {
+  const codes: Record<string, string> = {
+    OVERPAYMENT: 'overpayment',
+    INVALID_TENDER: 'invalid_tender',
+    ORDER_NOT_PAYABLE: 'invalid_status',
+    CHECK_NOT_PAYABLE: 'invalid_status',
+    PAID_CHECK_EXISTS: 'paid_check_exists',
+  };
+  return codes[code] ?? code.toLocaleLowerCase('en-US');
 }
 
 function readOrderIdOrThrow(formData: FormData): string {

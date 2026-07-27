@@ -77,22 +77,9 @@ The cloud role enum should be pruned to roles used by implemented cloud
 features; POS-only roles such as `cashier`, `kitchen`, and `waiter` must not be
 used to model local staff.
 
-### 3.2 `packages/core` is currently an application/data-access layer
+### 3.2 `packages/core` is database-independent
 
-The following core modules import Drizzle and `@yuta/db`:
-
-- `combos.ts`;
-- `menu.ts`;
-- `orders.ts`;
-- `payments.ts`;
-- `pos.ts`;
-- `prints.ts`;
-- `users.ts`.
-
-The print worker modules also read environment variables and access the
-filesystem.
-
-Required split:
+The core split is complete:
 
 - pure calculations, validation, formatting, date rules, and item-instruction
   rules remain in `packages/core`;
@@ -101,6 +88,12 @@ Required split:
 - repositories, transactions, print processing, environment access, and
   filesystem/device integration move to `apps/site-agent`;
 - DB row types must not be exported as contracts.
+
+The legacy order, payment, menu, user, print service, CLI, and filesystem
+worker modules have been removed. `packages/core` has no dependency on a
+database package, Drizzle, Zod transport schemas, environment loading, or
+filesystem access. The pure combo calculator remains in core and is consumed
+by `site-agent`.
 
 ### 3.3 Cloud admin currently owns local POS surfaces
 
@@ -116,6 +109,10 @@ The following cloud admin areas violate the approved runtime boundary:
 
 They must be removed from cloud navigation/routes and reintroduced only through
 a local management UI backed by `site-agent`.
+
+The cloud routes and server actions for `menu/**`, `operations/reports/**`,
+`settings/printers/**`, and `team/staff/**` have now been removed. Their
+replacement local management screens remain a later site-agent-backed phase.
 
 `settings/users/**` is different: it manages cloud users and organization
 memberships and remains in cloud admin after it is decoupled from the shared
@@ -391,14 +388,11 @@ The first non-destructive implementation slice is now present:
   random UUID default;
 - each package validates its own explicit database URL and has independent
   Drizzle commands;
-- the legacy `packages/db`, its migrations, its consumers, and all database
-  volumes remain untouched.
+- the legacy `packages/db`, its migrations, and its workspace dependencies
+  have been removed after all runtime consumers moved to explicit boundaries.
 
-Application services must generate UUIDv7 values when their repositories are
-moved to the new packages. That generator is deliberately not placed in the
-schema or database client layer. Clean `0000_initial` migrations remain deferred
-until the legacy consumers have moved and the final schemas have been verified,
-as required by the reset sequence.
+Application services and repositories generate UUIDv7 values; that generator
+is deliberately not placed in the schema or database client layer.
 
 The seed and integration-test foundation is now split by boundary:
 
@@ -408,9 +402,8 @@ The seed and integration-test foundation is now split by boundary:
 - both seed services generate new IDs with UUIDv7;
 - cloud and POS schema integration tests use their respective database URL and
   require an explicit opt-in flag;
-- the legacy reputation repository integration test remains in `packages/db`
-  until that repository is rewritten for `db-cloud`; it is not re-exported or
-  imported by either new package.
+- the reputation repository and its guarded integration test now live in
+  `packages/db-cloud` and use `CLOUD_DATABASE_URL`.
 
 The initial `apps/site-agent` and local API contract slice is now present:
 
@@ -437,10 +430,10 @@ Order-item and kitchen persistence are now implemented in `site-agent`:
 - replaying a kitchen UUIDv7 idempotency key returns its existing result, while
   cross-command reuse is rejected.
 
-The combo calculation engine has been extracted into
-`site-agent` and covered for fixed and base-item-plus-delta pricing, repeated
-quantities, deterministic matching, and no unit reuse. Its `db-pos` adapter
-rebuilds order and check discount snapshots with UUIDv7 IDs.
+The combo calculation engine is pure logic in `packages/core` and is covered
+for fixed and base-item-plus-delta pricing, repeated quantities, deterministic
+matching, and no unit reuse. Its site-agent/db-pos adapter rebuilds order and
+check discount snapshots with UUIDv7 IDs.
 
 The financial persistence slice is now implemented in `site-agent`:
 
@@ -463,7 +456,30 @@ Order and item responses expose the serialized allergy and lifecycle snapshots
 used by the existing screens; these mappings pass the database-backed
 site-agent integration suite. Catalog responses now include nested combo rules,
 groups, and eligible items, and the POS client covers the financial
-summary/split/payment endpoints. Operational cutover remains disabled until
-the pages and actions can switch together, because order-entry and payment
-share the same order IDs and staff selection. This keeps the transition from
-writing one database and reading the other.
+summary/split/payment endpoints. Payment summaries carry persisted combo
+discount details and their item allocations for both orders and item-based
+split checks.
+
+That atomic POS cutover is now complete:
+
+- all `apps/yuta-pos/src` reads and commands use the validated site-agent
+  client;
+- order list/detail, item entry, kitchen, splits, and payments share db-pos
+  identifiers;
+- the POS package no longer depends on `@yuta/db` or `drizzle-orm`;
+- the POS image and runtime service receive no database URL;
+- the legacy print-worker and shared-database migrate services were removed
+  from `apps/yuta-pos/docker-compose.yml`;
+- guarded backup maintenance now uses `POS_DATABASE_URL`.
+
+The cloud consumer cutover is also complete:
+
+- admin auth, tenant switching, cloud-user management, reputation, and Google
+  connector flows use `@yuta/db-cloud`;
+- public web tenant resolution and feedback flows use `@yuta/db-cloud`;
+- admin and web no longer depend on `@yuta/db`;
+- cloud-only roles are `owner`, `admin`, `manager`, and `employee`; POS roles
+  remain local;
+- the cloud schema and reputation repository integration suite pass against a
+  disposable PostgreSQL database;
+- the legacy `packages/db` package and migration history have been deleted.

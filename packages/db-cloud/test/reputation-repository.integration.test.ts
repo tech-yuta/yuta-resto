@@ -1,9 +1,12 @@
 import { config } from 'dotenv';
 import type { TenantContext } from '@yuta/tenant';
-import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import type { DbClient } from '../src/client';
+import { v7 as uuidv7 } from 'uuid';
+import {
+  createCloudDatabaseClient,
+  type CloudDatabaseClient,
+} from '../src/client';
 import {
   createFeedbackInternalNote,
   findFeedbackDetail,
@@ -24,17 +27,22 @@ import {
   users,
 } from '../src/schema';
 
+config({ path: '.env.test' });
 config({ path: '.env.local' });
 
-const integrationTest = process.env.DATABASE_URL ? describe : describe.skip;
+const integrationTest =
+  process.env.CLOUD_DATABASE_URL &&
+  process.env.YUTA_ALLOW_DATABASE_INTEGRATION_TESTS === 'true'
+    ? describe
+    : describe.skip;
 
 integrationTest('reputation repository integration', () => {
-  let db: DbClient;
-  const organizationId = randomUUID();
-  const establishmentId = randomUUID();
-  const actorUserId = randomUUID();
-  const assigneeUserId = randomUUID();
-  const membershipId = randomUUID();
+  let db: CloudDatabaseClient;
+  const organizationId = uuidv7();
+  const establishmentId = uuidv7();
+  const actorUserId = uuidv7();
+  const assigneeUserId = uuidv7();
+  const membershipId = uuidv7();
   const context: TenantContext = {
     organizationId,
     establishmentId,
@@ -50,7 +58,7 @@ integrationTest('reputation repository integration', () => {
   };
 
   beforeAll(async () => {
-    ({ db } = await import('../src/client'));
+    db = createCloudDatabaseClient(process.env);
     await db.insert(organizations).values({
       id: organizationId,
       name: 'Reputation integration organization',
@@ -67,13 +75,11 @@ integrationTest('reputation repository integration', () => {
         id: actorUserId,
         name: 'Integration Owner',
         email: `owner-${organizationId}@example.test`,
-        role: 'admin',
       },
       {
         id: assigneeUserId,
         name: 'Integration Assignee',
         email: `assignee-${organizationId}@example.test`,
-        role: 'manager',
       },
     ]);
     await db.insert(tenantMemberships).values([
@@ -86,6 +92,7 @@ integrationTest('reputation repository integration', () => {
         status: 'active',
       },
       {
+        id: uuidv7(),
         userId: assigneeUserId,
         organizationId,
         establishmentId,
@@ -117,17 +124,19 @@ integrationTest('reputation repository integration', () => {
       .delete(establishments)
       .where(eq(establishments.id, establishmentId));
     await db.delete(organizations).where(eq(organizations.id, organizationId));
+    await db.$client.end({ timeout: 5 });
   });
 
   it('persists inbox mutations, audits them, and rejects another tenant', async () => {
     const [feedback] = await db
       .insert(feedbackItems)
       .values({
+        id: uuidv7(),
         organizationId,
         establishmentId,
         source: 'GOOGLE',
         type: 'PUBLIC_REVIEW',
-        externalId: `integration-${randomUUID()}`,
+        externalId: `integration-${uuidv7()}`,
         authorName: 'Integration Customer',
         rating: 4,
         content: 'Integration feedback',
@@ -186,7 +195,7 @@ integrationTest('reputation repository integration', () => {
         type: 'user',
         userId: assigneeUserId,
         role: 'employee',
-        membershipId: randomUUID(),
+        membershipId: uuidv7(),
       },
     };
     await expect(
@@ -199,7 +208,7 @@ integrationTest('reputation repository integration', () => {
           ...employeeContext,
           actor: {
             ...employeeContext.actor,
-            userId: randomUUID(),
+            userId: uuidv7(),
           },
         },
         {
@@ -212,9 +221,10 @@ integrationTest('reputation repository integration', () => {
       code: 'FEEDBACK_NOT_FOUND',
     });
 
-    const audits = await db.query.reputationAuditEvents.findMany({
-      where: eq(reputationAuditEvents.organizationId, organizationId),
-    });
+    const audits = await db
+      .select()
+      .from(reputationAuditEvents)
+      .where(eq(reputationAuditEvents.organizationId, organizationId));
     expect(audits).toHaveLength(5);
 
     await expect(
@@ -222,7 +232,7 @@ integrationTest('reputation repository integration', () => {
         db,
         {
           ...context,
-          establishmentId: randomUUID(),
+          establishmentId: uuidv7(),
         },
         {
           feedbackId: feedback.id,
@@ -236,7 +246,7 @@ integrationTest('reputation repository integration', () => {
     await expect(
       findGoogleReputationConnector(db, {
         ...context,
-        establishmentId: randomUUID(),
+        establishmentId: uuidv7(),
       }),
     ).resolves.toBeNull();
   });

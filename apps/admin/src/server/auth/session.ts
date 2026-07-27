@@ -1,12 +1,11 @@
 import 'server-only';
 
 import { hashRateLimitKey, type AuthenticatedSession } from '@yuta/auth';
-import { createAuthRepository } from '@yuta/db';
-import { db } from '@yuta/db/client';
 import {
+  createAuthRepository,
   createMembershipLookup,
   findAuthenticatedTenantMetadata,
-} from '@yuta/db/tenant-adapters';
+} from '@yuta/db-cloud';
 import {
   requireEntitlement,
   requireRole,
@@ -16,11 +15,12 @@ import {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
+import { cloudDatabase } from '../cloud-database';
 import { requireReputationPermission } from './permissions';
 
 export const ADMIN_SESSION_COOKIE = 'yuta_admin_session';
 
-const authRepository = createAuthRepository(db);
+const authRepository = createAuthRepository(cloudDatabase);
 
 export function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -66,7 +66,7 @@ export async function requireAuthenticatedTenant(returnTo = '/today'): Promise<{
   tenant: TenantContext;
 }> {
   const session = await requireAdminSession(returnTo);
-  const metadata = await findAuthenticatedTenantMetadata(db, {
+  const metadata = await findAuthenticatedTenantMetadata(cloudDatabase, {
     organizationId: session.organizationId,
     establishmentId: session.establishmentId,
   });
@@ -76,7 +76,7 @@ export async function requireAuthenticatedTenant(returnTo = '/today'): Promise<{
     userId: session.userId,
     organizationId: session.organizationId,
     establishmentId: session.establishmentId,
-    membershipLookup: createMembershipLookup(db),
+    membershipLookup: createMembershipLookup(cloudDatabase),
     tenantMetadata: metadata,
   });
   return { session, tenant };

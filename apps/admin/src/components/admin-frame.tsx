@@ -38,7 +38,6 @@ import {
   PackageCheck,
   Palette,
   Scale,
-  Settings,
   Shield,
   ShoppingCart,
   Star,
@@ -101,7 +100,6 @@ const navSections: NavSection[] = [
   {
     title: 'Equipe',
     items: [
-      { label: 'Employes', icon: Users, href: '/team/staff' },
       { label: 'Planning', icon: CalendarDays, href: '/team/planning' },
       { label: 'Pointage', icon: Clock, href: '/team/time-tracking' },
       {
@@ -163,7 +161,6 @@ const navSections: NavSection[] = [
         icon: PackageCheck,
         href: '/settings/billing',
       },
-      { label: 'POS', icon: Settings, href: '/settings/printers' },
     ],
   },
 ];

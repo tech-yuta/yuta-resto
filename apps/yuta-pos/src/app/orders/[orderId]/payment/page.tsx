@@ -1,8 +1,7 @@
-import { allergySummary, createPaymentService, formatEuros } from '@yuta/core';
-import { db } from '@yuta/db/client';
+import { allergySummary, formatEuros } from '@yuta/core';
 import { Badge, Button, Card, Separator } from '@yuta/ui';
 import { Tags, TriangleAlert } from 'lucide-react';
-import { randomUUID } from 'node:crypto';
+import { v7 as uuidv7 } from 'uuid';
 import {
   cancelOrderSplitAction,
   createChecksByItemsAction,
@@ -16,6 +15,7 @@ import { EqualSplitDialogContent } from './EqualSplitDialogContent';
 import { ItemSplitDialogContent } from './ItemSplitDialogContent';
 import { PaymentCaptureForm } from './PaymentCaptureForm';
 import { PaymentChoiceDialogs } from './PaymentChoiceDialogs';
+import { posApi } from '../../../../lib/pos-api';
 
 type PaymentPageProps = {
   params: Promise<{
@@ -34,9 +34,7 @@ export default async function PaymentPage({
 }: PaymentPageProps) {
   const { orderId } = await params;
   const { error, itemSplitError, paymentDialog } = await searchParams;
-  const paymentService = createPaymentService(db);
-  const { order, activeComboRules } =
-    await paymentService.getPaymentViewData(orderId);
+  const { order, activeComboRules } = await posApi.getPaymentViewData(orderId);
 
   const paidCents = order.payments
     .filter((payment) => payment.status === 'paid')
@@ -66,7 +64,7 @@ export default async function PaymentPage({
         action={payFullOrderAction}
         orderId={order.id}
         remainingCents={remainingCents}
-        idempotencyKey={randomUUID()}
+        idempotencyKey={uuidv7()}
         disabled={splitChecks.length > 0}
         submitSize="lg"
       />
@@ -549,7 +547,7 @@ function CheckPaymentList({
                 orderId={orderId}
                 checkId={check.id}
                 remainingCents={remainingCents}
-                idempotencyKey={randomUUID()}
+                idempotencyKey={uuidv7()}
               />
             )}
           </div>

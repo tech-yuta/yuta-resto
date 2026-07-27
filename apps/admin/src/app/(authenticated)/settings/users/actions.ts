@@ -1,12 +1,15 @@
 'use server';
 
 import { emailSchema, passwordSchema } from '@yuta/auth';
-import { createTenantUserRepository, TenantUserError } from '@yuta/db';
-import { db } from '@yuta/db/client';
+import {
+  createTenantUserRepository,
+  TenantUserError,
+} from '@yuta/db-cloud';
 import { tenantRoleSchema, type TenantContext } from '@yuta/tenant';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireUserManagementTenant } from '../../../../server/auth/session';
+import { cloudDatabase } from '../../../../server/cloud-database';
 
 const manageableRoleSchema = tenantRoleSchema;
 const membershipStatusSchema = z.enum(['active', 'suspended']);
@@ -30,7 +33,7 @@ export type UserManagementActionState = {
   success: string | null;
 };
 
-const tenantUserRepository = createTenantUserRepository(db);
+const tenantUserRepository = createTenantUserRepository(cloudDatabase);
 
 export async function createTenantUserAction(
   _previousState: UserManagementActionState,

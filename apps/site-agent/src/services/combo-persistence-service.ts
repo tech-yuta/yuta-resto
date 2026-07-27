@@ -14,10 +14,7 @@ import {
 } from '@yuta/db-pos/schema';
 import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
-import {
-  calculateComboDiscounts,
-  type ComboCalculationRule,
-} from './combo-calculator';
+import { calculateComboDiscounts, type ComboCalculationRule } from '@yuta/core';
 
 export function createComboPersistenceService(db: PosDatabaseExecutor) {
   async function optimizeOrder(orderId: string) {

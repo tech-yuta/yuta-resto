@@ -1,5 +1,4 @@
-import { findGoogleReputationConnector } from '@yuta/db';
-import { db } from '@yuta/db/client';
+import { findGoogleReputationConnector } from '@yuta/db-cloud';
 import {
   Alert,
   AlertDescription,
@@ -20,6 +19,7 @@ import {
 import Link from 'next/link';
 import { AdminPage } from '../../../../components/admin-page';
 import { requireReputationPermission } from '../../../../server/auth/permissions';
+import { cloudDatabase as db } from '../../../../server/cloud-database';
 import { requireReputationTenant } from '../../../../server/auth/session';
 import { getGoogleConnectorAccessToken } from '../../../../server/reputation/google-connector-access';
 import {

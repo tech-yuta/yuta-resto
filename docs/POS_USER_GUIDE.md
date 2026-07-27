@@ -4,11 +4,10 @@ This guide describes how to use the current YuTa POS MVP for internal restaurant
 
 The app UI is in French. This documentation is in English to match the repository convention.
 
-The database architecture reset has been approved but is not yet implemented.
-The current code may still expose legacy POS management pages in cloud admin;
-those pages are deprecated and intentionally omitted from this guide. Staff,
-menu/catalog, combo, printer, and operational-report management move to a local
-UI backed by `site-agent`.
+The POS runtime uses the local `site-agent` API and db-pos database. Deprecated
+POS management pages in cloud admin are intentionally omitted from this guide.
+Staff, menu/catalog, combo, printer, and operational-report management belong
+to a local UI backed by `site-agent`.
 
 ## Local URLs
 
@@ -22,27 +21,26 @@ are implemented.
 
 ## Run Locally
 
-Until the code reset replaces the legacy compose topology, start the current
-development PostgreSQL database:
+Start a local POS PostgreSQL database, apply the db-pos schema, and seed local
+users/catalog. Set `POS_DATABASE_URL` from
+`packages/db-pos/.env.example` for the database, seed, and `site-agent`
+processes:
 
 ```bash
 docker compose -f docker-compose.db.dev.yml up -d
+pnpm db:pos:push
+pnpm db:pos:seed
 ```
 
-Run the POS app:
+Run the local API and POS app in separate terminals:
 
 ```bash
-corepack pnpm --filter @yuta/pos dev
+pnpm dev:site-agent
+pnpm dev:pos
 ```
 
-During the transition, run the legacy mock print worker:
-
-```bash
-corepack pnpm --filter @yuta/core print:worker:watch
-```
-
-The legacy print worker processes `print_jobs` rows created by kitchen sends
-and payments. It moves into `site-agent` during the code reset.
+Kitchen and receipt commands create durable print jobs in `site-agent`.
+Physical printer transport remains a documented MVP limit.
 
 The QA checklist lives in:
 
@@ -65,7 +63,7 @@ shell assets may be cached, but creating orders, sending items to the kitchen,
 and taking payments still require a working connection to the POS server and
 its PostgreSQL database.
 
-When POS, PostgreSQL, and the print worker are deployed on the restaurant edge
+When POS, `site-agent`, and PostgreSQL are deployed on the restaurant edge
 server, an Internet outage does not stop local operations. The restaurant LAN,
 edge server, and database must still be available. Browser-only order entry
 while the edge server is unreachable is not supported.

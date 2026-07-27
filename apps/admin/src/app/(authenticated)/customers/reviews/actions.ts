@@ -11,9 +11,9 @@ import {
   ReputationRepositoryError,
   saveFeedbackReplyDraft,
   updateFeedback,
-} from '@yuta/db';
-import { db } from '@yuta/db/client';
+} from '@yuta/db-cloud';
 import { revalidatePath } from 'next/cache';
+import { cloudDatabase as db } from '../../../../server/cloud-database';
 import { requireReputationTenant } from '../../../../server/auth/session';
 import { requireReputationPermission } from '../../../../server/auth/permissions';
 

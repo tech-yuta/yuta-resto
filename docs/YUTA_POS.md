@@ -11,9 +11,8 @@ The target runtime boundary is:
 apps/yuta-pos -> apps/site-agent -> packages/db-pos -> local PostgreSQL
 ```
 
-The current direct use of the legacy `packages/db` is transitional and must be
-removed by the database architecture reset. The POS must not reuse or modify
-the standalone database inside `apps/yuta-display`.
+The legacy shared database package has been removed. The POS must not reuse or
+modify the standalone database inside `apps/yuta-display`.
 
 ## Scope
 
@@ -195,7 +194,10 @@ Payment capture, split checks, combo allocation, receipt creation, and
 print-job maintenance are now implemented in `site-agent`. Financial mutations
 lock the order and run in one transaction. Full-order and check payments
 validate UUIDv7 replay input; a fully paid target creates its receipt snapshot
-and print job in the same transaction.
+and print job in the same transaction. Payment summaries expose the persisted
+combo discount and item-allocation snapshots for both full orders and
+item-based split checks, so the POS can render the applied offer details
+without recalculating pricing in the client.
 
 The new financial integration tests have passed against a disposable
 PostgreSQL database. The POS connectivity/health slice now calls
@@ -205,10 +207,10 @@ staff/catalog/order/item/kitchen endpoints, and the order-detail contracts
 carry the allergy acknowledgement and lifecycle snapshots required by the
 existing UI. Catalog responses include active and inactive combo-rule
 snapshots, and the client also covers payment summary, equal/item splits,
-split cancellation, and order/check payment capture. These operational methods
-are not enabled in the UI yet: cutover must switch the complete workflow
-atomically so live data is not split between the legacy and POS databases. Do
-not operate both persistence paths for the same command.
+split cancellation, and order/check payment capture. The POS pages and server
+actions now use this client for staff selection, order entry, kitchen, and
+payment workflows. `apps/yuta-pos/src` no longer imports `@yuta/db`, Drizzle,
+or a database client, and its container receives only `SITE_AGENT_URL`.
 
 There is intentionally no `/tables` or `/printers` resource. The current POS
 uses free-text table labels and printer-name snapshots; physical table maps and
@@ -339,48 +341,29 @@ phases live in:
 docs/POS_OFFLINE_STRATEGY.md
 ```
 
-## Mock Print Worker
+## Local print queue
 
-The MVP print flow is database-backed:
+The MVP print flow is site-agent-owned:
 
 ```txt
 POS send to kitchen or payment
 Create print_jobs row with status pending
-Worker claims pending job as printing
-Worker writes mock output
-Worker marks job printed or failed
+Local printer adapter claims the pending job
+Adapter sends the snapshot to the configured device
+Adapter marks the job printed or failed
 ```
 
 Kitchen ticket jobs are batch-based. If an order is sent to kitchen, then more items are added and sent later, the second ticket contains only the newly sent items.
 
-Run one batch locally:
+`site-agent` owns print-job creation and queue maintenance. The legacy
+continuous `@yuta/core` print worker has been removed from the POS Compose
+topology. Physical printer transport remains pending a hardware and connection
+decision.
 
-```bash
-corepack pnpm --filter @yuta/core print:worker
-```
-
-Run continuously:
-
-```bash
-corepack pnpm --filter @yuta/core print:worker:watch
-```
-
-The target `site-agent` owns the print queue and printer integration. During
-the transition, the existing continuous `print-worker` service remains a
-legacy implementation. Physical printer transport remains pending a hardware
-and connection decision.
-
-Optional env values:
-
-```txt
-PRINT_WORKER_OUTPUT_DIR=.tmp/prints
-PRINT_WORKER_BATCH_SIZE=10
-PRINT_WORKER_INTERVAL_MS=3000
-PRINT_WORKER_FAIL_RATE=0
-```
-
-`PRINT_WORKER_OUTPUT_DIR` makes the mock printer write one text file per job.
-Without it, the worker only updates job status in the database.
+`@yuta/core` is now database-independent. Its legacy repositories,
+transactions, print worker, environment loading, and filesystem code have been
+removed. `site-agent` consumes the shared pure combo calculator and owns POS
+persistence plus print-job state transitions.
 
 ## Local installation identity
 

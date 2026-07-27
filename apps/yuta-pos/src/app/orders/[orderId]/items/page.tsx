@@ -1,16 +1,12 @@
 import {
   allergySummary,
-  createOrderService,
   formatEuros,
   getItemInstructionConfig,
 } from '@yuta/core';
-import { db } from '@yuta/db/client';
-import { menuCategories, menuItems, payments } from '@yuta/db/schema';
 import { Button, IconButton, cn } from '@yuta/ui';
-import { and, asc, eq } from 'drizzle-orm';
 import { CreditCard, Minus, Plus, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
-import { randomUUID } from 'node:crypto';
+import { v7 as uuidv7 } from 'uuid';
 import {
   removePendingOrderItemAction,
   updateOrderItemQuantityAction,
@@ -21,6 +17,7 @@ import { SendToKitchenButton } from '../../../components/SendToKitchenButton';
 import { MenuItemBrowser } from './MenuItemBrowser';
 import { MobileOrderDialog } from './MobileOrderDialog';
 import { OrderItemNoteDialog } from './OrderItemNoteDialog';
+import { posApi } from '../../../../lib/pos-api';
 
 type OrderItemsPageProps = {
   params: Promise<{
@@ -42,18 +39,16 @@ export default async function OrderItemsPage({
 }: OrderItemsPageProps) {
   const { orderId } = await params;
   const { category } = await searchParams;
-  const orderService = createOrderService(db);
-  const [order, categories, paidPayment, menuItemConfigs] = await Promise.all([
-    orderService.getOrderDetail(orderId),
-    db.query.menuCategories.findMany({
-      where: eq(menuCategories.isActive, true),
-      orderBy: [asc(menuCategories.sortOrder), asc(menuCategories.name)],
-    }),
-    db.query.payments.findFirst({
-      where: and(eq(payments.orderId, orderId), eq(payments.status, 'paid')),
-    }),
-    db.query.menuItems.findMany({ with: { category: true } }),
-  ]);
+  const paymentView = await posApi.getPaymentViewData(orderId);
+  const { catalog } = paymentView;
+  const order = paymentView.order;
+  const categories = catalog.categories.filter((category) => category.isActive);
+  const paidPayment = order.payments.find(
+    (payment) => payment.status === 'paid',
+  );
+  const menuItemConfigs = catalog.categories.flatMap((category) =>
+    category.items.map((item) => ({ ...item, category })),
+  );
   const instructionConfigByMenuItemId = new Map(
     menuItemConfigs.map((item) => [
       item.id,
@@ -68,19 +63,19 @@ export default async function OrderItemsPage({
       name: categoryItem.name,
     })),
   ];
-  const items =
-    selectedCategoryId === 'all'
-      ? await db.query.menuItems.findMany({
-          where: eq(menuItems.isAvailable, true),
-          orderBy: [asc(menuItems.sortOrder), asc(menuItems.name)],
-        })
-      : await db.query.menuItems.findMany({
-          where: and(
-            eq(menuItems.categoryId, selectedCategoryId),
-            eq(menuItems.isAvailable, true),
-          ),
-          orderBy: [asc(menuItems.sortOrder), asc(menuItems.name)],
-        });
+  const items = catalog.categories
+    .flatMap((category) => category.items)
+    .filter(
+      (item) =>
+        item.isAvailable &&
+        (selectedCategoryId === 'all' ||
+          item.categoryId === selectedCategoryId),
+    )
+    .toSorted(
+      (left, right) =>
+        left.sortOrder - right.sortOrder ||
+        left.name.localeCompare(right.name, 'fr-FR'),
+    );
   const pendingItemCount = order.items.filter(
     (item) => item.status === 'pending',
   ).length;
@@ -107,7 +102,7 @@ export default async function OrderItemsPage({
         <>
           <SendToKitchenButton
             orderId={order.id}
-            idempotencyKey={randomUUID()}
+            idempotencyKey={uuidv7()}
             disabled={!canSendToKitchen}
             hasAllergy={order.hasAllergy}
             allergyNote={order.allergyNote}

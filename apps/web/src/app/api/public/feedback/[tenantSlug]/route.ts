@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto';
 import { publicFeedbackSubmissionSchema } from '@yuta/contracts/reputation';
-import { db } from '@yuta/db/client';
 import {
   countRecentPublicSubmissions,
   createPublicFeedback,
   findPublicFeedbackConfiguration,
-} from '@yuta/db';
+} from '@yuta/db-cloud';
 import { TenantError } from '@yuta/tenant';
 import { NextResponse, type NextRequest } from 'next/server';
+import { cloudDatabase as db } from '../../../../../server/cloud-database';
 import { resolveFeedbackTenant } from '../../../../../server/reputation/resolve-public-feedback';
 
 export const dynamic = 'force-dynamic';
