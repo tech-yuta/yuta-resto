@@ -6,7 +6,7 @@ import type {
   FeedbackStatus,
   FeedbackUrgency,
 } from '@yuta/contracts/reputation';
-import type { AssignableReputationUser } from '@yuta/db-cloud';
+import type { AssignableReputationUser } from '@yuta/contracts/cloud-admin';
 import {
   Avatar,
   Badge,

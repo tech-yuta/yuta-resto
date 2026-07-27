@@ -1,3 +1,4 @@
+export * from './cloud-admin';
 export * from './common';
 export * from './display';
 export * from './local-pos';

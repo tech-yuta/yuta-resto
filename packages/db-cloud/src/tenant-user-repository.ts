@@ -1,4 +1,9 @@
 import { hashPassword } from '@yuta/auth';
+import type {
+  ManageableEstablishment,
+  MembershipStatus,
+  OrganizationUser,
+} from '@yuta/contracts/cloud-admin';
 import type { TenantRole } from '@yuta/tenant';
 import { and, asc, count, eq, inArray, isNull, ne } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
@@ -10,29 +15,6 @@ import {
   tenantMemberships,
   users,
 } from './schema';
-
-export type MembershipStatus = 'active' | 'invited' | 'suspended';
-
-export type ManageableEstablishment = {
-  id: string;
-  name: string;
-};
-
-export type OrganizationUserMembership = {
-  id: string;
-  establishmentId: string;
-  establishmentName: string;
-  role: TenantRole;
-  status: MembershipStatus;
-};
-
-export type OrganizationUser = {
-  id: string;
-  name: string;
-  email: string | null;
-  isActive: boolean;
-  memberships: OrganizationUserMembership[];
-};
 
 export type TenantUserErrorCode =
   | 'ESTABLISHMENT_NOT_ALLOWED'
@@ -52,9 +34,7 @@ export class TenantUserError extends Error {
   }
 }
 
-export function createTenantUserRepository(
-  repositoryDb: CloudDatabaseClient,
-) {
+export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
   async function listManageableEstablishments(input: {
     organizationId: string;
     establishmentId?: string;

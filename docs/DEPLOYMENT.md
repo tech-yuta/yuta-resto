@@ -262,7 +262,7 @@ Before a production release:
 - Verify the active schema originated from its own `0000_initial`.
 - Confirm browser bundles contain no database URL.
 - Confirm cloud schema has no POS operational tables.
-- Confirm POS works with Internet/cloud disabled.
+- Run `pnpm test:pos:offline` to confirm POS works with Internet/cloud disabled.
 - Confirm display reads and writes only its standalone DB.
 - Verify backup and restore procedures for local data.
 - Update this document whenever deployment topology or operational rules

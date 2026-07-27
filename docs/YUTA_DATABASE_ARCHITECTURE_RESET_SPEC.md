@@ -764,16 +764,10 @@ yuta-pos → db-cloud
 yuta-display → db-cloud
 ```
 
-Add lint restrictions or dependency-boundary checks so violations fail CI.
-
-Suggested mechanisms:
-
-- ESLint `no-restricted-imports`;
-- package-specific ESLint overrides;
-- dependency-cruiser or Nx boundaries if already available;
-- CI script checking forbidden imports.
-
-Do not introduce a large monorepo framework only for this rule if ESLint is sufficient.
+These directions are enforced by `pnpm architecture:check` locally and in CI.
+The repository checker also rejects legacy `@yuta/db` usage, ambiguous
+`DATABASE_URL` configuration, database imports from client modules, and
+invalid clean migration baselines. No large monorepo framework is required.
 
 ---
 
@@ -1300,14 +1294,17 @@ Do not use the cloud tenant seed to initialize the POS database.
 
 ### Architecture tests
 
-CI must fail when:
+`pnpm architecture:check` runs in CI and fails when:
 
 - `yuta-pos` imports `db-cloud`;
 - `site-agent` imports `db-cloud`;
 - `admin` imports `db-pos`;
 - `core` imports any DB package;
 - `contracts` imports any DB package;
-- local apps import `tenant`.
+- local apps import `tenant`;
+- a client module imports a database package or references a database URL;
+- the legacy `@yuta/db` package/import or generic `DATABASE_URL` returns;
+- a database boundary loses its single clean `0000_initial` baseline.
 
 ### Cloud DB tests
 
@@ -1361,21 +1358,21 @@ The refactor is complete only when all conditions below are true.
 - [x] Existing migration history was removed.
 - [x] No transitional migration/backfill code remains.
 - [x] Each active DB package has one clean `0000_initial` baseline before first deployment.
-- [ ] A fresh environment can be recreated from code and migrations.
+- [x] A fresh environment can be recreated from code and migrations.
 
 ### Code boundaries
 
 - [x] `core` is database-independent.
 - [x] `contracts` is database-independent.
 - [x] Client bundles do not include DB clients or connection strings.
-- [ ] Forbidden imports are checked in CI.
+- [x] Forbidden imports are checked in CI.
 
 ### Runtime
 
 - [x] Admin/web use the cloud DB.
 - [x] POS uses the local server and local POS DB only.
 - [x] Display uses either the local POS API or its own justified local DB.
-- [ ] Local POS continues to work when cloud/Internet is unavailable.
+- [x] Local POS continues to work when cloud/Internet is unavailable.
 
 ---
 

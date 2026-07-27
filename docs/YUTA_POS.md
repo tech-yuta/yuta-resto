@@ -110,6 +110,12 @@ run through a one-shot migrate service using `packages/db-pos`.
 The POS browser/server bundle must receive neither `POS_DATABASE_URL` nor
 `CLOUD_DATABASE_URL`. Only `site-agent` receives `POS_DATABASE_URL`.
 
+Run `pnpm test:pos:offline` before a local production release. This acceptance
+test uses a disposable POS database, starts the real site-agent and production
+POS bundle without cloud configuration, creates an order through the local
+API, and requires POS health to stay available while the Internet probe is
+unavailable.
+
 Follow `docs/DEPLOYMENT.md` for the exact Luna server commands and required
 `apps/yuta-pos/.env.production` values.
 
@@ -211,6 +217,9 @@ split cancellation, and order/check payment capture. The POS pages and server
 actions now use this client for staff selection, order entry, kitchen, and
 payment workflows. `apps/yuta-pos/src` no longer imports `@yuta/db`, Drizzle,
 or a database client, and its container receives only `SITE_AGENT_URL`.
+The offline acceptance run also verifies the real `local-users` and catalog
+responses against a freshly seeded database and creates a UUIDv7 order without
+cloud services.
 
 There is intentionally no `/tables` or `/printers` resource. The current POS
 uses free-text table labels and printer-name snapshots; physical table maps and

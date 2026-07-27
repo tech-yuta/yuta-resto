@@ -1,10 +1,8 @@
 # yuta-display production deploy
 
-> **Database reset note:** This guide uses the target
-> `DISPLAY_DATABASE_URL`. The current application and compose files still use
-> the legacy `DATABASE_URL` until the code phase of the architecture reset is
-> completed. Do not perform a production deployment between the documentation
-> and code phases.
+The application, migration CLI, and Compose services use the dedicated
+`DISPLAY_DATABASE_URL`. The display database is app-owned and independent from
+both cloud and POS data.
 
 This production compose file does not start PostgreSQL. It expects an existing
 PostgreSQL database reachable from the mini PC.

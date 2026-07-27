@@ -1,18 +1,31 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { z } from 'zod';
 import * as schema from './schema';
 
-// Singleton pattern prevents exhausting connections during Next.js hot reload in development.
+const displayDatabaseEnvSchema = z.object({
+  DISPLAY_DATABASE_URL: z.string().url(),
+});
+
+export function createDisplayDatabaseClient(
+  environment: NodeJS.ProcessEnv = process.env,
+) {
+  const env = displayDatabaseEnvSchema.parse(environment);
+  const client = postgres(env.DISPLAY_DATABASE_URL, { max: 3 });
+  return drizzle(client, { schema });
+}
+
+export type DisplayDatabaseClient = ReturnType<
+  typeof createDisplayDatabaseClient
+>;
+
 declare global {
-  // eslint-disable-next-line no-var
-  var _pgClient: ReturnType<typeof postgres> | undefined;
+  var _yutaDisplayDatabase: DisplayDatabaseClient | undefined;
 }
 
-// max:3 is sufficient for a single-display kiosk — keeps server RAM low.
-const client = global._pgClient ?? postgres(process.env.DATABASE_URL!, { max: 3 });
-
-if (process.env.NODE_ENV !== 'production') {
-  global._pgClient = client;
+export function getDisplayDatabase(): DisplayDatabaseClient {
+  if (!global._yutaDisplayDatabase) {
+    global._yutaDisplayDatabase = createDisplayDatabaseClient();
+  }
+  return global._yutaDisplayDatabase;
 }
-
-export const db = drizzle(client, { schema });

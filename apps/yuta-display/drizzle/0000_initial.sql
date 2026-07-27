@@ -1,5 +1,5 @@
 CREATE TABLE "display_media" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"title" varchar(255),
 	"type" varchar(20) NOT NULL,
 	"file_url" text NOT NULL,

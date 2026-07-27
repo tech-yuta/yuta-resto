@@ -4,7 +4,7 @@ import type {
   ManageableEstablishment,
   OrganizationUser,
   OrganizationUserMembership,
-} from '@yuta/db-cloud';
+} from '@yuta/contracts/cloud-admin';
 import type { TenantRole } from '@yuta/tenant';
 import {
   Avatar,

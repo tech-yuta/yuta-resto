@@ -9,7 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 export const displayMedia = pgTable('display_media', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey(),
   title: varchar('title', { length: 255 }),
   type: varchar('type', { length: 20 }).notNull(),
   fileUrl: text('file_url').notNull(),

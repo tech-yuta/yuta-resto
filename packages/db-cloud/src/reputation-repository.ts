@@ -3,6 +3,7 @@ import type {
   FeedbackStatus,
   PublicFeedbackSubmission,
 } from '@yuta/contracts/reputation';
+import type { AssignableReputationUser } from '@yuta/contracts/cloud-admin';
 import type { PublicTenantContext, TenantContext } from '@yuta/tenant';
 import {
   and,
@@ -33,13 +34,6 @@ import {
 } from './schema';
 
 type DbClient = CloudDatabaseClient;
-
-export type AssignableReputationUser = {
-  id: string;
-  name: string;
-  email: string | null;
-  role: 'owner' | 'admin' | 'manager' | 'employee';
-};
 
 export type ReputationRepositoryErrorCode =
   | 'FEEDBACK_NOT_FOUND'

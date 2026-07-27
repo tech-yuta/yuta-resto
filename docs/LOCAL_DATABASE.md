@@ -96,7 +96,7 @@ pnpm --filter @yuta/display db:push
 Do not generate a chain of compatibility migrations from the legacy shared
 schema. Do not backfill legacy development data.
 
-The cloud and POS target schemas now have committed clean baselines:
+All active database boundaries now have committed clean baselines:
 
 - `packages/db-cloud/drizzle/0000_initial.sql` creates the 17-table cloud
   boundary;
@@ -106,14 +106,13 @@ The cloud and POS target schemas now have committed clean baselines:
   databases;
 - both seeds are idempotent and their guarded integration suites pass on those
   migrated databases.
-
-The remaining baseline task is to rename the standalone display connection to
-`DISPLAY_DATABASE_URL` and regenerate its app-owned migration as
-`apps/yuta-display/drizzle/0000_initial.sql`.
+- `apps/yuta-display/drizzle/0000_initial.sql` creates the standalone
+  app-owned `display_media` table, uses application-generated UUIDv7 IDs, and
+  has been verified through migrate plus CRUD on an empty PostgreSQL database.
 
 ## Root scripts
 
-The code reset must provide:
+The root provides explicit database commands for the cloud and POS boundaries:
 
 ```text
 db:cloud:push
@@ -124,16 +123,20 @@ db:pos:push
 db:pos:generate
 db:pos:migrate
 db:pos:seed
-db:reset:dev
 architecture:check
 ```
 
 Display migration scripts remain in `@yuta/display` because its database has
 only one owning application.
 
+Run `pnpm architecture:check` before pushing changes. The same command runs in
+CI and rejects legacy `@yuta/db` usage, cross-runtime imports, generic
+`DATABASE_URL` configuration, database dependencies in client modules, and
+invalid migration baselines.
+
 ## Guarded development reset
 
-`db:reset:dev` must:
+A future `db:reset:dev` command must:
 
 - refuse to run when `NODE_ENV=production`;
 - require `CONFIRM_DB_RESET=true`;
@@ -219,7 +222,20 @@ Never set the integration-test confirmation flag in a production environment.
 
 ## Fresh-install verification
 
-Before the first real deployment, verify:
+Run the repeatable offline POS acceptance test:
+
+```powershell
+pnpm test:pos:offline
+```
+
+The command creates a disposable PostgreSQL 17 container backed by `tmpfs`,
+applies `db-pos/0000_initial`, seeds local data, builds and starts the POS,
+starts `site-agent` without cloud configuration, creates an order through the
+local API, and verifies that POS health remains available while the Internet
+probe is unavailable. It removes its processes and disposable container on
+success or failure. Ports `3003` and `3004` must be free.
+
+Before the first real deployment, also verify:
 
 - each active boundary builds from its own `0000_initial`;
 - cloud schema contains no POS operational tables;

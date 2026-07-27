@@ -4,9 +4,9 @@ services:
       context: ../..
       dockerfile: apps/yuta-display/Dockerfile
     ports:
-      - "3002:3000"
+      - '3002:3000'
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DISPLAY_DATABASE_URL: ${DISPLAY_DATABASE_URL}
       UPLOAD_DIR: /app/apps/yuta-display/public/uploads/display
     volumes:
       - ./public/uploads/display:/app/apps/yuta-display/public/uploads/display
@@ -24,7 +24,7 @@ services:
     working_dir: /app/apps/yuta-display
     command: pnpm db:migrate
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DISPLAY_DATABASE_URL: ${DISPLAY_DATABASE_URL}
     networks:
       - postgres
     profiles:

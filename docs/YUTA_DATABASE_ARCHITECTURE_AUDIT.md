@@ -302,9 +302,9 @@ schemas can be pushed to disposable databases and their contents are reviewed.
 
 ### Display history
 
-`apps/yuta-display/drizzle/0000_loud_exodus.sql` is already isolated, but it
-must be regenerated as the clean app-owned `0000_initial` after the UUIDv7 and
-environment changes are applied.
+The isolated display history has been reset to
+`apps/yuta-display/drizzle/0000_initial.sql`. Runtime, CLI, and Compose use
+`DISPLAY_DATABASE_URL`, and `DisplayMediaService` supplies UUIDv7 IDs.
 
 ## 10. Docker and volume audit
 
@@ -332,23 +332,24 @@ luna_display_dev
 
 Do not delete either volume until the explicit destructive reset checkpoint.
 
-## 11. Boundary enforcement gap
+## 11. Boundary enforcement
 
-The repository currently has:
-
-- no ESLint configuration;
-- no dependency-boundary checker;
-- no CI workflow enforcing forbidden imports;
-- no root `architecture:check` script.
-
-The reset should add a small repository script rather than a large monorepo
-framework. At minimum it must fail when:
+The repository now has a dependency-boundary checker without introducing a
+monorepo framework. `pnpm architecture:check` and `.github/workflows/ci.yml`
+fail when:
 
 - cloud apps import `db-pos`;
 - local apps import `db-cloud` or `tenant`;
 - `core` or `contracts` imports any database package;
 - POS client code imports a DB client/schema;
-- browser code receives a database URL.
+- browser code receives a database URL;
+- the legacy `@yuta/db` package or import returns;
+- generic `DATABASE_URL` configuration returns;
+- a database boundary no longer has exactly one valid `0000_initial` baseline.
+
+The first checker run also removed two admin client type dependencies on
+`@yuta/db-cloud`. Their transport-facing DTOs now live in
+`@yuta/contracts/cloud-admin`.
 
 ## 12. Proposed next implementation sequence
 
@@ -496,7 +497,26 @@ The clean package baselines are now verified:
 - cloud `5/5`, db-pos `4/4`, and site-agent `10/10` guarded tests pass against
   those databases.
 
-The remaining database-baseline checkpoint is the standalone display app:
-rename its runtime/CLI/Compose variable to `DISPLAY_DATABASE_URL`, replace
-`0000_loud_exodus.sql` with `0000_initial.sql`, and verify its fresh install
-independently.
+The standalone display baseline is also complete:
+
+- runtime, Drizzle CLI, and production Compose use `DISPLAY_DATABASE_URL`;
+- the app-owned baseline creates only `display_media` and records one
+  migration;
+- the database schema has no random UUID default;
+- `DisplayMediaService` creates UUIDv7 records;
+- migrate and create/read/update/delete verification pass on an empty
+  PostgreSQL 17 database;
+- the production Next.js and Docker builds succeed without embedding a
+  database URL at build time.
+
+The local offline runtime acceptance is now repeatable through
+`pnpm test:pos:offline`:
+
+- a disposable PostgreSQL 17 database migrates from `db-pos/0000_initial` and
+  receives only the POS seed;
+- `site-agent` starts without any cloud or display database configuration;
+- local users and the catalog are read through the real HTTP API;
+- a UUIDv7 order is created through that API;
+- the production POS reports itself, site-agent, and the local database as
+  available while the Internet probe is unavailable;
+- all disposable processes and the database container are removed afterward.

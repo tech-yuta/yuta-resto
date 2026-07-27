@@ -188,6 +188,9 @@ importers:
       react-hook-form:
         specifier: ^7.57.0
         version: 7.80.0(react@19.2.7)
+      uuid:
+        specifier: ^14.0.1
+        version: 14.0.1
       zod:
         specifier: ^3.25.67
         version: 3.25.76

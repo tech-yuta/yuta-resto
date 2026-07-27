@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  architecture-and-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.17.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check architecture boundaries
+        run: pnpm architecture:check
+
+      - name: Type-check workspaces
+        run: pnpm -r --if-present typecheck
+
+      - name: Run unit and contract tests
+        run: |
+          pnpm --filter @yuta/core test
+          pnpm --filter @yuta/contracts test
+          pnpm --filter @yuta/tenant test
+          pnpm --filter @yuta/db-cloud test
+          pnpm --filter @yuta/db-pos test
+          pnpm --filter @yuta/site-agent test
+          pnpm --filter @yuta/pos test
+
+      - name: Run offline POS acceptance test
+        run: pnpm test:pos:offline

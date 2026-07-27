@@ -8,6 +8,7 @@
     "pnpm": ">=11.8.0"
   },
   "scripts": {
+    "architecture:check": "node ./scripts/check-import-boundaries.mjs",
     "dev": "pnpm --filter @yuta/web dev",
     "dev:admin": "pnpm --filter @yuta/admin dev",
     "dev:display": "pnpm --filter @yuta/display dev",
@@ -33,6 +34,7 @@
     "db:pos:studio": "pnpm --filter @yuta/db-pos db:studio",
     "test:db-cloud": "pnpm --filter @yuta/db-cloud test",
     "test:db-pos": "pnpm --filter @yuta/db-pos test",
+    "test:pos:offline": "node ./scripts/test-pos-offline.mjs",
     "test:pos": "pnpm --filter @yuta/pos test",
     "test:site-agent": "pnpm --filter @yuta/site-agent test",
     "typecheck": "pnpm --filter @yuta/web typecheck",

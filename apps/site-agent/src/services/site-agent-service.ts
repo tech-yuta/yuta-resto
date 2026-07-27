@@ -53,7 +53,13 @@ export function createSiteAgentService(db: PosDatabaseClient) {
 
   async function listLocalUsers() {
     const rows = await db
-      .select()
+      .select({
+        id: localUsers.id,
+        name: localUsers.name,
+        email: localUsers.email,
+        role: localUsers.role,
+        isActive: localUsers.isActive,
+      })
       .from(localUsers)
       .orderBy(asc(localUsers.name));
 

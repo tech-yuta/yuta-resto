@@ -1,5 +1,6 @@
 import { asc, eq } from 'drizzle-orm';
-import { db } from '../db';
+import { v7 as uuidv7 } from 'uuid';
+import { getDisplayDatabase } from '../db';
 import { displayMedia } from '../db/schema';
 import type {
   CreateDisplayMediaInput,
@@ -14,6 +15,7 @@ function toDisplayMedia(row: typeof displayMedia.$inferSelect): DisplayMedia {
 
 export const DisplayMediaService = {
   async getAll(): Promise<DisplayMedia[]> {
+    const db = getDisplayDatabase();
     const rows = await db
       .select()
       .from(displayMedia)
@@ -22,6 +24,7 @@ export const DisplayMediaService = {
   },
 
   async getActive(): Promise<DisplayMedia[]> {
+    const db = getDisplayDatabase();
     const rows = await db
       .select()
       .from(displayMedia)
@@ -36,6 +39,7 @@ export const DisplayMediaService = {
    * JSON payload sent to the TV every 60 s.
    */
   async getActiveForDisplay(): Promise<DisplayPlaylistItem[]> {
+    const db = getDisplayDatabase();
     const rows = await db
       .select({
         id: displayMedia.id,
@@ -51,6 +55,7 @@ export const DisplayMediaService = {
   },
 
   async getById(id: string): Promise<DisplayMedia | null> {
+    const db = getDisplayDatabase();
     const rows = await db
       .select()
       .from(displayMedia)
@@ -59,9 +64,11 @@ export const DisplayMediaService = {
   },
 
   async create(data: CreateDisplayMediaInput): Promise<DisplayMedia> {
+    const db = getDisplayDatabase();
     const rows = await db
       .insert(displayMedia)
       .values({
+        id: uuidv7(),
         title: data.title ?? null,
         type: data.type,
         fileUrl: data.fileUrl,
@@ -76,7 +83,11 @@ export const DisplayMediaService = {
     return toDisplayMedia(rows[0]);
   },
 
-  async update(id: string, data: UpdateDisplayMediaInput): Promise<DisplayMedia | null> {
+  async update(
+    id: string,
+    data: UpdateDisplayMediaInput,
+  ): Promise<DisplayMedia | null> {
+    const db = getDisplayDatabase();
     const rows = await db
       .update(displayMedia)
       .set({ ...data, updatedAt: new Date() })
@@ -86,6 +97,7 @@ export const DisplayMediaService = {
   },
 
   async delete(id: string): Promise<void> {
+    const db = getDisplayDatabase();
     await db.delete(displayMedia).where(eq(displayMedia.id, id));
   },
 };
