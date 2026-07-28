@@ -5,22 +5,24 @@
 #   docker compose -f apps/yuta-display/docker-compose.dev.yml up -d
 #   docker compose -f apps/yuta-display/docker-compose.dev.yml down
 services:
-  db:
+  display-db:
     image: postgres:17-alpine
+    container_name: yuta-display-db-dev
     environment:
       POSTGRES_USER: yuta_display
       POSTGRES_PASSWORD: yuta_display
       POSTGRES_DB: yuta_display
     ports:
-      - "55433:5432"
+      - '${DISPLAY_DEV_DB_PORT:-55433}:5432'
     volumes:
-      - luna_display_dev:/var/lib/postgresql/data
+      - display-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yuta_display -d yuta_display"]
+      test: ['CMD-SHELL', 'pg_isready -U yuta_display -d yuta_display']
       interval: 5s
       timeout: 3s
       retries: 5
     restart: unless-stopped
 
 volumes:
-  luna_display_dev:
+  display-db-data:
+    name: yuta-display-db-dev-data

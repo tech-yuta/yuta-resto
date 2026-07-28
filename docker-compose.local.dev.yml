@@ -1,0 +1,24 @@
+# Development only: isolated local POS PostgreSQL database.
+# Run site-agent and yuta-pos separately through their root dev scripts.
+services:
+  pos-db:
+    image: postgres:17-alpine
+    container_name: yuta-pos-db-dev
+    environment:
+      POSTGRES_DB: yuta_pos
+      POSTGRES_USER: yuta_pos
+      POSTGRES_PASSWORD: yuta_pos
+    ports:
+      - '${POS_DEV_DB_PORT:-55432}:5432'
+    volumes:
+      - pos-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U yuta_pos -d yuta_pos']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pos-db-data:
+    name: yuta-pos-db-dev-data

@@ -985,6 +985,12 @@ The script must:
 
 Never provide a production reset script.
 
+Implementation status: `pnpm db:reset:dev` now provides production and
+confirmation guards, an unprivileged `--dry-run`, fixed Compose/legacy targets,
+clean baseline migration, and opt-in cloud/POS seeding. The explicit
+data-discard checkpoint was approved and completed on 2026-07-28 without seed
+data.
+
 ---
 
 ### Phase 5 — Develop with disposable schemas
@@ -1354,7 +1360,7 @@ The refactor is complete only when all conditions below are true.
 
 ### Reset
 
-- [ ] Existing development DB data was discarded.
+- [x] Existing development DB data was discarded.
 - [x] Existing migration history was removed.
 - [x] No transitional migration/backfill code remains.
 - [x] Each active DB package has one clean `0000_initial` baseline before first deployment.

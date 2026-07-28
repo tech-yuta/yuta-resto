@@ -142,6 +142,19 @@ Create separate database users and grant each only its own database.
 
 ## Compose invocation
 
+Development databases use separate root Compose files and explicit project
+names:
+
+```bash
+docker compose --project-name yuta-cloud-dev -f docker-compose.cloud.dev.yml up -d --wait
+docker compose --project-name yuta-pos-dev -f docker-compose.local.dev.yml up -d --wait
+docker compose --project-name yuta-display-dev -f apps/yuta-display/docker-compose.dev.yml up -d --wait
+```
+
+These files expose PostgreSQL only for local development on ports `55431`,
+`55432`, and `55433` respectively. They do not represent the production
+topology.
+
 Run Compose from the repository root and pass the intended environment file
 explicitly:
 
@@ -182,6 +195,12 @@ receives only `CLOUD_DATABASE_URL`; a POS seed job receives only
 `POS_DATABASE_URL`. Do not include either seed in normal application startup,
 and do not run development fixtures automatically during production
 deployment.
+
+The optional `pnpm db:cloud:seed:demo` command is only for local databases or
+explicitly approved demo environments. It requires
+`CONFIRM_CLOUD_DEMO_SEED=true`, assumes the normal cloud foundation seed has
+already run, and must never be included in application startup, migrations, or
+customer production deployments.
 
 ## POS deployment requirements
 

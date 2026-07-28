@@ -9,9 +9,15 @@ The legacy `packages/db`, its migration history, and runtime `DATABASE_URL`
 contract have been removed. Cloud and POS database commands now target only
 their explicit packages and connection variables.
 
+The destructive development reset completed on 2026-07-28. The legacy shared
+and display volumes were deleted, and the cloud, POS, and display databases
+were recreated from their separate `0000_initial` baselines without seed data.
+The cloud development seed was then applied to create the initial organization,
+establishment, owner account, membership, entitlements, and reputation
+settings. POS and display remain unseeded.
+
 `apps/yuta-pos` has completed its runtime cutover: its source, image, and
 runtime service use `SITE_AGENT_URL` and receive no database connection string.
-Remaining legacy database consumers belong to other migration checkpoints.
 
 ## Database boundaries
 
@@ -36,9 +42,7 @@ docker-compose.cloud.dev.yml
 └── cloud-db (yuta_cloud)
 
 docker-compose.local.dev.yml
-├── pos-db (yuta_pos)
-├── site-agent
-└── yuta-pos
+└── pos-db (yuta_pos)
 
 apps/yuta-display/docker-compose.dev.yml
 └── display-db (yuta_display)
@@ -54,6 +58,17 @@ DISPLAY_DATABASE_URL=postgres://yuta_display:yuta_display@localhost:55433/yuta_d
 
 These are development examples only. Do not reuse development credentials in
 production.
+
+After cloning the repository or resetting development databases, synchronize
+ignored `.env.local` files without printing their secrets:
+
+```bash
+pnpm dev:env:sync
+```
+
+The command updates only development files, removes obsolete generic
+`DATABASE_URL` and `DISABLE_AUTH` keys, and refuses to run when
+`NODE_ENV=production`. It never edits `.env.production`.
 
 ## Environment ownership
 
@@ -119,10 +134,12 @@ db:cloud:push
 db:cloud:generate
 db:cloud:migrate
 db:cloud:seed
+db:cloud:seed:demo
 db:pos:push
 db:pos:generate
 db:pos:migrate
 db:pos:seed
+db:reset:dev
 architecture:check
 ```
 
@@ -136,18 +153,23 @@ invalid migration baselines.
 
 ## Guarded development reset
 
-A future `db:reset:dev` command must:
+Preview the exact commands and targets without changing Docker state:
 
-- refuse to run when `NODE_ENV=production`;
-- require `CONFIRM_DB_RESET=true`;
-- target only explicitly named development services and volumes;
-- recreate separate cloud, POS, and display development databases;
-- apply current schemas or baseline migrations;
-- optionally seed clearly marked development data.
+```bash
+pnpm db:reset:dev --dry-run
+```
 
-Never add a production reset script.
+The script targets only these development Compose projects:
 
-Conceptual usage after implementation:
+- `yuta-cloud-dev` through `docker-compose.cloud.dev.yml`;
+- `yuta-pos-dev` through `docker-compose.local.dev.yml`;
+- `yuta-display-dev` through
+  `apps/yuta-display/docker-compose.dev.yml`.
+
+It also removes the explicitly named legacy development containers and volumes
+reported by the reset audit. It never discovers targets through a wildcard.
+
+An actual reset is destructive and requires:
 
 ```bash
 CONFIRM_DB_RESET=true pnpm db:reset:dev
@@ -160,6 +182,13 @@ $env:CONFIRM_DB_RESET = 'true'
 pnpm db:reset:dev
 Remove-Item Env:CONFIRM_DB_RESET
 ```
+
+The command refuses to run when `NODE_ENV=production`, recreates all three
+databases from their `0000_initial` migrations, and leaves seed data disabled
+by default. To seed the cloud and POS development databases after migration,
+also set `SEED_DB_RESET=true`. The display boundary currently has no seed.
+
+Never add or use a production reset script.
 
 ## Seed ownership
 
@@ -193,6 +222,28 @@ invent a temporary password model.
 
 Both seeds generate new business IDs with UUIDv7 in application code and are
 idempotent through stable natural keys.
+
+### Cloud reputation demo data
+
+After the normal cloud seed has created the development organization,
+establishment, and owner, an optional guarded seed can populate the admin
+`customers/reviews` page:
+
+```powershell
+$env:CONFIRM_CLOUD_DEMO_SEED = 'true'
+pnpm db:cloud:seed:demo
+Remove-Item Env:CONFIRM_CLOUD_DEMO_SEED
+```
+
+The demo seed creates a small, idempotent set of Google and direct feedback,
+published and draft replies, internal notes, and direct-feedback details. Demo
+feedback is marked with `providerMetadata.demo = true`, so it remains
+distinguishable from imported or customer-created records.
+
+The command refuses to run without `CONFIRM_CLOUD_DEMO_SEED=true` and requires
+the normal cloud foundation seed to exist first. Run it only against a local
+database or an explicitly approved demo environment. Never run it against a
+customer or production database.
 
 Display seed data may include placeholder media records only when the
 corresponding local files exist.

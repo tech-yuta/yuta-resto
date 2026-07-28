@@ -1,0 +1,23 @@
+# Development only: isolated cloud SaaS PostgreSQL database.
+services:
+  cloud-db:
+    image: postgres:17-alpine
+    container_name: yuta-cloud-db-dev
+    environment:
+      POSTGRES_DB: yuta_cloud
+      POSTGRES_USER: yuta_cloud
+      POSTGRES_PASSWORD: yuta_cloud
+    ports:
+      - '${CLOUD_DEV_DB_PORT:-55431}:5432'
+    volumes:
+      - cloud-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U yuta_cloud -d yuta_cloud']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  cloud-db-data:
+    name: yuta-cloud-db-dev-data

@@ -316,8 +316,8 @@ export async function listFeedback(
             : query.sort === 'unanswered'
               ? sql`case when not exists (
                   select 1 from ${feedbackReplies}
-                  where ${feedbackReplies.feedbackItemId} = ${feedbackItems.id}
-                  and ${feedbackReplies.status} = 'PUBLISHED'
+                  where "feedback_replies"."feedback_item_id" = "feedback_items"."id"
+                  and "feedback_replies"."status" = 'PUBLISHED'
                 ) then 0 else 1 end asc, ${feedbackItems.receivedAt} desc`
               : desc(feedbackItems.receivedAt);
 
@@ -340,16 +340,16 @@ export async function listFeedback(
       replyId: sql<string | null>`(
         select ${feedbackReplies.id}
         from ${feedbackReplies}
-        where ${feedbackReplies.feedbackItemId} = ${feedbackItems.id}
-        and ${feedbackReplies.status} <> 'DELETED'
+        where "feedback_replies"."feedback_item_id" = "feedback_items"."id"
+        and "feedback_replies"."status" <> 'DELETED'
         order by ${feedbackReplies.createdAt} desc
         limit 1
       )`,
       replyStatus: sql<string | null>`(
         select ${feedbackReplies.status}::text
         from ${feedbackReplies}
-        where ${feedbackReplies.feedbackItemId} = ${feedbackItems.id}
-        and ${feedbackReplies.status} <> 'DELETED'
+        where "feedback_replies"."feedback_item_id" = "feedback_items"."id"
+        and "feedback_replies"."status" <> 'DELETED'
         order by ${feedbackReplies.createdAt} desc
         limit 1
       )`,
@@ -372,8 +372,8 @@ export async function listFeedback(
       unanswered: sql<number>`count(*) filter (
         where not exists (
           select 1 from ${feedbackReplies}
-          where ${feedbackReplies.feedbackItemId} = ${feedbackItems.id}
-          and ${feedbackReplies.status} = 'PUBLISHED'
+          where "feedback_replies"."feedback_item_id" = "feedback_items"."id"
+          and "feedback_replies"."status" = 'PUBLISHED'
         )
       )`,
       negative: sql<number>`count(*) filter (where ${feedbackItems.sentiment} = 'NEGATIVE')`,

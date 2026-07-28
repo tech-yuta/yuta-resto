@@ -27,8 +27,8 @@ users/catalog. Set `POS_DATABASE_URL` from
 processes:
 
 ```bash
-docker compose -f docker-compose.db.dev.yml up -d
-pnpm db:pos:push
+docker compose --project-name yuta-pos-dev -f docker-compose.local.dev.yml up -d --wait
+pnpm db:pos:migrate
 pnpm db:pos:seed
 ```
 

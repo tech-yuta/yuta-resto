@@ -16,7 +16,10 @@ Site agent: configured local URL
 Target local services:
 
 ```bash
-docker compose -f docker-compose.local.dev.yml up -d
+docker compose --project-name yuta-pos-dev -f docker-compose.local.dev.yml up -d --wait
+pnpm db:pos:migrate
+pnpm db:pos:seed
+pnpm dev:site-agent
 pnpm --filter @yuta/pos dev
 ```
 
@@ -37,7 +40,7 @@ N/A       not applicable for this run
 
 | Case                                | Expected Result                                                | Result | Notes |
 | ----------------------------------- | -------------------------------------------------------------- | -----: | ----- |
-| Local database container is running | `yuta-postgres-dev` is healthy on port `55433`                 |        |       |
+| Local database container is running | `yuta-pos-db-dev` is healthy on port `55432`                   |        |       |
 | POS health endpoint is ready        | `/api/health` returns application and database availability    |        |       |
 | Local service strip is visible      | Strip distinguishes local, database, and server failure states |        |       |
 | POS dev server opens                | `http://localhost:3003` loads without error                    |        |       |
@@ -196,7 +199,7 @@ N/A       not applicable for this run
 | Create and edit an order                    | Writes succeed against local PostgreSQL                       |             |       |
 | Send a new batch to kitchen                 | Kitchen screen receives it and one print job is created       |             |       |
 | Record an allowed local payment             | Payment persists and final receipt job is created once        |             |       |
-| Restart POS and site-agent services          | Existing order remains available and pending jobs resume      |             |       |
+| Restart POS and site-agent services         | Existing order remains available and pending jobs resume      |             |       |
 | Disconnect PostgreSQL                       | Health endpoint and service strip report database unavailable |             |       |
 | Stop the POS container                      | Browser reports the local server unavailable                  |             |       |
 | Restore latest backup into a drill database | Checksum, restore, migrations, and sample reads succeed       |             |       |

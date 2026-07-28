@@ -23,7 +23,7 @@ TypeScript, Tailwind CSS, and shared workspace packages.
 
 The legacy shared `packages/db` has been removed. See
 [`docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`](docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md)
-for the authoritative architecture and remaining reset status. POS operational
+for the authoritative architecture and reset status. POS operational
 data must never be written to or synchronized with the cloud database.
 
 ## Architecture Documentation
@@ -48,6 +48,7 @@ implementation context and are not architecture authority.
 
 ```bash
 pnpm install
+pnpm dev:env:sync
 pnpm dev
 ```
 
@@ -64,3 +65,15 @@ pnpm dev:pos
 pnpm dev:site-agent
 pnpm dev:display
 ```
+
+Start the isolated development databases from the repository root:
+
+```bash
+docker compose --project-name yuta-cloud-dev -f docker-compose.cloud.dev.yml up -d --wait
+docker compose --project-name yuta-pos-dev -f docker-compose.local.dev.yml up -d --wait
+docker compose --project-name yuta-display-dev -f apps/yuta-display/docker-compose.dev.yml up -d --wait
+```
+
+Use `pnpm db:reset:dev --dry-run` to inspect the guarded development reset.
+The destructive command requires the explicit `CONFIRM_DB_RESET=true`
+environment variable and must never be used against production.

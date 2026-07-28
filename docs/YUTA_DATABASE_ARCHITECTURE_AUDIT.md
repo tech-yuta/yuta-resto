@@ -308,29 +308,36 @@ The isolated display history has been reset to
 
 ## 10. Docker and volume audit
 
-| Current topology                    | Finding                                                                   | Target                                                                       |
-| ----------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `docker-compose.db.dev.yml`         | One `yuta_resto` DB and `yuta-postgres-dev-data` volume for cloud and POS | Replace with separate cloud/local dev compose files and volumes              |
-| POS `pos` service                   | Receives `DATABASE_URL` directly                                          | Remove DB credential; depend on `site-agent`                                 |
-| POS `print-worker` service          | Runs DB/filesystem logic from `@yuta/core`                                | Move processing into local `site-agent` runtime                              |
-| POS `migrate` service               | Runs in `/app/packages/db`                                                | Run `@yuta/db-pos` migrations with `POS_DATABASE_URL`                        |
-| Display production compose          | Receives generic `DATABASE_URL`                                           | Rename to `DISPLAY_DATABASE_URL`                                             |
-| Display dev compose                 | Uses PostgreSQL 16 and generic `yuta` user                                | Align to PostgreSQL 17 and display-specific DB user/credentials              |
-| External `postgres_default` network | Shared reachability                                                       | May remain, but credentials and DB grants must prevent cross-boundary access |
+The generic `docker-compose.db.dev.yml` has been removed. Development now uses
+three PostgreSQL 17 Compose boundaries with explicit database names, users,
+ports, and volumes:
 
-The current development volume identified for later guarded deletion is:
+| Compose file                               | Service      | Port  | Named volume               |
+| ------------------------------------------ | ------------ | ----- | -------------------------- |
+| `docker-compose.cloud.dev.yml`             | `cloud-db`   | 55431 | `yuta-cloud-db-dev-data`   |
+| `docker-compose.local.dev.yml`             | `pos-db`     | 55432 | `yuta-pos-db-dev-data`     |
+| `apps/yuta-display/docker-compose.dev.yml` | `display-db` | 55433 | `yuta-display-db-dev-data` |
 
-```text
-yuta-postgres-dev-data
-```
-
-The display development volume is:
+The guarded `pnpm db:reset:dev` script owns this development-only reset. Its
+guards and destructive path were verified on 2026-07-28. The reset removed
+this audited legacy volume:
 
 ```text
-luna_display_dev
+yuta-resto_yuta-postgres-dev-data
 ```
 
-Do not delete either volume until the explicit destructive reset checkpoint.
+It also removed the audited legacy display development volume:
+
+```text
+yuta-display_luna_display_dev
+```
+
+Their exact legacy containers were removed as well. The replacement cloud,
+POS, and display containers are healthy; their public schemas contain 17, 16,
+and 1 tables respectively, with one recorded migration per boundary. The reset
+itself applied no seed data; the cloud development seed was applied afterward
+to enable admin login, while POS and display remain unseeded. No wildcard-based
+container or volume deletion is used.
 
 ## 11. Boundary enforcement
 

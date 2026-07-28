@@ -135,10 +135,10 @@ Email: admin@yuta.local
 Password: ChangeMe-YuTa-2026!
 ```
 
-Set `YUTA_SEED_ADMIN_PASSWORD` before seeding to choose a different password.
-The seeded administrator receives the owner membership so organization-wide
-membership management can be tested locally. Production seeding refuses to run
-without this variable.
+Set `YUTA_CLOUD_SEED_ADMIN_PASSWORD` before seeding to choose a different
+password. The seeded administrator receives the owner membership so
+organization-wide membership management can be tested locally. Production
+seeding refuses to run without this variable.
 
 ## Password recovery
 
