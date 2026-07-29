@@ -31,6 +31,22 @@ subscriptions, and other SaaS-only data.
 
 Cloud must contain no POS operational tables.
 
+### Vercel Git deployment policy
+
+The Vercel projects for `apps/admin` and `apps/web` keep their GitHub
+repository connection, but automatic deployments from commits are disabled.
+Each Vercel project must use its application folder as the Root Directory:
+
+```text
+apps/admin
+apps/web
+```
+
+Both folders contain a `vercel.json` with
+`git.deploymentEnabled: false`. Deploy these applications manually when a
+release is ready. Do not remove this setting unless automatic preview and
+production deployments are intentionally re-enabled.
+
 ### Restaurant local
 
 ```text
@@ -189,6 +205,14 @@ Before the first real deployment:
 Do not deploy legacy shared migrations or compatibility/backfill migrations.
 
 Test every baseline against an empty database before production.
+After the baseline, apply feature migrations in journal order. POS local
+authentication starts with `packages/db-pos/drizzle/0001_local_auth.sql`.
+
+Never use the documented development PIN defaults in a restaurant
+installation. Supply four-to-eight-digit `YUTA_POS_SEED_ADMIN_PIN`,
+`YUTA_POS_SEED_STAFF_PIN`, and `YUTA_POS_SEED_KITCHEN_PIN` values to the
+explicit POS seed maintenance job. PINs are not runtime environment variables
+and are stored only as scrypt hashes.
 
 Cloud and POS seed jobs are separate maintenance operations. A cloud seed job
 receives only `CLOUD_DATABASE_URL`; a POS seed job receives only

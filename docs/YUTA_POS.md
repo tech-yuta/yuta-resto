@@ -168,6 +168,14 @@ The initial implemented API is:
 GET  /health
 GET  /api/v1/local-users
 GET  /api/v1/catalog
+POST /api/v1/catalog/combo-rules
+PATCH /api/v1/catalog/combo-rules/:ruleId
+POST /api/v1/catalog/combo-groups
+PATCH /api/v1/catalog/combo-groups/:groupId
+DELETE /api/v1/catalog/combo-groups/:groupId
+POST /api/v1/catalog/combo-group-items
+PATCH /api/v1/catalog/combo-group-items/:groupItemId
+DELETE /api/v1/catalog/combo-group-items/:groupItemId
 GET  /api/v1/orders
 POST /api/v1/orders
 GET  /api/v1/orders/:orderId
@@ -217,14 +225,15 @@ split cancellation, and order/check payment capture. The POS pages and server
 actions now use this client for staff selection, order entry, kitchen, and
 payment workflows. `apps/yuta-pos/src` no longer imports `@yuta/db`, Drizzle,
 or a database client, and its container receives only `SITE_AGENT_URL`.
-The offline acceptance run also verifies the real `local-users` and catalog
-responses against a freshly seeded database and creates a UUIDv7 order without
-cloud services.
+The offline acceptance run also verifies real local-user, catalog, and combo
+management against a freshly seeded database and creates a UUIDv7 order
+without cloud services.
 
-There is intentionally no `/tables` or `/printers` resource. The current POS
-uses free-text table labels and printer-name snapshots; physical table maps and
-printer configuration remain deferred until a real local workflow requires
-them.
+There is intentionally no `/tables` or physical `/printers` configuration
+resource. The current POS uses free-text table labels and printer-name
+snapshots; physical table maps and printer configuration remain deferred until
+a real hardware transport is selected. The authenticated `/api/v1/print-jobs`
+resource is the implemented local queue boundary.
 
 POS setup and reporting are local workflows, not cloud admin workflows:
 
@@ -385,6 +394,47 @@ uses local users, roles, and PIN sessions managed by `site-agent`; it does not
 reuse cloud memberships or cloud authentication sessions.
 
 The current `@yuta/db-pos` development seed creates local admin, staff, and
-kitchen identities plus catalog/combo fixtures. It intentionally creates no
-cloud membership and no temporary local password. PIN credentials and sessions
-remain part of the `site-agent` implementation phase.
+kitchen identities plus catalog/combo fixtures. Migration `0001_local_auth`
+adds hashed PIN credentials, authentication attempts, and revocable local
+sessions. `site-agent` validates PINs, limits repeated failures, stores only a
+session-token hash, and authorizes the local management shell independently of
+cloud authentication.
+
+`apps/yuta-pos` exposes the management shell at `/management`. The opaque
+session token is kept in an HttpOnly, SameSite=Strict cookie and is forwarded
+only by the POS Next.js server to `site-agent`. The first slice protects the
+management shell for `admin` and `manager`. `/management/users` provides local
+user creation, profile/role updates, activation, and PIN replacement. Admins
+can manage every role; managers can manage only `staff` and `kitchen`.
+`site-agent` rejects attempts to disable or demote the last active admin.
+Role, active-state, and PIN changes increment `authVersion`, invalidating the
+affected user's existing sessions.
+
+The unauthenticated local-user list remains available because the login and
+order-entry screens must present selectable local identities before a
+management session exists. All local-user mutations require a bearer
+management session. Existing operator service endpoints remain unchanged
+until the operator-login cutover is designed.
+
+`/management/catalog` provides authenticated local management for categories
+and menu items. Admins and managers can create or edit categories and items,
+change prices and kitchen stations, reorder entries, hide a category, or mark
+an item unavailable. The workflow performs no physical deletes. Existing POS
+order entry already filters inactive categories and unavailable items, so
+catalog changes take effect on the next server render without cloud access.
+
+`/management/combos` provides authenticated local management for combo rules,
+selection groups, eligible menu items, and item supplements. A new rule starts
+inactive. Its group structure may be edited only while inactive, and
+`site-agent` validates required groups and base-pricing configuration before
+activation. Rules are deactivated rather than deleted so historical discount
+references remain valid; inactive group structures may be removed.
+
+`/management/printing` provides authenticated local queue management. It lists
+safe print-job summaries and applies the persisted state machine:
+`pending -> printing -> printed` or
+`pending/printing -> failed -> pending` through retry. Queue reads and manual
+commands require a local admin or manager session. Raw payloads remain inside
+`site-agent`; the browser receives only order/table/item-count summaries.
+Physical ESC/POS transport and printer-routing configuration remain outside
+the current MVP.

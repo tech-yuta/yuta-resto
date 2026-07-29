@@ -11,6 +11,7 @@ import {
   ReceiptText,
   Search,
   Send,
+  Settings,
   SlidersHorizontal,
   TriangleAlert,
   User,
@@ -79,6 +80,12 @@ export default async function OrdersHomePage({
             <Link href="/kitchen">
               <ChefHat className="h-4 w-4" />
               Cuisine
+            </Link>
+          </Button>
+          <Button asChild variant="secondary" size="lg">
+            <Link href="/management">
+              <Settings className="h-4 w-4" />
+              Gestion
             </Link>
           </Button>
         </>

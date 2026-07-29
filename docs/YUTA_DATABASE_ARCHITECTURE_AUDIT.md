@@ -424,7 +424,9 @@ The initial `apps/site-agent` and local API contract slice is now present:
   implemented under `/api/v1`;
 - exact-origin CORS prevents arbitrary browser origins from using the local
   agent;
-- speculative table-map and physical-printer resources remain absent.
+- speculative table-map and physical-printer configuration resources remain
+  absent; the existing local print-job queue is exposed only through
+  authenticated `site-agent` management commands.
 
 Order-item and kitchen persistence are now implemented in `site-agent`:
 
@@ -504,6 +506,26 @@ The clean package baselines are now verified:
 - cloud `5/5`, db-pos `4/4`, and site-agent `10/10` guarded tests pass against
   those databases.
 
+The first post-baseline POS feature migration is now present:
+
+- `db-pos/0001_local_auth.sql` adds two local-only authentication tables and
+  hashed-PIN/session fields to `local_users`;
+- local sessions are owned by `site-agent`, use opaque token hashes, expire
+  after 12 hours, and are invalidated by user activation/auth-version checks;
+- the `/management` shell in `yuta-pos` accepts only local `admin` and
+  `manager` roles and does not reuse cloud users or memberships.
+- `/management/users` performs local staff mutations only through authenticated
+  `site-agent` commands, with no cloud database or cloud-admin dependency.
+- `/management/catalog` performs category and menu-item mutations through the
+  same local boundary; inactive entries stay local for historical references.
+- `/management/combos` performs combo-rule, group, and eligible-item mutations
+  through the same boundary. Structural edits require an inactive rule, and
+  activation validates the complete local rule before payment may use it.
+- `/management/printing` lists safe local print-job summaries and performs
+  printing, printed, failed, and retry transitions through authenticated
+  `site-agent` commands. It does not expose raw payloads or create speculative
+  printer hardware tables.
+
 The standalone display baseline is also complete:
 
 - runtime, Drizzle CLI, and production Compose use `DISPLAY_DATABASE_URL`;
@@ -523,6 +545,11 @@ The local offline runtime acceptance is now repeatable through
   receives only the POS seed;
 - `site-agent` starts without any cloud or display database configuration;
 - local users and the catalog are read through the real HTTP API;
+- local combo management creates a rule structure, activates it, rejects
+  structural writes while active, then deactivates and removes the disposable
+  structure;
+- the authenticated local print queue follows pending, printing, failed,
+  retry, and printed transitions against a real persisted kitchen ticket;
 - a UUIDv7 order is created through that API;
 - the production POS reports itself, site-agent, and the local database as
   available while the Internet probe is unavailable;

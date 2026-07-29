@@ -1,6 +1,7 @@
 import {
   boolean,
   index,
+  integer,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -17,6 +18,9 @@ export const localUsers = pgTable(
     email: varchar('email', { length: 320 }),
     role: localUserRoleEnum('role').notNull(),
     isActive: boolean('is_active').default(true).notNull(),
+    pinHash: varchar('pin_hash', { length: 255 }),
+    authVersion: integer('auth_version').default(1).notNull(),
+    lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),

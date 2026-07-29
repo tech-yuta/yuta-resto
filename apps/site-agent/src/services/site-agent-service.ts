@@ -22,14 +22,22 @@ import {
 import { asc, desc, eq, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import { HttpError } from '../http';
+import { createCatalogManagementService } from './catalog-management-service';
+import { createComboManagementService } from './combo-management-service';
 import { createOrderCommandService } from './order-command-service';
 import { createFinancialService } from './financial-service';
+import { createLocalAuthService } from './local-auth-service';
+import { createLocalUserManagementService } from './local-user-management-service';
 import { createPrintJobService } from './print-job-service';
 
 export function createSiteAgentService(db: PosDatabaseClient) {
   const orderCommands = createOrderCommandService(db);
   const financial = createFinancialService(db);
   const printing = createPrintJobService(db);
+  const authentication = createLocalAuthService(db);
+  const userManagement = createLocalUserManagementService(db);
+  const catalogManagement = createCatalogManagementService(db);
+  const comboManagement = createComboManagementService(db);
   async function getHealth() {
     try {
       await db.execute(sql`select 1`);
@@ -203,6 +211,10 @@ export function createSiteAgentService(db: PosDatabaseClient) {
     getCatalog,
     listOrders,
     createOrder,
+    ...authentication,
+    ...userManagement,
+    ...catalogManagement,
+    ...comboManagement,
     ...orderCommands,
     ...financial,
     ...printing,

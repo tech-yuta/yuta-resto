@@ -429,20 +429,20 @@ function checkMigrationBaselines() {
     const sqlFiles = walkFiles(directory).filter(
       (filePath) => extname(filePath) === '.sql',
     );
+    const baselineFiles = sqlFiles.filter(
+      (filePath) => basename(filePath) === '0000_initial.sql',
+    );
 
-    if (
-      sqlFiles.length !== 1 ||
-      basename(sqlFiles[0] ?? '') !== '0000_initial.sql'
-    ) {
+    if (baselineFiles.length !== 1) {
       addFailure(
         'migration-baseline',
         directory,
-        `${boundary.name} must contain exactly one 0000_initial.sql baseline`,
+        `${boundary.name} must contain one 0000_initial.sql baseline`,
       );
       continue;
     }
 
-    const filePath = sqlFiles[0];
+    const filePath = baselineFiles[0];
     const content = read(filePath);
     const tables = new Set(
       [...content.matchAll(/CREATE TABLE\s+"([^"]+)"/g)].map(
@@ -469,25 +469,30 @@ function checkMigrationBaselines() {
     }
 
     for (const table of boundary.forbiddenTables) {
-      if (tables.has(table)) {
-        addFailure(
-          'migration-boundary',
-          filePath,
-          `${boundary.name} baseline must not create "${table}"`,
-        );
+      for (const migrationFile of sqlFiles) {
+        if (read(migrationFile).includes(`"${table}"`)) {
+          addFailure(
+            'migration-boundary',
+            migrationFile,
+            `${boundary.name} migrations must not reference "${table}"`,
+          );
+        }
       }
     }
 
-    const randomUuid = /\b(?:gen_random_uuid|uuid_generate_v\d)\s*\(/i.exec(
-      content,
-    );
-    if (randomUuid) {
-      addFailure(
-        'application-generated-uuidv7',
-        filePath,
-        'business IDs must not use a database-generated UUID default',
-        randomUuid.index,
+    for (const migrationFile of sqlFiles) {
+      const migrationContent = read(migrationFile);
+      const randomUuid = /\b(?:gen_random_uuid|uuid_generate_v\d)\s*\(/i.exec(
+        migrationContent,
       );
+      if (randomUuid) {
+        addFailure(
+          'application-generated-uuidv7',
+          migrationFile,
+          'business IDs must not use a database-generated UUID default',
+          randomUuid.index,
+        );
+      }
     }
   }
 }

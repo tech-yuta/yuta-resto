@@ -112,10 +112,22 @@ function toPrintJob(job: typeof printJobs.$inferSelect) {
     checkId: job.checkId,
     paymentId: job.paymentId,
     type: job.jobType,
+    source: job.source,
     status: job.status,
     printerName: job.printerName,
+    summary: summarizePayload(job.payload),
     errorMessage: job.errorMessage,
     createdAt: job.createdAt.toISOString(),
     printedAt: job.printedAt?.toISOString() ?? null,
+  };
+}
+
+function summarizePayload(payload: Record<string, unknown>) {
+  return {
+    orderNumber:
+      typeof payload.orderNumber === 'string' ? payload.orderNumber : null,
+    tableLabel:
+      typeof payload.tableLabel === 'string' ? payload.tableLabel : null,
+    itemCount: Array.isArray(payload.items) ? payload.items.length : 0,
   };
 }

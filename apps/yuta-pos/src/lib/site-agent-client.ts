@@ -1,8 +1,24 @@
 import {
   addLocalOrderItemInputSchema,
+  createLocalCatalogCategoryInputSchema,
+  createLocalCatalogItemInputSchema,
+  createLocalComboGroupInputSchema,
+  createLocalComboGroupItemInputSchema,
+  createLocalComboRuleInputSchema,
+  createLocalUserInputSchema,
   createLocalChecksByItemsInputSchema,
   createLocalOrderInputSchema,
+  localAuthLoginInputSchema,
+  localAuthLoginResponseSchema,
+  localAuthLogoutResponseSchema,
+  localAuthSessionResponseSchema,
   localCatalogResponseSchema,
+  localCatalogCategoryResponseSchema,
+  localCatalogItemResponseSchema,
+  localComboDeleteResponseSchema,
+  localComboGroupItemResponseSchema,
+  localComboGroupResponseSchema,
+  localComboRuleResponseSchema,
   localKitchenSendResponseSchema,
   localChecksResponseSchema,
   localOrderCommandSchema,
@@ -14,21 +30,49 @@ import {
   localOrdersResponseSchema,
   localPaymentCaptureResponseSchema,
   localPaymentSummaryResponseSchema,
+  localPrintJobsResponseSchema,
+  localPrintJobSchema,
   localPosRoutes,
+  localUserResponseSchema,
   localUsersResponseSchema,
   payLocalCheckInputSchema,
   payLocalOrderInputSchema,
+  printJobCommandSchema,
+  printJobsQuerySchema,
   siteAgentHealthResponseSchema,
   splitLocalOrderEquallyInputSchema,
+  updateLocalCatalogCategoryInputSchema,
+  updateLocalCatalogItemInputSchema,
+  updateLocalComboGroupInputSchema,
+  updateLocalComboGroupItemInputSchema,
+  updateLocalComboRuleInputSchema,
+  resetLocalUserPinInputSchema,
+  updateLocalUserInputSchema,
   updateLocalOrderItemInputSchema,
   type AddLocalOrderItemInput,
+  type CreateLocalCatalogCategoryInput,
+  type CreateLocalCatalogItemInput,
+  type CreateLocalComboGroupInput,
+  type CreateLocalComboGroupItemInput,
+  type CreateLocalComboRuleInput,
   type CreateLocalChecksByItemsInput,
   type CreateLocalOrderInput,
+  type CreateLocalUserInput,
+  type LocalAuthLoginInput,
   type LocalOrderCommand,
   type LocalOrderItemCommand,
   type LocalOrdersQuery,
   type PayLocalCheckInput,
   type PayLocalOrderInput,
+  type PrintJobCommand,
+  type PrintJobsQuery,
+  type ResetLocalUserPinInput,
+  type UpdateLocalCatalogCategoryInput,
+  type UpdateLocalCatalogItemInput,
+  type UpdateLocalComboGroupInput,
+  type UpdateLocalComboGroupItemInput,
+  type UpdateLocalComboRuleInput,
+  type UpdateLocalUserInput,
   type UpdateLocalOrderItemInput,
 } from '@yuta/contracts/local-pos';
 import { z } from 'zod';
@@ -111,11 +155,287 @@ export function createSiteAgentClient(input?: {
     async getHealth() {
       return request(localPosRoutes.health, siteAgentHealthResponseSchema);
     },
+    async signInLocalUser(input: LocalAuthLoginInput) {
+      const body = localAuthLoginInputSchema.parse(input);
+      return request(localPosRoutes.authLogin, localAuthLoginResponseSchema, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    },
+    async getLocalSession(token: string) {
+      return request(
+        localPosRoutes.authSession,
+        localAuthSessionResponseSchema,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+    },
+    async signOutLocalSession(token: string) {
+      return request(
+        localPosRoutes.authSession,
+        localAuthLogoutResponseSchema,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+    },
     async listLocalUsers() {
       return request(localPosRoutes.localUsers, localUsersResponseSchema);
     },
+    async createLocalUser(token: string, input: CreateLocalUserInput) {
+      const body = createLocalUserInputSchema.parse(input);
+      return request(localPosRoutes.localUsers, localUserResponseSchema, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+    },
+    async updateLocalUser(
+      token: string,
+      userId: string,
+      input: UpdateLocalUserInput,
+    ) {
+      const body = updateLocalUserInputSchema.parse(input);
+      return request(
+        `${localPosRoutes.localUsers}/${encodeURIComponent(userId)}`,
+        localUserResponseSchema,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async resetLocalUserPin(
+      token: string,
+      userId: string,
+      input: ResetLocalUserPinInput,
+    ) {
+      const body = resetLocalUserPinInputSchema.parse(input);
+      return request(
+        `${localPosRoutes.localUsers}/${encodeURIComponent(userId)}/pin`,
+        localUserResponseSchema,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+      );
+    },
     async getCatalog() {
       return request(localPosRoutes.catalog, localCatalogResponseSchema);
+    },
+    async createCatalogCategory(
+      token: string,
+      input: CreateLocalCatalogCategoryInput,
+    ) {
+      const body = createLocalCatalogCategoryInputSchema.parse(input);
+      return request(
+        localPosRoutes.catalogCategories,
+        localCatalogCategoryResponseSchema,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async updateCatalogCategory(
+      token: string,
+      categoryId: string,
+      input: UpdateLocalCatalogCategoryInput,
+    ) {
+      const body = updateLocalCatalogCategoryInputSchema.parse(input);
+      return request(
+        `${localPosRoutes.catalogCategories}/${encodeURIComponent(categoryId)}`,
+        localCatalogCategoryResponseSchema,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async createCatalogItem(token: string, input: CreateLocalCatalogItemInput) {
+      const body = createLocalCatalogItemInputSchema.parse(input);
+      return request(
+        localPosRoutes.catalogItems,
+        localCatalogItemResponseSchema,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async updateCatalogItem(
+      token: string,
+      itemId: string,
+      input: UpdateLocalCatalogItemInput,
+    ) {
+      const body = updateLocalCatalogItemInputSchema.parse(input);
+      return request(
+        `${localPosRoutes.catalogItems}/${encodeURIComponent(itemId)}`,
+        localCatalogItemResponseSchema,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async createComboRule(token: string, input: CreateLocalComboRuleInput) {
+      const body = createLocalComboRuleInputSchema.parse(input);
+      return request(localPosRoutes.comboRules, localComboRuleResponseSchema, {
+        method: 'POST',
+        headers: managementJsonHeaders(token),
+        body: JSON.stringify(body),
+      });
+    },
+    async updateComboRule(
+      token: string,
+      ruleId: string,
+      input: UpdateLocalComboRuleInput,
+    ) {
+      const body = updateLocalComboRuleInputSchema.parse(input);
+      return request(
+        `${localPosRoutes.comboRules}/${encodeURIComponent(ruleId)}`,
+        localComboRuleResponseSchema,
+        {
+          method: 'PATCH',
+          headers: managementJsonHeaders(token),
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async createComboGroup(token: string, input: CreateLocalComboGroupInput) {
+      const body = createLocalComboGroupInputSchema.parse(input);
+      return request(
+        localPosRoutes.comboRuleGroups,
+        localComboGroupResponseSchema,
+        {
+          method: 'POST',
+          headers: managementJsonHeaders(token),
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async updateComboGroup(
+      token: string,
+      groupId: string,
+      input: UpdateLocalComboGroupInput,
+    ) {
+      const body = updateLocalComboGroupInputSchema.parse(input);
+      return request(
+        `${localPosRoutes.comboRuleGroups}/${encodeURIComponent(groupId)}`,
+        localComboGroupResponseSchema,
+        {
+          method: 'PATCH',
+          headers: managementJsonHeaders(token),
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async deleteComboGroup(token: string, groupId: string) {
+      return request(
+        `${localPosRoutes.comboRuleGroups}/${encodeURIComponent(groupId)}`,
+        localComboDeleteResponseSchema,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+    },
+    async createComboGroupItem(
+      token: string,
+      input: CreateLocalComboGroupItemInput,
+    ) {
+      const body = createLocalComboGroupItemInputSchema.parse(input);
+      return request(
+        localPosRoutes.comboRuleGroupItems,
+        localComboGroupItemResponseSchema,
+        {
+          method: 'POST',
+          headers: managementJsonHeaders(token),
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async updateComboGroupItem(
+      token: string,
+      groupItemId: string,
+      input: UpdateLocalComboGroupItemInput,
+    ) {
+      const body = updateLocalComboGroupItemInputSchema.parse(input);
+      return request(
+        `${localPosRoutes.comboRuleGroupItems}/${encodeURIComponent(groupItemId)}`,
+        localComboGroupItemResponseSchema,
+        {
+          method: 'PATCH',
+          headers: managementJsonHeaders(token),
+          body: JSON.stringify(body),
+        },
+      );
+    },
+    async deleteComboGroupItem(token: string, groupItemId: string) {
+      return request(
+        `${localPosRoutes.comboRuleGroupItems}/${encodeURIComponent(groupItemId)}`,
+        localComboDeleteResponseSchema,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+    },
+    async listPrintJobs(token: string, input: Partial<PrintJobsQuery> = {}) {
+      const query = printJobsQuerySchema.parse(input);
+      const search = new URLSearchParams({ limit: String(query.limit) });
+      if (query.status) search.set('status', query.status);
+      return request(
+        `${localPosRoutes.printJobs}?${search.toString()}`,
+        localPrintJobsResponseSchema,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+    },
+    async executePrintJobCommand(
+      token: string,
+      printJobId: string,
+      input: PrintJobCommand,
+    ) {
+      const body = printJobCommandSchema.parse(input);
+      return request(
+        `${localPosRoutes.printJobs}/${encodeURIComponent(printJobId)}/commands`,
+        localPrintJobSchema,
+        {
+          method: 'POST',
+          headers: managementJsonHeaders(token),
+          body: JSON.stringify(body),
+        },
+      );
     },
     async listOrders(input: Partial<LocalOrdersQuery> = {}) {
       const query = localOrdersQuerySchema.parse(input);
@@ -267,6 +587,13 @@ export function createSiteAgentClient(input?: {
 }
 
 export const siteAgentClient = createSiteAgentClient();
+
+function managementJsonHeaders(token: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
 
 function normalizeBaseUrl(value: string): string {
   return value.endsWith('/') ? value.slice(0, -1) : value;

@@ -10,8 +10,15 @@ export const uuidV7Schema = identifierSchema.refine(
 
 export const localPosRoutes = {
   health: '/health',
+  authLogin: `${localPosApiBasePath}/auth/login`,
+  authSession: `${localPosApiBasePath}/auth/session`,
   localUsers: `${localPosApiBasePath}/local-users`,
   catalog: `${localPosApiBasePath}/catalog`,
+  catalogCategories: `${localPosApiBasePath}/catalog/categories`,
+  catalogItems: `${localPosApiBasePath}/catalog/items`,
+  comboRules: `${localPosApiBasePath}/catalog/combo-rules`,
+  comboRuleGroups: `${localPosApiBasePath}/catalog/combo-groups`,
+  comboRuleGroupItems: `${localPosApiBasePath}/catalog/combo-group-items`,
   orders: `${localPosApiBasePath}/orders`,
   orderItems: `${localPosApiBasePath}/order-items`,
   payments: `${localPosApiBasePath}/payments`,
@@ -47,6 +54,73 @@ export const localUserSchema = z
 
 export const localUsersResponseSchema = z
   .object({ users: z.array(localUserSchema) })
+  .strict();
+
+export const localPinSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4,8}$/, 'PIN must contain between 4 and 8 digits.');
+
+const localUserNameSchema = z.string().trim().min(1).max(255);
+const localUserEmailSchema = z.string().trim().email().max(320).nullable();
+
+export const createLocalUserInputSchema = z
+  .object({
+    name: localUserNameSchema,
+    email: localUserEmailSchema,
+    role: localUserRoleSchema,
+    pin: localPinSchema,
+  })
+  .strict();
+
+export const updateLocalUserInputSchema = z
+  .object({
+    name: localUserNameSchema.optional(),
+    email: localUserEmailSchema.optional(),
+    role: localUserRoleSchema.optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict()
+  .refine((values) => Object.keys(values).length > 0, {
+    message: 'At least one local-user field is required.',
+  });
+
+export const resetLocalUserPinInputSchema = z
+  .object({ pin: localPinSchema })
+  .strict();
+
+export const localUserResponseSchema = z
+  .object({ user: localUserSchema })
+  .strict();
+
+export const localAuthLoginInputSchema = z
+  .object({
+    userId: identifierSchema,
+    pin: localPinSchema,
+  })
+  .strict();
+
+export const localAuthSessionSchema = z
+  .object({
+    id: identifierSchema,
+    user: localUserSchema,
+    expiresAt: isoDateTimeSchema,
+  })
+  .strict();
+
+export const localAuthLoginResponseSchema = z
+  .object({
+    token: z.string().min(32).max(200),
+    session: localAuthSessionSchema,
+  })
+  .strict();
+
+export const localAuthSessionResponseSchema = z
+  .object({ session: localAuthSessionSchema })
+  .strict();
+
+export const localAuthLogoutResponseSchema = z
+  .object({ success: z.literal(true) })
   .strict();
 
 export const kitchenStationSchema = z.enum([
@@ -117,6 +191,170 @@ export const localCatalogResponseSchema = z
     categories: z.array(localCatalogCategorySchema),
     comboRules: z.array(localComboRuleSchema),
   })
+  .strict();
+
+const catalogNameSchema = z.string().trim().min(1).max(255);
+const catalogSortOrderSchema = z.number().int().min(-100_000).max(100_000);
+const catalogPriceCentsSchema = z.number().int().min(0).max(100_000_000);
+
+export const createLocalCatalogCategoryInputSchema = z
+  .object({
+    name: catalogNameSchema,
+    sortOrder: catalogSortOrderSchema.default(0),
+  })
+  .strict();
+
+export const updateLocalCatalogCategoryInputSchema = z
+  .object({
+    name: catalogNameSchema.optional(),
+    sortOrder: catalogSortOrderSchema.optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict()
+  .refine((values) => Object.keys(values).length > 0, {
+    message: 'At least one category field is required.',
+  });
+
+export const createLocalCatalogItemInputSchema = z
+  .object({
+    categoryId: identifierSchema,
+    name: catalogNameSchema,
+    description: z.string().trim().max(2000).nullable().default(null),
+    priceCents: catalogPriceCentsSchema,
+    kitchenStation: kitchenStationSchema,
+    isAvailable: z.boolean().default(true),
+    sortOrder: catalogSortOrderSchema.default(0),
+  })
+  .strict();
+
+export const updateLocalCatalogItemInputSchema = z
+  .object({
+    categoryId: identifierSchema.optional(),
+    name: catalogNameSchema.optional(),
+    description: z.string().trim().max(2000).nullable().optional(),
+    priceCents: catalogPriceCentsSchema.optional(),
+    kitchenStation: kitchenStationSchema.optional(),
+    isAvailable: z.boolean().optional(),
+    sortOrder: catalogSortOrderSchema.optional(),
+  })
+  .strict()
+  .refine((values) => Object.keys(values).length > 0, {
+    message: 'At least one catalog-item field is required.',
+  });
+
+export const localCatalogCategoryResponseSchema = z
+  .object({ category: localCatalogCategorySchema })
+  .strict();
+
+export const localCatalogItemResponseSchema = z
+  .object({ item: localCatalogItemSchema })
+  .strict();
+
+const comboRuleNameSchema = z.string().trim().min(1).max(255);
+const comboMoneySchema = z.number().int().min(0).max(100_000_000);
+const comboSignedMoneySchema = z
+  .number()
+  .int()
+  .min(-100_000_000)
+  .max(100_000_000);
+const comboPrioritySchema = z.number().int().min(-100_000).max(100_000);
+
+export const createLocalComboRuleInputSchema = z
+  .object({
+    name: comboRuleNameSchema,
+    pricingMode: comboPricingModeSchema,
+    comboPriceCents: comboMoneySchema,
+    priceDeltaCents: comboSignedMoneySchema.default(0),
+    basePricingGroupName: comboRuleNameSchema.nullable().default(null),
+    priority: comboPrioritySchema.default(0),
+    maxApplications: z.number().int().positive().max(10_000).nullable(),
+    isActive: z.boolean().default(false),
+  })
+  .strict();
+
+export const updateLocalComboRuleInputSchema = z
+  .object({
+    name: comboRuleNameSchema.optional(),
+    pricingMode: comboPricingModeSchema.optional(),
+    comboPriceCents: comboMoneySchema.optional(),
+    priceDeltaCents: comboSignedMoneySchema.optional(),
+    basePricingGroupName: comboRuleNameSchema.nullable().optional(),
+    priority: comboPrioritySchema.optional(),
+    maxApplications: z
+      .number()
+      .int()
+      .positive()
+      .max(10_000)
+      .nullable()
+      .optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict()
+  .refine((values) => Object.keys(values).length > 0, {
+    message: 'At least one combo-rule field is required.',
+  });
+
+export const createLocalComboGroupInputSchema = z
+  .object({
+    comboRuleId: identifierSchema,
+    name: comboRuleNameSchema,
+    minQuantity: z.number().int().min(0).max(100),
+    maxQuantity: z.number().int().min(0).max(100),
+    sortOrder: comboPrioritySchema.default(0),
+  })
+  .strict()
+  .refine((values) => values.maxQuantity >= values.minQuantity, {
+    message: 'Group maxQuantity must be greater than or equal to minQuantity.',
+  });
+
+export const updateLocalComboGroupInputSchema = z
+  .object({
+    name: comboRuleNameSchema.optional(),
+    minQuantity: z.number().int().min(0).max(100).optional(),
+    maxQuantity: z.number().int().min(0).max(100).optional(),
+    sortOrder: comboPrioritySchema.optional(),
+  })
+  .strict()
+  .refine((values) => Object.keys(values).length > 0, {
+    message: 'At least one combo-group field is required.',
+  })
+  .refine(
+    (values) =>
+      values.minQuantity === undefined ||
+      values.maxQuantity === undefined ||
+      values.maxQuantity >= values.minQuantity,
+    {
+      message:
+        'Group maxQuantity must be greater than or equal to minQuantity.',
+    },
+  );
+
+export const createLocalComboGroupItemInputSchema = z
+  .object({
+    comboRuleGroupId: identifierSchema,
+    menuItemId: identifierSchema,
+    extraPriceCents: comboMoneySchema.default(0),
+  })
+  .strict();
+
+export const updateLocalComboGroupItemInputSchema = z
+  .object({ extraPriceCents: comboMoneySchema })
+  .strict();
+
+export const localComboRuleResponseSchema = z
+  .object({ comboRule: localComboRuleSchema })
+  .strict();
+
+export const localComboGroupResponseSchema = z
+  .object({ group: localComboRuleGroupSchema })
+  .strict();
+
+export const localComboGroupItemResponseSchema = z
+  .object({ item: localComboRuleGroupItemSchema })
+  .strict();
+
+export const localComboDeleteResponseSchema = z
+  .object({ success: z.literal(true) })
   .strict();
 
 export const localOrderTypeSchema = z.enum(['dine_in', 'takeaway', 'delivery']);
@@ -480,6 +718,12 @@ export const printJobStatusSchema = z.enum([
   'printed',
   'failed',
 ]);
+export const printJobSourceSchema = z.enum([
+  'pos',
+  'kitchen',
+  'delivery',
+  'manual',
+]);
 export const printJobsQuerySchema = z
   .object({
     status: printJobStatusSchema.optional(),
@@ -503,8 +747,16 @@ export const localPrintJobSchema = z
     checkId: identifierSchema.nullable(),
     paymentId: identifierSchema.nullable(),
     type: printJobTypeSchema,
+    source: printJobSourceSchema,
     status: printJobStatusSchema,
     printerName: z.string().min(1),
+    summary: z
+      .object({
+        orderNumber: z.string().nullable(),
+        tableLabel: z.string().nullable(),
+        itemCount: z.number().int().nonnegative(),
+      })
+      .strict(),
     errorMessage: z.string().nullable(),
     createdAt: isoDateTimeSchema,
     printedAt: isoDateTimeSchema.nullable(),
@@ -554,7 +806,44 @@ export type SiteAgentHealthResponse = z.infer<
   typeof siteAgentHealthResponseSchema
 >;
 export type LocalUser = z.infer<typeof localUserSchema>;
+export type CreateLocalUserInput = z.infer<typeof createLocalUserInputSchema>;
+export type UpdateLocalUserInput = z.infer<typeof updateLocalUserInputSchema>;
+export type ResetLocalUserPinInput = z.infer<
+  typeof resetLocalUserPinInputSchema
+>;
+export type LocalAuthLoginInput = z.infer<typeof localAuthLoginInputSchema>;
+export type LocalAuthSession = z.infer<typeof localAuthSessionSchema>;
 export type LocalCatalogResponse = z.infer<typeof localCatalogResponseSchema>;
+export type CreateLocalCatalogCategoryInput = z.infer<
+  typeof createLocalCatalogCategoryInputSchema
+>;
+export type UpdateLocalCatalogCategoryInput = z.infer<
+  typeof updateLocalCatalogCategoryInputSchema
+>;
+export type CreateLocalCatalogItemInput = z.infer<
+  typeof createLocalCatalogItemInputSchema
+>;
+export type UpdateLocalCatalogItemInput = z.infer<
+  typeof updateLocalCatalogItemInputSchema
+>;
+export type CreateLocalComboRuleInput = z.infer<
+  typeof createLocalComboRuleInputSchema
+>;
+export type UpdateLocalComboRuleInput = z.infer<
+  typeof updateLocalComboRuleInputSchema
+>;
+export type CreateLocalComboGroupInput = z.infer<
+  typeof createLocalComboGroupInputSchema
+>;
+export type UpdateLocalComboGroupInput = z.infer<
+  typeof updateLocalComboGroupInputSchema
+>;
+export type CreateLocalComboGroupItemInput = z.infer<
+  typeof createLocalComboGroupItemInputSchema
+>;
+export type UpdateLocalComboGroupItemInput = z.infer<
+  typeof updateLocalComboGroupItemInputSchema
+>;
 export type CreateLocalOrderInput = z.infer<typeof createLocalOrderInputSchema>;
 export type LocalOrderSummary = z.infer<typeof localOrderSummarySchema>;
 export type LocalOrdersQuery = z.infer<typeof localOrdersQuerySchema>;
@@ -574,3 +863,4 @@ export type CreateLocalChecksByItemsInput = z.infer<
 export type CreatePrintJobInput = z.infer<typeof createPrintJobInputSchema>;
 export type PrintJobsQuery = z.infer<typeof printJobsQuerySchema>;
 export type PrintJobCommand = z.infer<typeof printJobCommandSchema>;
+export type LocalPrintJob = z.infer<typeof localPrintJobSchema>;

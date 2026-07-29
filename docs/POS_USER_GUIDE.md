@@ -14,10 +14,11 @@ to a local UI backed by `site-agent`.
 ```txt
 POS orders:    http://localhost:3003
 New POS order: http://localhost:3003/pos
+Local management: http://localhost:3003/management
 ```
 
-The local management URL will be documented when `site-agent` and its local UI
-are implemented.
+The local management shell requires an active local user with the `admin` or
+`manager` role and a PIN session issued by `site-agent`.
 
 ## Run Locally
 
@@ -463,10 +464,12 @@ Use the page-level `Annuler le partage` action to return to full-order payment w
 ## Local POS Staff Management
 
 This workflow belongs to the local POS management UI backed by `site-agent`.
-It must not be exposed by the cloud `apps/admin` application. The exact local
-route will be documented when the local UI is implemented.
+It must not be exposed by the cloud `apps/admin` application. Open
+`/management`, select an active administrator or manager, and enter the local
+PIN. The development seed uses PIN `1234` for `YuTa Admin`; override seed PINs
+through the guarded local environment before a real restaurant installation.
 
-Use the local management screen to manage POS staff users:
+Open `Gestion locale > Équipe POS` to manage:
 
 ```txt
 Create employee
@@ -496,11 +499,15 @@ staff
 Kitchen-only users are managed here but are not shown in the POS order creator selector.
 
 Do not delete users from the database. Deactivate users to preserve order and payment history.
+An administrator can manage every role. A manager can manage only `staff` and
+`kitchen` users. The last active administrator cannot be deactivated or
+changed to another role. Changing a role, changing a PIN, or deactivating a
+user invalidates that user's existing local sessions.
 
 ## Local Menu Management
 
 This workflow belongs to the local POS management UI backed by `site-agent`.
-Use it to manage:
+Open `Gestion locale > Menu et catégories` to manage:
 
 ```txt
 Menu categories
@@ -521,6 +528,10 @@ Aucune
 ```
 
 Availability controls whether an item appears in the POS item grid.
+A hidden category removes the whole category and its items from new order
+entry. An unavailable item remains in local history but is not offered for new
+orders. Administrators and managers may perform these changes. Categories and
+items are never physically deleted by this workflow.
 
 On the order item screen, the search field filters the items in the selected
 category immediately as staff type. It does not require submitting the search
@@ -529,12 +540,15 @@ On mobile, `Voir commande` opens the current order summary over the item grid
 without navigating away or reloading the page. Closing it preserves the current
 category, search, and grid position.
 
-Do not delete old menu items for historical correction. Toggle availability instead.
+Do not delete old menu items for historical correction. Toggle availability
+instead.
 
 ## Local Combo Management
 
 Combo management belongs to the local POS management UI and uses only the
-local POS database.
+local POS database. Open `Gestion locale > Combos` or go directly to
+`/management/combos`. An active local administrator or manager session is
+required.
 
 Combos are payment discounts, not kitchen production rules.
 
@@ -560,7 +574,18 @@ Combo Ete      = selected plat price + 2.50 EUR
 The `Groupe base` field must match the combo group that contains the priced
 main dish, usually `Plat`.
 
-Combos are applied during payment optimization.
+Create a rule in the inactive state, then add its groups and eligible menu
+items. Group structure and eligible-item prices can be changed only while the
+rule is inactive. Before activation, `site-agent` verifies that the rule has
+at least one group, every required group has an eligible item, and a
+`Plat + supplement` rule names an existing base group.
+
+Rules are never physically deleted because paid orders may reference their
+discount history. Deactivate a retired rule instead. Groups and eligible-item
+mappings may be removed while their rule is inactive.
+
+Combos are applied during payment optimization. Editing an inactive rule does
+not rewrite discounts already persisted on paid orders.
 
 ## Local Operational Reports
 
@@ -579,6 +604,9 @@ Each order can be opened in POS from the report page.
 ## Local Print Queue
 
 The print queue belongs to `site-agent` and the local management UI.
+Open `Gestion locale > File d'impression` or go directly to
+`/management/printing`. An active local administrator or manager session is
+required to read or change the queue.
 
 The local screen shows recent print jobs:
 
@@ -599,28 +627,25 @@ customer_receipt   created after full payment or paid split check
 Manual actions:
 
 ```txt
-Marquer imprime
-Echec
-Reessayer
+Démarrer     pending -> printing
+Imprimé      printing -> printed
+Échec        pending/printing -> failed
+Réessayer    failed -> pending
 ```
 
-When the mock worker is running, it will automatically process pending jobs.
+The failure reason remains visible until the job is retried. The screen also
+shows the printer-name snapshot, source, linked order, creation time, and a
+safe summary of the ticket payload. Raw print payloads are not exposed to the
+browser.
 
-## Local Mock Print Worker
+## Physical Printer Adapter
 
-The current worker in `@yuta/core` is transitional. Printer queue processing
-and device integration move into `site-agent` during the database reset.
-
-Optional environment values:
-
-```txt
-PRINT_WORKER_OUTPUT_DIR=.tmp/prints
-PRINT_WORKER_BATCH_SIZE=10
-PRINT_WORKER_INTERVAL_MS=3000
-PRINT_WORKER_FAIL_RATE=0
-```
-
-`PRINT_WORKER_OUTPUT_DIR` writes one mock text file per printed job. Without it, the worker only updates database status.
+The current MVP persists and manages print jobs but does not send ESC/POS data
+to a physical printer. There is no active mock worker and no printer secret in
+the browser bundle. A future `site-agent` hardware adapter will claim pending
+jobs and use the same state machine. Do not add `printers` or
+`printer_routes` tables until the real USB, system-spooler, or network
+transport is selected.
 
 ## Important Behavior Notes
 

@@ -5,6 +5,7 @@ import {
   localPosRoutes,
 } from '@yuta/contracts/local-pos';
 import { readJsonBody, sendJson } from '../http';
+import { requireLocalManagementSession } from './auth';
 import type { RouteHandler } from './types';
 
 export const handlePrintJobRoutes: RouteHandler = async ({
@@ -14,6 +15,7 @@ export const handlePrintJobRoutes: RouteHandler = async ({
   service,
 }) => {
   if (url.pathname === localPosRoutes.printJobs && request.method === 'GET') {
+    await requireLocalManagementSession(request.headers.authorization, service);
     const query = printJobsQuerySchema.parse({
       status: url.searchParams.get('status') ?? undefined,
       limit: url.searchParams.get('limit') ?? undefined,
@@ -25,6 +27,7 @@ export const handlePrintJobRoutes: RouteHandler = async ({
     url.pathname,
   );
   if (commandMatch && request.method === 'POST') {
+    await requireLocalManagementSession(request.headers.authorization, service);
     const command = await readJsonBody(request, printJobCommandSchema);
     sendJson(
       response,

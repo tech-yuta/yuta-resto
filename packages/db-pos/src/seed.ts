@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { v7 as uuidv7 } from 'uuid';
 import type { PosDatabaseClient } from './client';
+import { hashLocalPin } from './local-auth-crypto';
 import {
   comboRuleGroupItems,
   comboRuleGroups,
@@ -163,20 +164,28 @@ export async function seedPosData(
 ): Promise<PosSeedContext> {
   const activeDb =
     seedDb ?? (await import('./client')).createPosDatabaseClient(process.env);
+  const [adminPinHash, staffPinHash, kitchenPinHash] = await Promise.all([
+    hashLocalPin(readSeedPin('YUTA_POS_SEED_ADMIN_PIN', '1234')),
+    hashLocalPin(readSeedPin('YUTA_POS_SEED_STAFF_PIN', '2345')),
+    hashLocalPin(readSeedPin('YUTA_POS_SEED_KITCHEN_PIN', '3456')),
+  ]);
   const adminUser = await upsertLocalUser(activeDb, {
     name: 'YuTa Admin',
     email: 'admin@yuta.local',
     role: 'admin',
+    pinHash: adminPinHash,
   });
   const staffUser = await upsertLocalUser(activeDb, {
     name: 'YuTa Staff',
     email: 'staff@yuta.local',
     role: 'staff',
+    pinHash: staffPinHash,
   });
   const kitchenUser = await upsertLocalUser(activeDb, {
     name: 'YuTa Kitchen',
     email: 'kitchen@yuta.local',
     role: 'kitchen',
+    pinHash: kitchenPinHash,
   });
 
   const categories: Record<string, MenuCategory> = {};
@@ -238,6 +247,7 @@ async function upsertLocalUser(
     name: string;
     email: string;
     role: 'admin' | 'manager' | 'staff' | 'kitchen';
+    pinHash: string;
   },
 ): Promise<LocalUser> {
   const existing = await seedDb.query.localUsers.findFirst({
@@ -258,6 +268,17 @@ async function upsertLocalUser(
     .values({ id: uuidv7(), ...values })
     .returning();
   return created;
+}
+
+function readSeedPin(
+  environmentKey: string,
+  developmentFallback: string,
+): string {
+  const value = process.env[environmentKey] ?? developmentFallback;
+  if (!/^\d{4,8}$/.test(value)) {
+    throw new Error(`${environmentKey} must contain between 4 and 8 digits.`);
+  }
+  return value;
 }
 
 async function upsertCategory(

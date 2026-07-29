@@ -211,14 +211,16 @@ is mandatory when `NODE_ENV=production`.
 
 The POS seed requires `POS_DATABASE_URL`. It creates or updates:
 
-- local admin, staff, and kitchen identities;
+- local admin, staff, and kitchen identities with development PIN hashes;
 - categories and products;
 - combo rules and their item groups.
 
 The POS seed does not create cloud users, tenant memberships, reputation data,
-sample orders, payment history, print jobs, or device credentials. Local PIN
-authentication will be added with `site-agent`; the current seed does not
-invent a temporary password model.
+sample orders, payment history, print jobs, or device credentials. The default
+development PINs are `1234` for admin, `2345` for staff, and `3456` for
+kitchen. Override them with `YUTA_POS_SEED_ADMIN_PIN`,
+`YUTA_POS_SEED_STAFF_PIN`, and `YUTA_POS_SEED_KITCHEN_PIN`. Each value must
+contain between four and eight digits. The seed stores only scrypt hashes.
 
 Both seeds generate new business IDs with UUIDv7 in application code and are
 idempotent through stable natural keys.
@@ -284,11 +286,14 @@ applies `db-pos/0000_initial`, seeds local data, builds and starts the POS,
 starts `site-agent` without cloud configuration, creates an order through the
 local API, and verifies that POS health remains available while the Internet
 probe is unavailable. It removes its processes and disposable container on
-success or failure. Ports `3003` and `3004` must be free.
+success or failure. Ports `3003` and `3004` must be free by default. Override
+the acceptance-only ports with `YUTA_OFFLINE_POS_PORT` and
+`YUTA_OFFLINE_SITE_AGENT_PORT` when local services are already running.
 
 Before the first real deployment, also verify:
 
-- each active boundary builds from its own `0000_initial`;
+- each active boundary builds from its own `0000_initial` followed by its
+  ordered feature migrations;
 - cloud schema contains no POS operational tables;
 - POS schema contains no cloud auth, OAuth, organization-membership, or
   subscription tables;

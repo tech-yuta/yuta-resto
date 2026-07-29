@@ -9,6 +9,8 @@ import {
   comboRuleGroupItems,
   comboRuleGroups,
   comboRules,
+  localAuthLoginAttempts,
+  localAuthSessions,
   localUserRoleEnum,
   localUsers,
   menuCategories,
@@ -23,6 +25,8 @@ import {
 
 const tablesWithBusinessIds: PgTable[] = [
   localUsers,
+  localAuthSessions,
+  localAuthLoginAttempts,
   menuCategories,
   menuItems,
   orders,

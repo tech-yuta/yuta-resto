@@ -88,7 +88,10 @@ function applyCors(
     'Access-Control-Allow-Methods',
     'GET,POST,PATCH,DELETE,OPTIONS',
   );
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  response.setHeader(
+    'Access-Control-Allow-Headers',
+    'Authorization, Content-Type',
+  );
 }
 
 async function startSiteAgent(): Promise<void> {

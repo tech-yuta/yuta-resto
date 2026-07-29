@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 const repositoryRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const containerName = `yuta-pos-offline-acceptance-${randomUUID().slice(0, 8)}`;
 const pnpmEntrypoint = process.env.npm_execpath;
-const siteAgentPort = 3004;
-const posPort = 3003;
+const siteAgentPort = readPort('YUTA_OFFLINE_SITE_AGENT_PORT', 3004);
+const posPort = readPort('YUTA_OFFLINE_POS_PORT', 3003);
 const posNextEnvPath = join(
   repositoryRoot,
   'apps',
@@ -19,6 +19,19 @@ const posNextEnvPath = join(
 const childProcesses = [];
 let containerStarted = false;
 let originalPosNextEnv;
+
+function readPort(name, fallback) {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isInteger(value) || value < 1 || value > 65_535) {
+    throw new Error(`${name} must be a valid TCP port.`);
+  }
+  return value;
+}
+
+function createAcceptanceUuidV7() {
+  const value = randomUUID();
+  return `${value.slice(0, 14)}7${value.slice(15)}`;
+}
 
 function runCommand(command, args, options = {}) {
   return new Promise((resolveCommand, rejectCommand) => {
@@ -316,9 +329,420 @@ async function main() {
     (total, category) => total + category.items.length,
     0,
   );
+  const seededCatalogItem = catalog.categories
+    .flatMap((category) => category.items)
+    .at(0);
 
-  if (users.users.length === 0 || catalogItemCount === 0) {
+  if (users.users.length === 0 || !seededCatalogItem) {
     throw new Error('The disposable POS seed did not create usable data.');
+  }
+
+  const managementUser = users.users.find(
+    (user) => user.role === 'admin' || user.role === 'manager',
+  );
+  if (!managementUser) {
+    throw new Error(
+      'The disposable POS seed did not create a management user.',
+    );
+  }
+
+  const loginResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/auth/login`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: managementUser.id,
+        pin: runtimeEnv.YUTA_POS_SEED_ADMIN_PIN ?? '1234',
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!loginResponse.ok) {
+    throw new Error(
+      `Local management login returned HTTP ${loginResponse.status}: ${await loginResponse.text()}`,
+    );
+  }
+  const localAuth = await loginResponse.json();
+
+  const sessionResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/auth/session`,
+    {
+      headers: { Authorization: `Bearer ${localAuth.token}` },
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!sessionResponse.ok) {
+    throw new Error(
+      `Local management session returned HTTP ${sessionResponse.status}: ${await sessionResponse.text()}`,
+    );
+  }
+  const localSession = await sessionResponse.json();
+  if (localSession.session.user.id !== managementUser.id) {
+    throw new Error('Local management session returned the wrong user.');
+  }
+
+  const createdUserResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/local-users`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'Offline acceptance staff',
+        email: 'offline-acceptance@yuta.local',
+        role: 'staff',
+        pin: '4567',
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (createdUserResponse.status !== 201) {
+    throw new Error(
+      `Local user creation returned HTTP ${createdUserResponse.status}: ${await createdUserResponse.text()}`,
+    );
+  }
+  const createdUser = await createdUserResponse.json();
+
+  const createdUserLoginResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/auth/login`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: createdUser.user.id, pin: '4567' }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!createdUserLoginResponse.ok) {
+    throw new Error('The newly created local user could not sign in.');
+  }
+  const createdUserAuth = await createdUserLoginResponse.json();
+
+  const resetPinResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/local-users/${createdUser.user.id}/pin`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ pin: '5678' }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!resetPinResponse.ok) {
+    throw new Error('The local user PIN could not be reset.');
+  }
+
+  const revokedSessionResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/auth/session`,
+    {
+      headers: { Authorization: `Bearer ${createdUserAuth.token}` },
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (revokedSessionResponse.status !== 401) {
+    throw new Error('Resetting a PIN did not invalidate the previous session.');
+  }
+
+  const managerResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/local-users`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'Offline acceptance manager',
+        email: 'offline-manager@yuta.local',
+        role: 'manager',
+        pin: '4568',
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (managerResponse.status !== 201) {
+    throw new Error('The offline acceptance manager could not be created.');
+  }
+  const manager = await managerResponse.json();
+  const managerLoginResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/auth/login`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: manager.user.id, pin: '4568' }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  const managerAuth = await managerLoginResponse.json();
+  const forbiddenAdminUpdate = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/local-users/${managementUser.id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${managerAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'Forbidden admin update' }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (forbiddenAdminUpdate.status !== 403) {
+    throw new Error('A manager was allowed to modify an administrator.');
+  }
+
+  const lastAdminResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/local-users/${managementUser.id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ isActive: false }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (lastAdminResponse.status !== 409) {
+    throw new Error('The last active local admin was not protected.');
+  }
+
+  const categoryResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/categories`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'Offline acceptance category',
+        sortOrder: 999,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (categoryResponse.status !== 201) {
+    throw new Error('The offline catalog category could not be created.');
+  }
+  const createdCategory = await categoryResponse.json();
+
+  const itemResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/items`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        categoryId: createdCategory.category.id,
+        name: 'Offline acceptance item',
+        description: 'Created without cloud services',
+        priceCents: 1250,
+        kitchenStation: 'kitchen',
+        isAvailable: true,
+        sortOrder: 10,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (itemResponse.status !== 201) {
+    throw new Error('The offline catalog item could not be created.');
+  }
+  const createdItem = await itemResponse.json();
+
+  const unavailableItemResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/items/${createdItem.item.id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ isAvailable: false }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  const unavailableItem = await unavailableItemResponse.json();
+  if (
+    !unavailableItemResponse.ok ||
+    unavailableItem.item.isAvailable !== false
+  ) {
+    throw new Error('The offline catalog item availability did not update.');
+  }
+
+  const hiddenCategoryResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/categories/${createdCategory.category.id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ isActive: false }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  const hiddenCategory = await hiddenCategoryResponse.json();
+  if (
+    !hiddenCategoryResponse.ok ||
+    hiddenCategory.category.isActive !== false
+  ) {
+    throw new Error('The offline catalog category visibility did not update.');
+  }
+
+  const comboRuleResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/combo-rules`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'Offline acceptance combo',
+        pricingMode: 'fixed',
+        comboPriceCents: 1990,
+        priceDeltaCents: 0,
+        basePricingGroupName: null,
+        priority: 999,
+        maxApplications: 1,
+        isActive: false,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (comboRuleResponse.status !== 201) {
+    throw new Error(
+      `The offline combo rule could not be created: ${await comboRuleResponse.text()}`,
+    );
+  }
+  const createdComboRule = await comboRuleResponse.json();
+
+  const comboGroupResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/combo-groups`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        comboRuleId: createdComboRule.comboRule.id,
+        name: 'Main',
+        minQuantity: 1,
+        maxQuantity: 1,
+        sortOrder: 0,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (comboGroupResponse.status !== 201) {
+    throw new Error(
+      `The offline combo group could not be created: ${await comboGroupResponse.text()}`,
+    );
+  }
+  const createdComboGroup = await comboGroupResponse.json();
+
+  const comboGroupItemResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/combo-group-items`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        comboRuleGroupId: createdComboGroup.group.id,
+        menuItemId: seededCatalogItem.id,
+        extraPriceCents: 0,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (comboGroupItemResponse.status !== 201) {
+    throw new Error(
+      `The offline combo item could not be created: ${await comboGroupItemResponse.text()}`,
+    );
+  }
+  const createdComboGroupItem = await comboGroupItemResponse.json();
+
+  const activateComboResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/combo-rules/${createdComboRule.comboRule.id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ isActive: true }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!activateComboResponse.ok) {
+    throw new Error(
+      `The structurally valid offline combo could not be activated: ${await activateComboResponse.text()}`,
+    );
+  }
+
+  const activeStructureMutationResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/combo-group-items/${createdComboGroupItem.item.id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ extraPriceCents: 100 }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (activeStructureMutationResponse.status !== 409) {
+    throw new Error(
+      'An active combo allowed its group structure to be modified.',
+    );
+  }
+
+  const deactivateComboResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/combo-rules/${createdComboRule.comboRule.id}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ isActive: false }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!deactivateComboResponse.ok) {
+    throw new Error('The offline combo could not be deactivated.');
+  }
+
+  const deleteComboItemResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/combo-group-items/${createdComboGroupItem.item.id}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localAuth.token}` },
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  const deleteComboGroupResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/catalog/combo-groups/${createdComboGroup.group.id}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localAuth.token}` },
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!deleteComboItemResponse.ok || !deleteComboGroupResponse.ok) {
+    throw new Error(
+      'The inactive offline combo structure could not be removed.',
+    );
   }
 
   const orderResponse = await fetch(
@@ -341,6 +765,95 @@ async function main() {
     );
   }
   const createdOrder = await orderResponse.json();
+
+  const orderItemResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/orders/${createdOrder.order.id}/items`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        menuItemId: seededCatalogItem.id,
+        quantity: 1,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!orderItemResponse.ok) {
+    throw new Error(
+      `The offline order item could not be created: ${await orderItemResponse.text()}`,
+    );
+  }
+
+  const kitchenSendResponse = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/orders/${createdOrder.order.id}/commands`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'send_to_kitchen',
+        idempotencyKey: createAcceptanceUuidV7(),
+        allergyAcknowledged: false,
+        staffUserId: users.users[0].id,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!kitchenSendResponse.ok) {
+    throw new Error(
+      `The offline kitchen ticket could not be created: ${await kitchenSendResponse.text()}`,
+    );
+  }
+  const kitchenSend = await kitchenSendResponse.json();
+
+  const unauthorizedPrintQueue = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/print-jobs`,
+    { signal: AbortSignal.timeout(5_000) },
+  );
+  if (unauthorizedPrintQueue.status !== 401) {
+    throw new Error('The local print queue was readable without a session.');
+  }
+
+  const pendingPrintQueue = await fetch(
+    `http://127.0.0.1:${siteAgentPort}/api/v1/print-jobs?status=pending`,
+    {
+      headers: { Authorization: `Bearer ${localAuth.token}` },
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  const pendingPrintJobs = await pendingPrintQueue.json();
+  if (
+    !pendingPrintQueue.ok ||
+    !pendingPrintJobs.printJobs.some(
+      (job) =>
+        job.id === kitchenSend.printJob.id && job.summary.itemCount === 1,
+    )
+  ) {
+    throw new Error('The kitchen ticket was not visible in the local queue.');
+  }
+
+  const printJobCommandUrl = `http://127.0.0.1:${siteAgentPort}/api/v1/print-jobs/${kitchenSend.printJob.id}/commands`;
+  for (const command of [
+    { action: 'mark_printing' },
+    { action: 'mark_failed', errorMessage: 'Offline acceptance failure' },
+    { action: 'retry' },
+    { action: 'mark_printing' },
+    { action: 'mark_printed' },
+  ]) {
+    const commandResponse = await fetch(printJobCommandUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localAuth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(command),
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!commandResponse.ok) {
+      throw new Error(
+        `Print command ${command.action} failed: ${await commandResponse.text()}`,
+      );
+    }
+  }
 
   console.log(
     'Starting the POS with an intentionally unavailable Internet probe...',
@@ -375,6 +888,15 @@ async function main() {
         siteAgent: agentHealth.status,
         siteAgentDatabase: agentHealth.database,
         localUsers: users.users.length,
+        localManagementRole: localSession.session.user.role,
+        localUserManagement:
+          'create, reset PIN, revoke, role guard, last-admin guard',
+        localCatalogManagement:
+          'create category/item, availability, category visibility',
+        localComboManagement:
+          'create structure, activate, active-write guard, deactivate, remove structure',
+        localPrintQueue:
+          'authenticated list, printing, failure, retry, printed',
         catalogItems: catalogItemCount,
         createdOrderId: createdOrder.order.id,
         pos: posHealth.status,

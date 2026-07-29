@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./local-auth-crypto": "./src/local-auth-crypto.ts",
     "./seed": "./src/seed.ts",
     "./schema": "./src/schema/index.ts"
   },

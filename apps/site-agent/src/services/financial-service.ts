@@ -765,8 +765,22 @@ function toPrintJob(job: typeof printJobs.$inferSelect) {
     checkId: job.checkId,
     paymentId: job.paymentId,
     type: job.jobType,
+    source: job.source,
     status: job.status,
     printerName: job.printerName,
+    summary: {
+      orderNumber:
+        typeof job.payload.orderNumber === 'string'
+          ? job.payload.orderNumber
+          : null,
+      tableLabel:
+        typeof job.payload.tableLabel === 'string'
+          ? job.payload.tableLabel
+          : null,
+      itemCount: Array.isArray(job.payload.items)
+        ? job.payload.items.length
+        : 0,
+    },
     errorMessage: job.errorMessage,
     createdAt: job.createdAt.toISOString(),
     printedAt: job.printedAt?.toISOString() ?? null,

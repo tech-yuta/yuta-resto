@@ -40,33 +40,39 @@ export interface ButtonProps
   loading?: boolean;
 }
 
-export function Button({
-  asChild = false,
-  className,
-  disabled,
-  fullWidth,
-  loading,
-  variant,
-  size,
-  children,
-  ...props
-}: ButtonProps) {
-  const Comp = asChild ? Slot : 'button';
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    {
+      asChild = false,
+      className,
+      disabled,
+      fullWidth,
+      loading,
+      variant,
+      size,
+      children,
+      ...props
+    },
+    ref,
+  ) {
+    const Comp = asChild ? Slot : 'button';
 
-  return (
-    <Comp
-      className={cn(
-        buttonVariants({ variant, size }),
-        fullWidth && 'w-full',
-        className,
-      )}
-      data-loading={loading ? '' : undefined}
-      disabled={disabled || loading}
-      {...props}
-    >
-      {children}
-    </Comp>
-  );
-}
+    return (
+      <Comp
+        ref={ref}
+        className={cn(
+          buttonVariants({ variant, size }),
+          fullWidth && 'w-full',
+          className,
+        )}
+        data-loading={loading ? '' : undefined}
+        disabled={disabled || loading}
+        {...props}
+      >
+        {children}
+      </Comp>
+    );
+  },
+);
 
 export { buttonVariants };
