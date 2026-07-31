@@ -145,7 +145,7 @@ export function MarketingHeader() {
                 <span className="sr-only">Ouvrir le menu</span>
               </summary>
               <div className="absolute right-0 top-12 max-h-[calc(100vh-5rem)] w-80 overflow-y-auto rounded-xl border border-border-default bg-surface p-3 shadow-lg">
-                <p className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-[0.12em] text-muted">
+                <p className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-[0.12em] text-secondary">
                   Solutions
                 </p>
                 <div className="grid gap-1">
@@ -255,25 +255,25 @@ export function MarketingFooter() {
         <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[220px_1fr_1fr_0.9fr_0.85fr_1.15fr]">
           <div>
             <Brand />
-            <p className="mt-3 max-w-[220px] text-[13px] leading-5 text-secondary">
-              YUTA aide les restaurateurs à centraliser leur activité, gagner
-              du temps et mieux piloter leur établissement.
+            <p className="mt-3 max-w-[220px] text-[15px] leading-6 text-secondary">
+              YUTA aide les restaurateurs à centraliser leur activité, gagner du
+              temps et mieux piloter leur établissement.
             </p>
             <a
-              href="mailto:tampm@yutapro.fr"
-              className={`mt-3 inline-flex items-center gap-2 text-[13px] font-medium text-secondary ${focusLinkClass}`}
+              href="mailto:contact@yutapro.fr"
+              className={`mt-3 inline-flex items-center gap-2 text-[15px] font-medium text-secondary ${focusLinkClass}`}
             >
               <Mail className="h-4 w-4" />
-              tampm@yutapro.fr
+              contact@yutapro.fr
             </a>
           </div>
 
           {footerGroups.map((group) => (
             <div key={group.title}>
-              <h2 className="text-[13px] font-bold text-primary">
+              <h2 className="text-[14px] font-bold text-primary">
                 {group.title}
               </h2>
-              <ul className="mt-2.5 grid gap-1.5 text-[13px] leading-5 text-secondary">
+              <ul className="mt-2.5 grid gap-1.5 text-[15px] leading-6 text-secondary">
                 {group.links.map((link) => (
                   <li key={`${group.title}-${link.label}`}>
                     <Link href={link.href} className={focusLinkClass}>
@@ -286,9 +286,9 @@ export function MarketingFooter() {
           ))}
         </div>
 
-        <div className="mt-6 flex flex-col gap-2 border-t border-border-default pt-4 text-[12px] leading-5 text-muted sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-6 flex flex-col gap-2 border-t border-border-default pt-4 text-[13px] leading-5 text-secondary sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} YUTA — Tous droits réservés.</p>
-          <p>Conçu pour les restaurateurs · Hébergé en Europe</p>
+          <p>Projet pilote · Déployé sur Vercel</p>
         </div>
       </PublicContainer>
     </footer>
@@ -336,11 +336,7 @@ export function MarketingPage({
           Écrivez-nous pour toute question sur YUTA ou sur l’utilisation de vos
           données.
         </p>
-        <MarketingButton
-          asChild
-          variant="success"
-          className="mt-5 text-[15px]"
-        >
+        <MarketingButton asChild variant="success" className="mt-5 text-[15px]">
           <Link href="/contact">
             Contacter YUTA
             <ArrowRight className="h-4 w-4" />

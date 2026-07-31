@@ -72,7 +72,7 @@ export default function PrivacyPage() {
           Les données sont conservées pendant la durée nécessaire au
           fonctionnement du compte et au respect des obligations applicables. La
           déconnexion Google met fin aux nouveaux accès. Une demande de
-          suppression peut être envoyée à tampm@yutapro.fr et sera traitée en
+          suppression peut être envoyée à privacy@yutapro.fr et sera traitée en
           tenant compte des sauvegardes, journaux de sécurité et obligations
           légales applicables.
         </p>
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
         <p>
           Vous pouvez demander l’accès, la rectification ou la suppression des
           données vous concernant, ainsi que retirer une autorisation Google à
-          tout moment. Pour exercer ces choix, contactez tampm@yutapro.fr.
+          tout moment. Pour exercer ces choix, contactez privacy@yutapro.fr.
         </p>
       </InformationSection>
     </MarketingPage>

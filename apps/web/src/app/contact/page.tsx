@@ -33,10 +33,10 @@ export default function ContactPage() {
         <p>
           Adresse e-mail :{' '}
           <a
-            href="mailto:tampm@yutapro.fr"
+            href="mailto:contact@yutapro.fr"
             className="font-semibold text-status-success underline underline-offset-4"
           >
-            tampm@yutapro.fr
+            contact@yutapro.fr
           </a>
         </p>
         <p>

@@ -14,8 +14,8 @@ public feedback routes.
   presenting it as the whole YUTA product.
 - `/integrations/google-business-profile` explains Google Business Profile
   authorization, data use, reply validation, and revocation.
-- `/integrations/google` redirects to the canonical Google Business Profile
-  integration route.
+- `/integrations/google` permanently redirects to the canonical Google
+  Business Profile integration route.
 - `/pour-les-restaurateurs` describes the modular product approach for
   independent restaurant operators.
 - `/a-propos` explains YUTA's field-led product approach.
@@ -69,9 +69,16 @@ Public pages use a hybrid full-width layout:
 - Headings use weight 600–700 with slightly negative letter spacing.
 - Body copy uses weight 400 with generous line height.
 - Public body text must be at least 15px and should normally be 16px.
+- Compact navigation labels, metadata, badges, legal disclaimers, and text
+  inside illustrative product previews may use 13–14px when they are not the
+  primary reading content.
 - Legal article copy uses 16px text with approximately 28px line height.
 - Avoid light gray text for essential, legal, privacy, and data-control
   information.
+
+Homepage photography is stored as right-sized WebP assets. New marketing
+photography must use a responsive `next/image` `sizes` value and should not
+ship as a multi-megabyte source PNG.
 
 ## Marketing buttons
 
@@ -98,7 +105,15 @@ Public pages use a hybrid full-width layout:
 
 ## Public contact and application link
 
-The public contact address is `tampm@yutapro.fr`.
+The public role addresses are active Google Workspace aliases:
+
+- `contact@yutapro.fr` for general and legal contact;
+- `support@yutapro.fr` for product and Google integration support;
+- `privacy@yutapro.fr` for privacy, revocation, and deletion requests.
+
+They currently route to the primary operator mailbox while YUTA has a single
+operator. The primary mailbox must not replace these role addresses in public
+content.
 
 Set the admin application URL per environment:
 
@@ -114,8 +129,9 @@ Before using these pages in an OAuth or Business Profile API review:
 
 - publish them over HTTPS on a verified `yutapro.fr` hostname;
 - ensure every legal and data-management link is reachable without login;
-- replace incomplete legal publisher and hosting details with the final
-  registered business information;
+- replace the current pilot-project publisher details with the registered
+  business information after YUTA is incorporated;
+- add the publisher's required postal address before commercial launch;
 - keep the Google integration description aligned with the implemented scopes
   and data lifecycle;
 - retain the statement that YUTA is independent from Google.

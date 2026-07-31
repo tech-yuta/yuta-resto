@@ -48,7 +48,7 @@ export default function DataManagementPage() {
       >
         <p>
           Envoyez votre demande depuis l’adresse associée à votre compte YUTA à
-          tampm@yutapro.fr. Indiquez l’organisation et les établissements
+          privacy@yutapro.fr. Indiquez l’organisation et les établissements
           concernés afin que l’équipe puisse vérifier votre autorité et traiter
           la demande en sécurité.
         </p>

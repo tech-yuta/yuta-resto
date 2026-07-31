@@ -78,7 +78,7 @@ export default function GoogleIntegrationPage() {
           Vous pouvez déconnecter Google depuis les paramètres YUTA ou révoquer
           l’autorisation depuis les paramètres de sécurité de votre compte
           Google. Vous pouvez également demander la suppression des données
-          synchronisées en écrivant à tampm@yutapro.fr.
+          synchronisées en écrivant à support@yutapro.fr.
         </p>
       </InformationSection>
     </MarketingPage>

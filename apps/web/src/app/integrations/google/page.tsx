@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 
 export default function LegacyGoogleIntegrationPage() {
-  redirect('/integrations/google-business-profile');
+  permanentRedirect('/integrations/google-business-profile');
 }

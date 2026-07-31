@@ -79,7 +79,7 @@ const organizationJsonLd = {
   },
   description:
     'YUTA développe une suite d’outils intelligents pour simplifier la gestion quotidienne des restaurants.',
-  email: 'tampm@yutapro.fr',
+  email: 'contact@yutapro.fr',
 };
 
 const websiteJsonLd = {
@@ -195,10 +195,9 @@ const dataPromises = [
 
 const sectionTitleClassName =
   'text-[22px] font-bold leading-[1.25] tracking-[-0.025em]';
-const sectionDescriptionClassName =
-  'text-[15px] leading-6 text-secondary';
+const sectionDescriptionClassName = 'text-[15px] leading-6 text-secondary';
 const cardTitleClassName = 'text-[15px] font-bold leading-5';
-const cardDescriptionClassName = 'text-[14px] leading-[1.55] text-secondary';
+const cardDescriptionClassName = 'text-[15px] leading-6 text-secondary';
 
 export default function HomePage() {
   return (
@@ -251,13 +250,9 @@ function SectionHeading({
           {eyebrow}
         </p>
       ) : null}
-      <h2 className={`mt-2 ${sectionTitleClassName}`}>
-        {title}
-      </h2>
+      <h2 className={`mt-2 ${sectionTitleClassName}`}>{title}</h2>
       {description ? (
-        <p className={`mt-3 ${sectionDescriptionClassName}`}>
-          {description}
-        </p>
+        <p className={`mt-3 ${sectionDescriptionClassName}`}>{description}</p>
       ) : null}
     </div>
   );
@@ -295,7 +290,7 @@ function HeroSection() {
               asChild
               variant="success"
               size="md"
-              className="whitespace-nowrap px-5 text-[14px]"
+              className="whitespace-nowrap px-5 text-[15px]"
             >
               <a href="#solutions">
                 Découvrir YUTA
@@ -306,12 +301,12 @@ function HeroSection() {
               asChild
               variant="outline"
               size="md"
-              className="whitespace-nowrap px-5 text-[14px]"
+              className="whitespace-nowrap px-5 text-[15px]"
             >
               <Link href="/contact?subject=demo">Demander une démo</Link>
             </MarketingButton>
           </div>
-          <div className="mt-7 grid gap-3 text-[13px] leading-5 text-secondary sm:grid-cols-[1.1fr_0.9fr_1.1fr] sm:gap-4">
+          <div className="mt-7 grid gap-3 text-[14px] leading-5 text-secondary sm:grid-cols-[1.1fr_0.9fr_1.1fr] sm:gap-4">
             <span className="flex items-center gap-2.5">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-status-success-soft">
                 <Utensils className="h-4 w-4 text-status-success" />
@@ -349,7 +344,7 @@ function HeroSection() {
                 className="flex min-h-16 items-center justify-center gap-3 bg-surface px-3 py-3"
               >
                 <Icon className="h-6 w-6 shrink-0 text-status-success" />
-                <span className="whitespace-nowrap text-[12px] font-medium text-secondary">
+                <span className="whitespace-nowrap text-[13px] font-medium text-secondary">
                   {item.label}
                 </span>
               </div>
@@ -415,7 +410,7 @@ function PlatformPreview() {
             />
             <span className="text-[15px] font-bold">YUTA</span>
           </div>
-          <figcaption className="rounded-full bg-surface-muted px-3 py-1 text-[12px] text-muted">
+          <figcaption className="rounded-full bg-surface-muted px-3 py-1 text-[13px] text-secondary">
             Aperçu de l’environnement YUTA — données d’illustration
           </figcaption>
         </div>
@@ -450,7 +445,7 @@ function PlatformPreview() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="font-bold">Établissement de démonstration</p>
-                <p className="mt-0.5 text-[13px] text-muted">
+                <p className="mt-0.5 text-[13px] text-secondary">
                   Vue d’ensemble du jour
                 </p>
               </div>
@@ -468,7 +463,7 @@ function PlatformPreview() {
                       <Icon className="h-4 w-4 shrink-0 text-status-success" />
                     </div>
                     <p className="mt-2 text-2xl font-bold">{item.value}</p>
-                    <p className="mt-1 text-[12px] font-semibold text-status-success">
+                    <p className="mt-1 text-[13px] font-semibold text-brand-700">
                       {item.helper}
                     </p>
                   </Card>
@@ -570,14 +565,14 @@ function SolutionPillarsSection() {
                   {pillar.modules.map((module) => (
                     <li
                       key={module}
-                      className="flex items-start gap-2 text-[14px] leading-[1.55] text-secondary"
+                      className="flex items-start gap-2 text-[15px] leading-6 text-secondary"
                     >
                       <ChevronRight className="mt-1 h-3 w-3 shrink-0 text-primary stroke-[2.5]" />
                       {module}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-auto flex items-center gap-2 pt-4 text-[11px] font-semibold text-muted">
+                <p className="mt-auto flex items-center gap-2 pt-4 text-[13px] font-semibold text-secondary">
                   <span
                     className={`h-2 w-2 rounded-full ${pillar.dotClassName}`}
                   />
@@ -589,7 +584,7 @@ function SolutionPillarsSection() {
         </div>
         <div className="mt-4 flex items-center justify-center gap-3 rounded-lg bg-surface-muted px-5 py-3">
           <Info className="h-4 w-4 shrink-0 text-status-success" />
-          <p className="text-[12px] leading-5 text-secondary">
+          <p className="text-[14px] leading-5 text-secondary">
             Les modules sont déployés progressivement. Activez uniquement ce
             dont vous avez besoin aujourd’hui.
           </p>
@@ -687,10 +682,7 @@ function ModularPlatformSection() {
   ];
 
   return (
-    <section
-      id="plateforme-modulaire"
-      className="w-full scroll-mt-24 py-7"
-    >
+    <section id="plateforme-modulaire" className="w-full scroll-mt-24 py-7">
       <PublicContainer>
         <h2 className={`text-center ${sectionTitleClassName}`}>
           Une plateforme qui s’adapte à votre établissement
@@ -893,10 +885,11 @@ function GoogleIntegrationSection() {
         <div className="grid gap-6 rounded-xl border border-brand-100 bg-gradient-to-r from-brand-50/40 via-surface to-brand-50/30 p-5 lg:grid-cols-[280px_minmax(0,1fr)_190px] lg:items-center lg:gap-6">
           <div className="relative mx-auto h-32 w-[280px]">
             <Image
-              src="/images/restaurant-integration.png"
+              src="/images/restaurant-integration.webp"
               alt="Équipe préparant le service dans un restaurant"
-              width={192}
-              height={120}
+              width={640}
+              height={364}
+              sizes="192px"
               className="absolute right-0 top-1/2 h-[118px] w-48 -translate-y-1/2 rounded-l-xl rounded-r-[3rem] object-cover shadow-sm"
             />
             <div className="absolute left-0 top-1/2 z-10 grid h-28 w-28 -translate-y-1/2 place-items-center rounded-full border border-brand-100 bg-surface shadow-md">
@@ -916,7 +909,7 @@ function GoogleIntegrationSection() {
             <h2 className={sectionTitleClassName}>
               Connectez les établissements que vous gérez sur Google
             </h2>
-            <ul className="mt-4 grid gap-2 text-[14px] leading-5 text-secondary">
+            <ul className="mt-4 grid gap-2 text-[15px] leading-6 text-secondary">
               {[
                 'Connexion sécurisée via Google OAuth 2.0',
                 'Sélection des établissements autorisés',
@@ -934,7 +927,7 @@ function GoogleIntegrationSection() {
           <MarketingButton
             asChild
             variant="outline"
-            className="w-full justify-between border-status-success px-4 text-left text-[13px] leading-5 text-status-success lg:min-h-16 lg:w-[190px]"
+            className="w-full justify-between border-status-success px-4 text-left text-[14px] leading-5 text-status-success lg:min-h-16 lg:w-[190px]"
           >
             <Link href="/integrations/google-business-profile">
               <span>Comprendre l’intégration Google Business Profile</span>
@@ -942,7 +935,7 @@ function GoogleIntegrationSection() {
             </Link>
           </MarketingButton>
         </div>
-        <p className="mt-3 text-center text-[13px] leading-5 text-muted">
+        <p className="mt-3 text-center text-[14px] leading-5 text-secondary">
           Google Business Profile est une marque de Google LLC. YUTA est un
           service indépendant et n’est ni affilié à, ni approuvé par Google.
         </p>
@@ -957,10 +950,11 @@ function FieldTestedSection() {
       <PublicContainer>
         <div className="grid overflow-hidden rounded-xl border border-brand-100 bg-gradient-to-r from-brand-50/30 via-surface to-surface lg:grid-cols-[0.82fr_1.18fr] lg:items-stretch">
           <Image
-            src="/images/restaurant-team-service.png"
+            src="/images/restaurant-team-service.webp"
             alt="Équipe de restaurant travaillant pendant le service"
-            width={720}
-            height={420}
+            width={1200}
+            height={600}
+            sizes="(min-width: 1024px) 42vw, 100vw"
             className="h-full min-h-52 w-full object-cover lg:rounded-r-2xl"
           />
           <div className="p-6 lg:px-8 lg:py-7">
@@ -969,8 +963,8 @@ function FieldTestedSection() {
             </h2>
             <p className={`mt-3 ${sectionDescriptionClassName}`}>
               YUTA est développé avec des restaurateurs de tous types. Chaque
-              fonctionnalité répond à un besoin concret du quotidien en salle
-              et en cuisine.
+              fonctionnalité répond à un besoin concret du quotidien en salle et
+              en cuisine.
             </p>
             <div className="mt-6 grid gap-6 sm:grid-cols-3">
               {[
@@ -993,7 +987,7 @@ function FieldTestedSection() {
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-50">
                       <Icon className="h-5 w-5 text-status-success stroke-[1.9]" />
                     </span>
-                    <p className="pt-0.5 text-[13px] font-semibold leading-5">
+                    <p className="pt-0.5 text-[14px] font-semibold leading-5">
                       {item.title}
                     </p>
                   </div>
@@ -1058,7 +1052,7 @@ function FinalCtaSection() {
               <h2 className="max-w-md text-[18px] font-bold leading-[1.25] tracking-[-0.02em]">
                 Un seul environnement pour mieux gérer votre restaurant
               </h2>
-              <p className="mt-1.5 text-[13px] leading-5 text-brand-100">
+              <p className="mt-1.5 text-[15px] leading-6 text-brand-100">
                 Centralisez, organisez, automatisez. Avec YUTA, restez concentré
                 sur l’essentiel : vos clients et votre cuisine.
               </p>
@@ -1068,7 +1062,7 @@ function FinalCtaSection() {
                 asChild
                 variant="secondary"
                 size="md"
-                className="px-5 text-[14px]"
+                className="px-5 text-[15px]"
               >
                 <Link href="/contact?subject=demo">
                   Demander une démonstration
@@ -1079,7 +1073,7 @@ function FinalCtaSection() {
                 asChild
                 variant="outline"
                 size="md"
-                className="border-brand-200 px-5 text-[14px] text-inverse"
+                className="border-brand-200 px-5 text-[15px] text-inverse"
               >
                 <Link href="/contact">Nous contacter</Link>
               </MarketingButton>

@@ -33,15 +33,33 @@ export default function LegalPage() {
       ]}
     >
       <InformationSection id="editeur" title="Éditeur">
-        <p>Nom du service et de la publication : YUTA.</p>
-        <p>Contact du responsable de publication : tampm@yutapro.fr.</p>
+        <p>
+          Nom du site et du projet : YUTA. YUTA est actuellement un projet
+          pilote exploité à titre personnel et n’est pas encore constitué en
+          entreprise.
+        </p>
+        <p>Éditeur et responsable de la publication : Phan Minh Tam.</p>
+        <p>Contact : contact@yutapro.fr.</p>
+        <p>
+          L’adresse postale de l’éditeur sera ajoutée avant l’ouverture
+          commerciale du service.
+        </p>
       </InformationSection>
 
       <InformationSection id="hebergement" title="Hébergement">
         <p>
-          Le service est exploité sur une infrastructure hébergée en Europe. Les
-          coordonnées contractuelles complètes de l’hébergeur seront ajoutées
-          avant l’ouverture commerciale du service.
+          Le site yutapro.fr est déployé sur les services de Vercel Inc., 440 N
+          Barranca Ave #4133, Covina, CA 91723, États-Unis.
+        </p>
+        <p>
+          Site de l’hébergeur :{' '}
+          <a
+            href="https://vercel.com"
+            className="font-semibold text-brand-700 underline underline-offset-4"
+          >
+            vercel.com
+          </a>
+          .
         </p>
       </InformationSection>
 
