@@ -5,7 +5,7 @@ This guide describes how to use the current YuTa POS MVP for internal restaurant
 The app UI is in French. This documentation is in English to match the repository convention.
 
 The POS runtime uses the local `site-agent` API and db-pos database. Deprecated
-POS management pages in cloud admin are intentionally omitted from this guide.
+POS management pages in the cloud back-office are intentionally omitted from this guide.
 Staff, menu/catalog, combo, printer, and operational-report management belong
 to a local UI backed by `site-agent`.
 
@@ -464,7 +464,7 @@ Use the page-level `Annuler le partage` action to return to full-order payment w
 ## Local POS Staff Management
 
 This workflow belongs to the local POS management UI backed by `site-agent`.
-It must not be exposed by the cloud `apps/admin` application. Open
+It must not be exposed by the cloud `apps/backoffice` application. Open
 `/management`, select an active administrator or manager, and enter the local
 PIN. The development seed uses PIN `1234` for `YuTa Admin`; override seed PINs
 through the guarded local environment before a real restaurant installation.
@@ -704,7 +704,7 @@ packages/core
 packages/ui
 ```
 
-Cloud admin does not manage POS users, menu/catalog, printers, orders,
+The cloud back-office does not manage POS users, menu/catalog, printers, orders,
 payments, or operational reports. Those workflows belong to a local UI backed
 by `site-agent`.
 

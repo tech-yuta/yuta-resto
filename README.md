@@ -6,8 +6,10 @@ TypeScript, Tailwind CSS, and shared workspace packages.
 ## Workspace
 
 - `apps/web` - public YuTa website and product landing page for restaurants.
-- `apps/admin` - cloud SaaS administration for organizations,
+- `apps/backoffice` - restaurant customer back-office for organizations,
   establishments, reputation, reservations, and cloud configuration.
+- `apps/platform-admin` - reserved name for the future internal YUTA
+  administration application; it is not implemented yet.
 - `apps/yuta-pos` - local-only restaurant POS client for orders, payments,
   tables, and service workflows.
 - `apps/site-agent` - local API and persistence boundary for the POS; realtime,
@@ -60,7 +62,7 @@ requirements are documented in `docs/PUBLIC_WEBSITE.md`.
 Useful app scripts:
 
 ```bash
-pnpm dev:admin
+pnpm dev:backoffice
 pnpm dev:pos
 pnpm dev:site-agent
 pnpm dev:display

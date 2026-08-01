@@ -21,7 +21,7 @@ Current applications:
 
 ```text
 apps/
-├── admin
+├── backoffice
 ├── web
 ├── yuta-display
 └── yuta-pos

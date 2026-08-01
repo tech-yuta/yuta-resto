@@ -3,7 +3,7 @@
 **Status:** Implementation-ready specification  
 **Repository:** `YUTA-RESTO` pnpm workspace  
 **Target package path:** `packages/contracts`  
-**Consumers:** `apps/admin`, `apps/web`, `apps/yuta-pos`,
+**Consumers:** `apps/backoffice`, `apps/web`, `apps/yuta-pos`,
 `apps/yuta-display`, `apps/site-agent`, and future cloud workers
 
 The database/runtime boundaries in
@@ -374,7 +374,7 @@ Do not duplicate these literal values in applications.
 
 ### 8.3 Reservation response
 
-Public and admin responses may differ. Avoid exposing internal notes in a public response.
+Public and back-office responses may differ. Avoid exposing internal notes in a public response.
 
 ```ts
 export const publicReservationResponseSchema = z.object({
@@ -387,7 +387,7 @@ export const publicReservationResponseSchema = z.object({
 });
 ```
 
-If admin needs more fields, define a separate `adminReservationResponseSchema` rather than widening the public schema.
+If the back-office needs more fields, define a separate `adminReservationResponseSchema` rather than widening the public schema.
 
 ---
 
@@ -650,7 +650,7 @@ Initial migration priority:
 ```text
 1. Orders shared by yuta-pos and yuta-display
 2. Common API errors
-3. Reservations shared by web and admin
+3. Reservations shared by web and back-office
 4. Sync/event contracts
 ```
 
@@ -664,7 +664,7 @@ The first implementation is complete when:
 - It imports no YUTA application or database package.
 - Order statuses are no longer duplicated between POS and display.
 - At least one order input and one kitchen event are runtime-validated.
-- At least one reservation input is shared by web and admin/API boundary.
+- At least one reservation input is shared by web and the back-office/API boundary.
 - All exported TypeScript types are inferred from Zod schemas.
 - Tests cover valid and invalid payloads.
 - All current applications still build.

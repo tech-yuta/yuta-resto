@@ -2,7 +2,7 @@
 
 > **Product-scope reference; legacy architecture superseded.** Business and UX
 > requirements in this document remain useful, but all references to shared
-> `packages/db`, cloud admin POS management, database deployment, and future
+> `packages/db`, cloud back-office POS management, database deployment, and future
 > cloud synchronization are superseded by
 > `docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`, `docs/YUTA_POS.md`, and
 > `docs/POS_OFFLINE_STRATEGY.md`.
@@ -23,7 +23,7 @@ Use:
 
 ```txt
 apps/yuta-pos       POS, kitchen workflow, payments, and split payment MVP
-apps/admin          Existing admin dashboard for back-office POS management
+apps/backoffice     Existing restaurant back-office for POS management
 packages/db         Shared database package for YuTa ecosystem apps
 packages/core       Shared business logic where appropriate
 packages/ui         Shared UI component library (@yuta/ui)
@@ -695,7 +695,7 @@ Use `@yuta/ui` components and YuTa design tokens.
 
 ## 13. Admin MVP
 
-Use the existing `apps/admin` app for back-office POS management:
+Use the existing `apps/backoffice` app for back-office POS management:
 
 ```txt
 Manage menu categories
@@ -750,7 +750,7 @@ Recommended order:
 9. Build POS order UI
 10. Build kitchen screen inside yuta-pos
 11. Build payment and split screens
-12. Add admin menu/combos screens to apps/admin
+12. Add back-office menu/combos screens to apps/backoffice
 13. Add print job mock workflow
 14. Add unit tests
 15. Add Docker Compose following docs/DEPLOYMENT.md

@@ -2,7 +2,7 @@
 
 Use this checklist to stabilize the POS MVP before adding larger features.
 
-This checklist targets the post-reset local architecture. Cloud `apps/admin`
+This checklist targets the post-reset local architecture. Cloud `apps/backoffice`
 must not be used for POS staff, menu/catalog, combo, printer, order, payment,
 or operational-report QA.
 

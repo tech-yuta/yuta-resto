@@ -17,7 +17,7 @@ YuTa has separate cloud and restaurant-local runtime families.
 
 ```text
 apps/web
-apps/admin
+apps/backoffice
 optional cloud worker
         |
 packages/db-cloud
@@ -33,12 +33,12 @@ Cloud must contain no POS operational tables.
 
 ### Vercel Git deployment policy
 
-The Vercel projects for `apps/admin` and `apps/web` keep their GitHub
+The Vercel projects for `apps/backoffice` and `apps/web` keep their GitHub
 repository connection, but automatic deployments from commits are disabled.
 Each Vercel project must use its application folder as the Root Directory:
 
 ```text
-apps/admin
+apps/backoffice
 apps/web
 ```
 
@@ -46,6 +46,24 @@ Both folders contain a `vercel.json` with
 `git.deploymentEnabled: false`. Deploy these applications manually when a
 release is ready. Do not remove this setting unless automatic preview and
 production deployments are intentionally re-enabled.
+
+The existing restaurant application must keep a single Vercel project with
+these settings:
+
+```text
+Project name:   yuta-backoffice
+Root Directory: apps/backoffice
+Domain:         app.yutapro.fr
+```
+
+`admin.yutapro.fr` is reserved for the future `apps/platform-admin` application
+and must not be attached to the restaurant back-office. Set
+`NEXT_PUBLIC_APP_URL=https://app.yutapro.fr` for the back-office and
+`NEXT_PUBLIC_BACKOFFICE_URL=https://app.yutapro.fr` for links from `apps/web`.
+The Google Business Profile OAuth callback is
+`https://app.yutapro.fr/api/reputation/google/oauth/callback`. Back-office
+session cookies remain host-only; do not set a shared `.yutapro.fr` cookie
+domain.
 
 ### Restaurant local
 
@@ -246,7 +264,7 @@ no database credential, legacy print worker, or shared-database migration
 service. Deploy `site-agent` and the one-shot `@yuta/db-pos` migration service
 as separate local services.
 
-Cloud admin must not expose local menu/catalog, printer, POS-user, order,
+The cloud back-office must not expose local menu/catalog, printer, POS-user, order,
 payment, or operational-report workflows.
 
 ## Display deployment requirements

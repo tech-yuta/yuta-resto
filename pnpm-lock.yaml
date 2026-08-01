@@ -12,7 +12,7 @@ importers:
         specifier: ^3.8.4
         version: 3.8.4
 
-  apps/admin:
+  apps/backoffice:
     dependencies:
       '@yuta/auth':
         specifier: workspace:*

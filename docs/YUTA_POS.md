@@ -235,7 +235,7 @@ snapshots; physical table maps and printer configuration remain deferred until
 a real hardware transport is selected. The authenticated `/api/v1/print-jobs`
 resource is the implemented local queue boundary.
 
-POS setup and reporting are local workflows, not cloud admin workflows:
+POS setup and reporting are local workflows, not cloud back-office workflows:
 
 ```txt
 Local POS users and PIN roles
@@ -246,7 +246,7 @@ Daily orders and payments
 ```
 
 These workflows must be implemented in a local UI backed by `site-agent`.
-They must be removed from `apps/admin`.
+They must be removed from `apps/backoffice`.
 
 Combo rules support two pricing modes:
 

@@ -69,8 +69,8 @@ function syncEnvFile(relativePath, input) {
   console.log(`Updated ${relativePath}`);
 }
 
-const adminEnv = readEnv('apps/admin/.env.local');
-const existingAuthSecret = adminEnv.values.get('AUTH_SECRET');
+const backofficeEnv = readEnv('apps/backoffice/.env.local');
+const existingAuthSecret = backofficeEnv.values.get('AUTH_SECRET');
 const authSecret =
   existingAuthSecret && existingAuthSecret.length >= 32
     ? existingAuthSecret
@@ -83,25 +83,25 @@ const feedbackSalt =
     ? existingFeedbackSalt
     : randomBytes(32).toString('hex');
 
-syncEnvFile('apps/admin/.env.local', {
-  remove: ['DATABASE_URL', 'DISABLE_AUTH'],
+syncEnvFile('apps/backoffice/.env.local', {
+  remove: ['DATABASE_URL', 'DISABLE_AUTH', 'NEXT_PUBLIC_ADMIN_URL'],
   values: {
     CLOUD_DATABASE_URL:
       'postgres://yuta_cloud:yuta_cloud@localhost:55431/yuta_cloud',
     CLOUD_DATABASE_SSL: 'false',
     AUTH_SECRET: authSecret,
-    NEXT_PUBLIC_ADMIN_URL: 'http://localhost:3001',
+    NEXT_PUBLIC_APP_URL: 'http://localhost:3001',
   },
 });
 
 syncEnvFile('apps/web/.env.local', {
-  remove: ['DATABASE_URL'],
+  remove: ['DATABASE_URL', 'NEXT_PUBLIC_ADMIN_URL'],
   values: {
     CLOUD_DATABASE_URL:
       'postgres://yuta_cloud:yuta_cloud@localhost:55431/yuta_cloud',
     CLOUD_DATABASE_SSL: 'false',
     PUBLIC_FEEDBACK_IP_HASH_SALT: feedbackSalt,
-    NEXT_PUBLIC_ADMIN_URL: 'http://localhost:3001',
+    NEXT_PUBLIC_BACKOFFICE_URL: 'http://localhost:3001',
   },
 });
 

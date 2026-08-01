@@ -33,15 +33,15 @@ Date: 2026-07-19
 - The proposed `submitted` / `in_preparation` names were incompatible with the
   implemented POS lifecycle. Per product direction, the current `sent` /
   `preparing` semantics were preserved.
-- Admin reservation and order screens currently contain presentation/mock data,
+- Back-office reservation and order screens currently contain presentation/mock data,
   not shared transport DTOs, so they were not force-migrated.
 - `apps/yuta-display` is a separate signage product with its own database and no
   existing POS kitchen-event consumer. No artificial event integration was
   added.
-- Admin now uses a database-backed HttpOnly session and connects its verified
+- The back-office now uses a database-backed HttpOnly session and connects its verified
   user membership to `resolveAuthenticatedTenant`. The POS staff-selection
   cookie remains deliberately separate and is not authentication.
-- Admin users can switch between their active establishment memberships.
+- Back-office users can switch between their active establishment memberships.
   Owners can manage organization-wide establishment memberships from
   `/settings/users`; administrators are limited to the selected establishment.
   Membership mutations are audited and suspension revokes matching sessions.
@@ -49,12 +49,12 @@ Date: 2026-07-19
 ## Remaining work
 
 - Integrate authenticated tenant resolution into POS after its authentication
-  model is defined. Admin integration is complete.
+  model is defined. Back-office integration is complete.
 - Add `organization_id` / `establishment_id` ownership and explicit context to
   existing POS order, menu, payment, print, and reporting repositories. They
   remain single-tenant and were left unchanged to avoid changing payment and
   kitchen behavior prematurely.
-- Define a real reservations persistence/API flow before replacing the admin
+- Define a real reservations persistence/API flow before replacing the back-office
   reservation mock statuses.
 - Connect the kitchen event contract only when a real POS-to-display event
   transport exists.

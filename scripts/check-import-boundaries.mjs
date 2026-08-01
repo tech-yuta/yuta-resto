@@ -259,8 +259,8 @@ const boundaryRules = [
     forbiddenTokens: ['CLOUD_DATABASE_URL', 'POS_DATABASE_URL'],
   },
   {
-    name: 'admin-cloud-only',
-    roots: ['apps/admin'],
+    name: 'backoffice-cloud-only',
+    roots: ['apps/backoffice'],
     forbiddenModules: ['@yuta/db-pos', '@yuta/local-runtime'],
     forbiddenTokens: ['POS_DATABASE_URL', 'DISPLAY_DATABASE_URL'],
   },
@@ -329,7 +329,7 @@ function checkBoundaryRules() {
 
 function checkClientModules() {
   const clientRoots = [
-    'apps/admin/src',
+    'apps/backoffice/src',
     'apps/web/src',
     'apps/yuta-display/src',
     'apps/yuta-pos/src',

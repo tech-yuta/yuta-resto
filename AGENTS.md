@@ -5,7 +5,7 @@
 This is the YuTa internal restaurant tool monorepo.
 
 ```
-apps/admin          — Admin dashboard (port 3001)
+apps/backoffice     — Restaurant back-office (port 3001)
 apps/web            — Public web app (port 3000)
 apps/yuta-display   — Digital signage display (port 3002)
 apps/yuta-pos       — Local-only restaurant POS client
@@ -22,7 +22,7 @@ The legacy shared `packages/db` has been removed.
 The authoritative target architecture is
 `docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`.
 
-- `apps/admin` and server-side cloud features in `apps/web` use
+- `apps/backoffice` and server-side cloud features in `apps/web` use
   `packages/db-cloud`.
 - `apps/yuta-pos` accesses local operational data through `apps/site-agent`;
   `site-agent` is the runtime owner of `packages/db-pos`.
@@ -34,6 +34,8 @@ The authoritative target architecture is
   consumer needs the display schema or repositories.
 - Do not introduce a compatibility package that re-exports the new databases
   through `@yuta/db`.
+- The future internal YUTA administration application is reserved as
+  `apps/platform-admin`; do not use `apps/backoffice` for platform administration.
 
 ---
 

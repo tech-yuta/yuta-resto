@@ -31,7 +31,7 @@ The current architecture has:
 - 1 display migration;
 - one shared `DATABASE_URL` convention for cloud and POS;
 - direct `@yuta/db` references in:
-  - 22 admin TypeScript files;
+  - 22 back-office TypeScript files;
   - 4 web TypeScript files;
   - 14 POS TypeScript/config files;
   - 10 core source/test files.
@@ -95,9 +95,9 @@ database package, Drizzle, Zod transport schemas, environment loading, or
 filesystem access. The pure combo calculator remains in core and is consumed
 by `site-agent`.
 
-### 3.3 Cloud admin currently owns local POS surfaces
+### 3.3 Cloud back-office currently owns local POS surfaces
 
-The following cloud admin areas violate the approved runtime boundary:
+The following cloud back-office areas violate the approved runtime boundary:
 
 - `menu/**`;
 - `operations/orders/**`;
@@ -115,7 +115,7 @@ The cloud routes and server actions for `menu/**`, `operations/reports/**`,
 replacement local management screens remain a later site-agent-backed phase.
 
 `settings/users/**` is different: it manages cloud users and organization
-memberships and remains in cloud admin after it is decoupled from the shared
+memberships and remains in the cloud back-office after it is decoupled from the shared
 POS `users` table.
 
 Other currently placeholder operational areas, including stock and local staff
@@ -140,13 +140,13 @@ is implemented.
 
 | Current entity/table    | Current consumers                                                      | Target                | Action            | Notes                                                                                |
 | ----------------------- | ---------------------------------------------------------------------- | --------------------- | ----------------- | ------------------------------------------------------------------------------------ |
-| `organizations`         | Tenant adapters, auth, reputation, seed, admin switcher                | `db-cloud`            | Keep and rewrite  | Preserve `organization_id` terminology; use application-generated UUIDv7             |
-| `establishments`        | Tenant adapters, memberships, auth, reputation, admin                  | `db-cloud`            | Keep and rewrite  | Always verify parent `organization_id` in scoped operations                          |
+| `organizations`         | Tenant adapters, auth, reputation, seed, back-office switcher          | `db-cloud`            | Keep and rewrite  | Preserve `organization_id` terminology; use application-generated UUIDv7             |
+| `establishments`        | Tenant adapters, memberships, auth, reputation, back-office            | `db-cloud`            | Keep and rewrite  | Always verify parent `organization_id` in scoped operations                          |
 | `tenant_domains`        | Public tenant resolution, seed                                         | `db-cloud`            | Keep and rewrite  | Cloud-only hostname resolution                                                       |
 | `tenant_memberships`    | Auth, tenant resolution, cloud user management, reputation permissions | `db-cloud`            | Keep and rewrite  | Reference cloud users; prune POS-only roles                                          |
 | `tenant_entitlements`   | Tenant resolution, public reputation configuration, seed               | `db-cloud`            | Keep and rewrite  | Cloud SaaS feature access only                                                       |
 | `users`                 | Cloud auth/membership and local POS staff/orders                       | Split across both DBs | Split and rewrite | Create cloud `users` plus POS `local_users`; never share IDs as a runtime dependency |
-| `auth_sessions`         | Admin authentication, session revocation                               | `db-cloud`            | Keep and rewrite  | Reference cloud users only                                                           |
+| `auth_sessions`         | Back-office authentication, session revocation                         | `db-cloud`            | Keep and rewrite  | Reference cloud users only                                                           |
 | `password_reset_tokens` | Cloud password-reset repository                                        | `db-cloud`            | Keep and rewrite  | Token value remains a random secret, not UUIDv7                                      |
 | `auth_login_attempts`   | Cloud login rate limiting                                              | `db-cloud`            | Keep and rewrite  | Cloud authentication only                                                            |
 | `auth_audit_events`     | Cloud membership/user mutations                                        | `db-cloud`            | Keep and rewrite  | Reference cloud users and organization scope                                         |
@@ -155,12 +155,12 @@ is implemented.
 
 | Current entity/table       | Current consumers                                   | Target                   | Action           | Notes                                                    |
 | -------------------------- | --------------------------------------------------- | ------------------------ | ---------------- | -------------------------------------------------------- |
-| `feedback_items`           | Public feedback API, admin inbox/detail, seed/tests | `db-cloud`               | Keep and rewrite | Require `organization_id` and `establishment_id` scoping |
+| `feedback_items`           | Public feedback API, back-office inbox/detail, seed/tests | `db-cloud`               | Keep and rewrite | Require `organization_id` and `establishment_id` scoping |
 | `feedback_replies`         | Manual reply drafts/detail, seed                    | `db-cloud`               | Keep and rewrite | Manual draft workflow is implemented                     |
 | `feedback_analyses`        | Seed and read-only detail helper                    | None in initial baseline | Delete/defer     | AI provider/workflow is not implemented                  |
 | `direct_customer_feedback` | Public submission and rate limiting                 | `db-cloud`               | Keep and rewrite | Current public feedback flow                             |
 | `feedback_incidents`       | Seed, inbox filter, read-only detail                | None in initial baseline | Delete/defer     | Incident creation/lifecycle is not implemented           |
-| `feedback_internal_notes`  | Admin note creation/detail                          | `db-cloud`               | Keep and rewrite | Current internal-note workflow                           |
+| `feedback_internal_notes`  | Back-office note creation/detail                     | `db-cloud`               | Keep and rewrite | Current internal-note workflow                           |
 | `reputation_connectors`    | Google OAuth connection and location selection      | `db-cloud`               | Keep and rewrite | Encrypt refresh credentials at application layer         |
 | `reputation_settings`      | Public feedback configuration and seed              | `db-cloud`               | Keep and rewrite | Current establishment configuration                      |
 | `reputation_audit_events`  | Reputation and connector mutations                  | `db-cloud`               | Keep and rewrite | Current audit trail                                      |
@@ -221,13 +221,13 @@ initial baseline.
 
 | Consumer                             | Current dependency                                  | Target action                                                                   |
 | ------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `apps/admin` cloud auth              | `@yuta/db` auth/client/tenant adapters              | Move to `@yuta/db-cloud`; keep server-only                                      |
-| `apps/admin` reputation/integrations | `@yuta/db` repositories/client                      | Move to tenant-scoped `@yuta/db-cloud` repositories                             |
-| `apps/admin/settings/users`          | Shared users plus memberships                       | Keep cloud membership management; use cloud users only                          |
-| `apps/admin/menu`                    | POS schema and core DB services                     | Remove from cloud; rebuild as local UI through `site-agent`                     |
-| `apps/admin/operations/*` POS areas  | POS orders/payments or placeholders                 | Remove orders/payments/reports/tables from cloud                                |
-| `apps/admin/settings/printers`       | POS print service                                   | Remove from cloud; rebuild locally                                              |
-| `apps/admin/team/staff`              | Shared users and user service                       | Remove from cloud; rebuild local POS user management                            |
+| `apps/backoffice` cloud auth              | `@yuta/db` auth/client/tenant adapters              | Move to `@yuta/db-cloud`; keep server-only                                      |
+| `apps/backoffice` reputation/integrations | `@yuta/db` repositories/client                      | Move to tenant-scoped `@yuta/db-cloud` repositories                             |
+| `apps/backoffice/settings/users`          | Shared users plus memberships                       | Keep cloud membership management; use cloud users only                          |
+| `apps/backoffice/menu`                    | POS schema and core DB services                     | Remove from cloud; rebuild as local UI through `site-agent`                     |
+| `apps/backoffice/operations/*` POS areas  | POS orders/payments or placeholders                 | Remove orders/payments/reports/tables from cloud                                |
+| `apps/backoffice/settings/printers`       | POS print service                                   | Remove from cloud; rebuild locally                                              |
+| `apps/backoffice/team/staff`              | Shared users and user service                       | Remove from cloud; rebuild local POS user management                            |
 | `apps/web` public feedback           | `@yuta/db` repositories/client/adapters             | Move to server-only `@yuta/db-cloud`                                            |
 | `apps/yuta-pos`                      | Direct DB client/schema and DB-backed core services | Replace with local HTTP/WebSocket calls to `site-agent`                         |
 | `packages/core`                      | Drizzle, DB client/schema, filesystem/env           | Retain pure rules only; move runtime services to `site-agent`                   |
@@ -267,7 +267,7 @@ initial baseline.
 | `packages/db/drizzle.config.ts`         | `DATABASE_URL`                | Split into `CLOUD_DATABASE_URL` and `POS_DATABASE_URL` configs  |
 | `packages/db/.env.example`              | `DATABASE_URL`                | Replace with package-specific examples                          |
 | `packages/db` integration test          | `DATABASE_URL`                | `CLOUD_DATABASE_URL`                                            |
-| `apps/admin/.env.example`               | `DATABASE_URL`                | `CLOUD_DATABASE_URL`                                            |
+| `apps/backoffice/.env.example`          | `DATABASE_URL`                | `CLOUD_DATABASE_URL`                                            |
 | `apps/web/.env.example`                 | `DATABASE_URL`                | `CLOUD_DATABASE_URL`                                            |
 | `apps/yuta-pos/.env.production.example` | `DATABASE_URL`                | Remove DB URL; add local `SITE_AGENT_URL`/runtime configuration |
 | `apps/yuta-pos/Dockerfile`              | baked fallback `DATABASE_URL` | Remove entirely                                                 |
@@ -336,7 +336,7 @@ Their exact legacy containers were removed as well. The replacement cloud,
 POS, and display containers are healthy; their public schemas contain 17, 16,
 and 1 tables respectively, with one recorded migration per boundary. The reset
 itself applied no seed data; the cloud development seed was applied afterward
-to enable admin login, while POS and display remain unseeded. No wildcard-based
+to enable back-office login, while POS and display remain unseeded. No wildcard-based
 container or volume deletion is used.
 
 ## 11. Boundary enforcement
@@ -354,7 +354,7 @@ fail when:
 - generic `DATABASE_URL` configuration returns;
 - a database boundary no longer has exactly one valid `0000_initial` baseline.
 
-The first checker run also removed two admin client type dependencies on
+The first checker run also removed two back-office client type dependencies on
 `@yuta/db-cloud`. Their transport-facing DTOs now live in
 `@yuta/contracts/cloud-admin`.
 
@@ -372,7 +372,7 @@ After this classification is reviewed:
 6. Add `apps/site-agent` and local API contracts based on actual POS actions.
 7. Move POS persistence/transactions/printing out of `packages/core`.
 8. Replace POS direct DB access with the local API.
-9. Remove local POS surfaces from cloud admin.
+9. Remove local POS surfaces from the cloud back-office.
 10. Update cloud consumers to `db-cloud`.
 11. Update display environment naming while keeping its DB app-owned.
 12. Add architecture import checks.
@@ -484,10 +484,10 @@ That atomic POS cutover is now complete:
 
 The cloud consumer cutover is also complete:
 
-- admin auth, tenant switching, cloud-user management, reputation, and Google
+- back-office auth, tenant switching, cloud-user management, reputation, and Google
   connector flows use `@yuta/db-cloud`;
 - public web tenant resolution and feedback flows use `@yuta/db-cloud`;
-- admin and web no longer depend on `@yuta/db`;
+- back-office and web no longer depend on `@yuta/db`;
 - cloud-only roles are `owner`, `admin`, `manager`, and `employee`; POS roles
   remain local;
 - the cloud schema and reputation repository integration suite pass against a

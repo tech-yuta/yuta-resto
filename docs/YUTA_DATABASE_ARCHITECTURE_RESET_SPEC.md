@@ -11,7 +11,7 @@
 - Persist cloud ownership as `organization_id` plus `establishment_id`; do not
   create a `tenants` table. `tenant` remains the runtime authorization context.
 - Remove POS menu/catalog, printers, operational reports, and local POS user
-  management from cloud admin; implement required workflows in a local UI
+  management from the cloud back-office; implement required workflows in a local UI
   through `site-agent`.
 - Use application-generated UUIDv7 for new business records.
 - Keep the standalone display database app-owned under
@@ -30,7 +30,7 @@ YUTA now has two fundamentally different runtime families:
    - Publicly deployed.
    - Use a managed live database.
    - Multi-tenant.
-   - Examples: `apps/admin`, `apps/web`.
+   - Examples: `apps/backoffice`, `apps/web`.
 
 2. **Local-only applications**
    - Deployed only inside a restaurant or customer site.
@@ -114,7 +114,7 @@ Generate one clean initial migration per database boundary
 ```text
 YUTA-RESTO/
 ├── apps/
-│   ├── admin/                     # Cloud, authenticated, multi-tenant
+│   ├── backoffice/                # Cloud, authenticated, multi-tenant
 │   ├── web/                       # Cloud/public website and public SaaS pages
 │   ├── yuta-pos/                  # Local-only POS client
 │   ├── yuta-display/              # Local-only display app
@@ -177,7 +177,7 @@ whose standalone `display_media` schema is used only by the display app.
 
 ## 4. Runtime classification
 
-### 4.1 `apps/admin`
+### 4.1 `apps/backoffice`
 
 **Runtime:** Cloud  
 **Database:** `packages/db-cloud`  
@@ -195,8 +195,8 @@ Responsibilities may include:
 - subscription and billing;
 - cloud-only business tools.
 
-The cloud admin must not manage local POS operational domains. The following
-current areas must be removed from the cloud admin and, where still required,
+The cloud back-office must not manage local POS operational domains. The following
+current areas must be removed from the cloud back-office and, where still required,
 implemented in a local UI backed by `site-agent`:
 
 - POS menu and catalog management;
@@ -684,7 +684,7 @@ For the current scope, `auth` is cloud authentication only.
 Used by:
 
 ```text
-apps/admin
+apps/backoffice
 cloud-protected routes in apps/web
 optional cloud worker
 ```
@@ -742,7 +742,7 @@ core ───────────────────┼─────
 ui ─────────────────────┤               │
                         │               │
 auth ────────┐          │               │
-tenant ──────┼── admin/web              │
+tenant ──────┼── backoffice/web         │
 db-cloud ────┘                          │
                                         │
 local-runtime ─────┐                    │
@@ -811,7 +811,7 @@ DISPLAY_DATABASE_URL=
 
 Rules:
 
-- `apps/admin` and cloud server code may receive `CLOUD_DATABASE_URL`.
+- `apps/backoffice` and cloud server code may receive `CLOUD_DATABASE_URL`.
 - `apps/site-agent` may receive `POS_DATABASE_URL`.
 - `apps/yuta-pos` browser code must receive neither database URL.
 - `apps/yuta-display` receives `DISPLAY_DATABASE_URL` only in standalone server-side mode.
@@ -1064,13 +1064,13 @@ Use contracts from `packages/contracts`.
 
 ### Phase 7 — Update application dependencies
 
-#### Admin
+#### Back-office
 
 Replace old database imports with `@yuta/db-cloud`.
 
 Ensure all tenant-owned queries are scoped through tenant-aware services/repositories.
 
-Remove cloud admin pages and server actions for POS menu/catalog, printers,
+Remove cloud back-office pages and server actions for POS menu/catalog, printers,
 order/payment reports, and local POS user management. Reintroduce required
 workflows only in a local UI through `site-agent`.
 
@@ -1304,7 +1304,7 @@ Do not use the cloud tenant seed to initialize the POS database.
 
 - `yuta-pos` imports `db-cloud`;
 - `site-agent` imports `db-cloud`;
-- `admin` imports `db-pos`;
+- `backoffice` imports `db-pos`;
 - `core` imports any DB package;
 - `contracts` imports any DB package;
 - local apps import `tenant`;
@@ -1332,7 +1332,7 @@ Do not use the cloud tenant seed to initialize the POS database.
 
 - `yuta-pos` communicates with `site-agent`;
 - `site-agent` is functional with only `POS_DATABASE_URL`;
-- `admin` is functional with only `CLOUD_DATABASE_URL`;
+- `backoffice` is functional with only `CLOUD_DATABASE_URL`;
 - stopping cloud services does not prevent local POS operation.
 
 ---
@@ -1375,7 +1375,7 @@ The refactor is complete only when all conditions below are true.
 
 ### Runtime
 
-- [x] Admin/web use the cloud DB.
+- [x] Back-office/web use the cloud DB.
 - [x] POS uses the local server and local POS DB only.
 - [x] Display uses either the local POS API or its own justified local DB.
 - [x] Local POS continues to work when cloud/Internet is unavailable.
@@ -1411,7 +1411,7 @@ Codex should execute in this order:
 5. Move/rewrite only required schemas.
 6. Update environment validation.
 7. Update Docker development topology.
-8. Update admin/web to use `db-cloud`.
+8. Update backoffice/web to use `db-cloud`.
 9. Create or formalize `site-agent`.
 10. Update POS to use the local API.
 11. Keep the standalone display DB app-owned and reset its baseline migration.
@@ -1433,7 +1433,7 @@ At each step, prefer deletion and explicit boundaries over compatibility wrapper
                          YUTA CLOUD
 ┌────────────────────────────────────────────────────────┐
 │                                                        │
-│  apps/web                 apps/admin                   │
+│  apps/web                 apps/backoffice              │
 │      │                         │                       │
 │      └──────────────┬──────────┘                       │
 │                     ▼                                  │

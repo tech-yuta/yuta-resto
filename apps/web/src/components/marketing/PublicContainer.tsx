@@ -1,11 +1,11 @@
 import { cn } from '@yuta/ui';
 import type { HTMLAttributes, ReactNode } from 'react';
 
-type PublicContainerSize = 'default' | 'wide' | 'legal';
+type PublicContainerSize = 'marketing' | 'article' | 'legal';
 
 const sizeClasses: Record<PublicContainerSize, string> = {
-  default: 'max-w-[1280px]',
-  wide: 'max-w-[1360px]',
+  marketing: 'max-w-[1280px]',
+  article: 'max-w-[800px]',
   legal: 'max-w-[1200px]',
 };
 
@@ -17,7 +17,7 @@ interface PublicContainerProps extends HTMLAttributes<HTMLDivElement> {
 export function PublicContainer({
   children,
   className,
-  size = 'default',
+  size = 'marketing',
   ...props
 }: PublicContainerProps) {
   return (

@@ -17,7 +17,7 @@ Implement idempotent Google review import and a manual synchronization action.
 - Unified inbox list and feedback detail reads.
 - Public direct-feedback page with validation, consent handling, external review
   links, tenant resolution, and abuse rate limiting.
-- Database-backed admin authentication with HttpOnly sessions.
+- Database-backed back-office authentication with HttpOnly sessions.
 - Tenant and establishment selector with server-side membership validation and
   session rotation.
 - `/settings/users` membership administration for owners and administrators.

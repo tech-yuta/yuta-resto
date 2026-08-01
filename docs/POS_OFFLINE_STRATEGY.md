@@ -58,7 +58,7 @@ apps/site-agent
 `apps/site-agent` is the only runtime owner of `POS_DATABASE_URL` and
 `packages/db-pos`.
 
-Stopping the Internet connection, cloud database, `apps/admin`, or `apps/web`
+Stopping the Internet connection, cloud database, `apps/backoffice`, or `apps/web`
 must not prevent local POS operation.
 
 ## Current implementation state

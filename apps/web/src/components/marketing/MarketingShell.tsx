@@ -85,7 +85,7 @@ function Brand() {
 
 export function MarketingHeader() {
   const applicationUrl =
-    process.env.NEXT_PUBLIC_ADMIN_URL ?? 'https://app.yutapro.fr';
+    process.env.NEXT_PUBLIC_BACKOFFICE_URL ?? 'https://app.yutapro.fr';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border-default bg-surface/95 backdrop-blur">
@@ -321,7 +321,7 @@ export function MarketingPage({
   children: ReactNode;
 }) {
   const article = (
-    <article className="min-w-0 max-w-[820px]">
+    <article className="min-w-0 w-full">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-status-success">
         {eyebrow}
       </p>
@@ -349,9 +349,9 @@ export function MarketingPage({
   return (
     <MarketingShell>
       <section className="w-full py-14 sm:py-16 lg:py-20">
-        <PublicContainer size="legal">
+        <PublicContainer size={layout === 'legal' ? 'legal' : 'article'}>
           {layout === 'legal' ? (
-            <div className="grid items-start gap-10 lg:grid-cols-[260px_minmax(0,800px)] lg:gap-14">
+            <div className="grid items-start gap-10 lg:grid-cols-[260px_minmax(0,720px)] lg:justify-center lg:gap-14">
               <aside>
                 <details className="rounded-xl border border-border-default bg-surface p-4 lg:hidden">
                   <summary className="cursor-pointer font-semibold text-primary">
@@ -370,7 +370,7 @@ export function MarketingPage({
               {article}
             </div>
           ) : (
-            <div className="mx-auto max-w-[820px]">{article}</div>
+            article
           )}
         </PublicContainer>
       </section>

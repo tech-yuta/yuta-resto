@@ -1,10 +1,10 @@
 # Avis & commentaires
 
 This document tracks the Phase 1 reputation module implemented across
-`apps/admin`, `apps/web`, `packages/contracts`, and the cloud database
+`apps/backoffice`, `apps/web`, `packages/contracts`, and the cloud database
 boundary.
 
-The persistence package is `packages/db-cloud`; admin and public web server
+The persistence package is `packages/db-cloud`; back-office and public web server
 code use it through `CLOUD_DATABASE_URL`. Reputation data is cloud-only and always
 scoped by `organization_id` and, where applicable, `establishment_id`.
 
@@ -14,7 +14,7 @@ is completed, added, deferred, or reordered.
 
 ## Product surfaces
 
-- Admin inbox: `/customers/reviews` in `apps/admin`.
+- Back-office inbox: `/customers/reviews` in `apps/backoffice`.
 - Review detail route: `/customers/reviews/[reviewId]`.
 - Public feedback form: `/{tenantSlug}/feedback` in `apps/web`.
 - Public submission endpoint:
@@ -87,12 +87,12 @@ The hostname-scoped public URL is also available through
 
 ## Authentication boundary
 
-The admin inbox now requires a database-backed server session. The authenticated
+The back-office inbox now requires a database-backed server session. The authenticated
 layout resolves the session user, validates the active membership, creates a
 trusted tenant context, checks `reputation.enabled`, and enforces
 `reputation.read` before the repository is called.
 
-The admin shell can switch to another active establishment membership. The
+The back-office shell can switch to another active establishment membership. The
 server validates the target and rotates the session before reloading the inbox,
 so review queries always use the newly authenticated organization and
 establishment scope.
@@ -104,7 +104,7 @@ shared contracts, repeat authorization checks on the server, and create
 reputation audit events. Employees can read and act only on feedback assigned
 to their own user account.
 
-No production development-tenant fallback remains in the admin application.
+No production development-tenant fallback remains in the back-office application.
 Organization, establishment, role, entitlement, and permission values are never
 accepted from the browser. See `docs/AUTHENTICATION.md`.
 
@@ -121,12 +121,12 @@ logs. Access tokens are refreshed server-side when they approach expiration.
 The account and location selected in the UI are fetched from Google again before
 the connector is marked `CONNECTED`.
 
-Admin environments require:
+Back-office environments require:
 
 ```env
 GOOGLE_BUSINESS_PROFILE_CLIENT_ID=...
 GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET=...
-GOOGLE_BUSINESS_PROFILE_REDIRECT_URI=https://admin.example.com/api/reputation/google/oauth/callback
+GOOGLE_BUSINESS_PROFILE_REDIRECT_URI=https://app.yutapro.fr/api/reputation/google/oauth/callback
 REPUTATION_CREDENTIAL_ENCRYPTION_KEY=...
 ```
 

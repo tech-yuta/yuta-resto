@@ -3,7 +3,7 @@
 **Status:** Implementation-ready specification  
 **Repository:** `YUTA-RESTO` pnpm workspace  
 **Target package path:** `packages/tenant`  
-**Consumers:** cloud server code in `apps/admin`, `apps/web`, and an optional
+**Consumers:** cloud server code in `apps/backoffice`, `apps/web`, and an optional
 cloud worker; selected browser-safe types/helpers may be shared with cloud
 clients. Local-only POS, display, and `site-agent` code must not import this
 package.
@@ -89,7 +89,7 @@ The package may expose small access guards based on trusted memberships, but it 
 Instead, it defines ports/interfaces and receives implementations from applications.
 
 ```text
-apps/web or apps/admin
+apps/web or apps/backoffice
         │
         ├── hostname/session input
         ├── DB-backed lookup adapter from @yuta/db-cloud
@@ -128,7 +128,7 @@ Forbidden dependencies:
 Recommended graph:
 
 ```text
-apps/admin, apps/web ─→ @yuta/tenant
+apps/backoffice, apps/web ─→ @yuta/tenant
 cloud server code ───→ @yuta/db-cloud
 @Yuta/tenant ─────────→ zod only
 @Yuta/db-cloud ───────→ no dependency on @yuta/tenant required
@@ -174,7 +174,7 @@ Keep framework-specific adapters outside this package, for example:
 
 ```text
 apps/web/src/server/tenant/resolve-public-tenant.ts
-apps/admin/src/server/tenant/resolve-authenticated-tenant.ts
+apps/backoffice/src/server/tenant/resolve-authenticated-tenant.ts
 packages/db-cloud/src/adapters/tenant-domain-lookup.ts
 packages/db-cloud/src/adapters/tenant-membership-lookup.ts
 ```
@@ -643,7 +643,7 @@ luna.localhost → FAST VIET / LUNA
 
 ---
 
-## 17. Admin/POS integration
+## 17. Back-office/POS integration
 
 Authenticated applications should resolve context from:
 
@@ -792,7 +792,7 @@ Codex must implement incrementally.
 4. Keep a development-only explicit hostname mapping.
 5. Remove production fallback to LUNA.
 
-### Phase 3 — admin and POS
+### Phase 3 — back-office and POS
 
 1. Identify current user/restaurant selection mechanism.
 2. Add membership lookup adapter.
@@ -818,7 +818,7 @@ The first implementation is complete when:
 - Authenticated membership resolution is unit-tested.
 - `apps/web` can resolve LUNA through a domain record rather than hard-coded constants.
 - Unknown production hostnames fail closed.
-- At least one admin/POS server-side flow obtains tenant context from an active membership.
+- At least one back-office/POS server-side flow obtains tenant context from an active membership.
 - At least one repository query is scoped by organization and establishment context.
 - Cross-tenant access tests fail safely.
 - No LUNA-specific ID, domain, or brand data exists inside the package.

@@ -1,11 +1,11 @@
-# Admin Authentication
+# Back-office Authentication
 
-YuTa Admin uses server-side, database-backed sessions. Authentication is
+The YUTA restaurant back-office uses server-side, database-backed sessions. Authentication is
 implemented by `@yuta/auth`, the cloud database boundary, and the server
-boundary in `apps/admin/src/server/auth`.
+boundary in `apps/backoffice/src/server/auth`.
 
 Authentication persistence and tenant lookup adapters are implemented in
-`@yuta/db-cloud`. Admin server code creates the cloud client from
+`@yuta/db-cloud`. Back-office server code creates the cloud client from
 `CLOUD_DATABASE_URL`; the removed legacy `@yuta/db` package is not used.
 
 Cloud authentication is not used by `apps/yuta-pos`, `apps/site-agent`, or
@@ -30,7 +30,7 @@ user role, organization, establishment, entitlement, or permission.
 
 ## Organization and establishment switching
 
-The authenticated admin shell lists every active establishment membership
+The authenticated back-office shell lists every active establishment membership
 available to the current user. Options are grouped by organization. A user can
 switch across establishments in one organization or across organizations only
 when an active establishment-level membership exists for each target.
@@ -52,13 +52,14 @@ rendered, the switch is rejected and the existing session remains unchanged.
 
 ## Cookie policy
 
-The admin session cookie is named `yuta_admin_session` and uses:
+The back-office session cookie is named `yuta_backoffice_session` and uses:
 
 - `HttpOnly`
 - `SameSite=Lax`
 - `Secure` in production
 - root path
 - a fixed 14-day expiration
+- no explicit `Domain`, so it remains host-only on `app.yutapro.fr`
 
 Logout revokes the database session before deleting the browser cookie. Tenant
 switching rotates the session token and revokes the previous token. Password

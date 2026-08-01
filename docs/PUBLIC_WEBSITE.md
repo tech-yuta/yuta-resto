@@ -51,10 +51,13 @@ automatically.
 Public pages use a hybrid full-width layout:
 
 - every major section owns a full-width outer wrapper;
-- `PublicContainer` constrains the header, homepage hero, homepage sections,
-  and final call to action to the same 1280px grid; legal layouts use 1200px;
+- `PublicContainer` owns three named width presets: `marketing` at 1280px,
+  `article` at 800px, and `legal` at 1200px. These dimensions include the
+  shared responsive horizontal padding, so readable article copy is no wider
+  than 720px on wide screens;
 - solution cards use at most three columns on wide desktop;
-- legal pages use a 260px table of contents and an article no wider than 820px;
+- legal pages use a 260px table of contents and the same 720px reading column
+  as standard editorial pages;
 - the final homepage call to action follows the standard 1280px content grid;
 - the header exposes the complete navigation through a mobile menu below the
   desktop breakpoint.
@@ -115,10 +118,10 @@ They currently route to the primary operator mailbox while YUTA has a single
 operator. The primary mailbox must not replace these role addresses in public
 content.
 
-Set the admin application URL per environment:
+Set the restaurant back-office URL per environment:
 
 ```env
-NEXT_PUBLIC_ADMIN_URL=https://app.yutapro.fr
+NEXT_PUBLIC_BACKOFFICE_URL=https://app.yutapro.fr
 ```
 
 Without an override, the public site links to `https://app.yutapro.fr`.
