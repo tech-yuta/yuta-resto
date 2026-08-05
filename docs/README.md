@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
@@ -17,6 +19,17 @@ Last updated: 2026-08-05
 
 Completed plans, audits, migration checkpoints, and implementation reports are
 not current architecture authority. Git history preserves that record.
+
+## Documentation visibility
+
+- `Visibility: Public product` describes capabilities approved for public,
+  pricing, commercial, partner, and customer-facing communication.
+- `Visibility: Engineering` may describe every maintained runtime, including
+  POS, Site Agent, Display, devices, printing, offline behavior, and local data.
+- `Visibility: Local operator` is intended for restaurant operation.
+
+Visibility labels define communication scope, not confidentiality. Secrets and
+sensitive details never belong in the repository.
 
 ## Current documents
 
@@ -39,6 +52,7 @@ not current architecture authority. Git history preserves that record.
 - [`features/public-website/README.md`](features/public-website/README.md)
 - [`features/public-booking/README.md`](features/public-booking/README.md)
 - [`features/public-booking/PRODUCT_SPEC.md`](features/public-booking/PRODUCT_SPEC.md)
+- [`features/public-booking/STATUS.md`](features/public-booking/STATUS.md)
 - [`features/reputation/README.md`](features/reputation/README.md)
 - [`features/reputation/STATUS.md`](features/reputation/STATUS.md)
 
@@ -61,14 +75,19 @@ the shared operations documents until a dedicated product document is needed.
 - [`DOCUMENTATION_POLICY.md`](DOCUMENTATION_POLICY.md)
 - [`tasks/TASK_TEMPLATE.md`](tasks/TASK_TEMPLATE.md)
 - [`decisions/ADR-000-template.md`](decisions/ADR-000-template.md)
+- [`decisions/ADR-001-runtime-families-and-product-visibility.md`](decisions/ADR-001-runtime-families-and-product-visibility.md)
+- [`decisions/ADR-002-independent-public-booking-application.md`](decisions/ADR-002-independent-public-booking-application.md)
+- [`decisions/ADR-003-database-ownership-boundaries.md`](decisions/ADR-003-database-ownership-boundaries.md)
 
-`tasks/PUBLIC_BOOKING_PHASE_0_1.md` is retained while the current booking work is
-being reconciled. Remove it after all durable behavior and remaining work have
-been reflected in the booking feature documents.
+Completed task specifications are removed after durable behavior is reflected
+in current feature documentation and remaining work is captured in `STATUS.md`.
 
 ## Maintenance
 
 - Update an existing current document instead of adding an overlapping report.
 - Remove superseded plans only after durable rules have been extracted.
-- Keep component catalogs synchronized as required by root `AGENTS.md`.
+- Keep `packages/ui/src/index.ts` authoritative for public UI exports; do not
+  duplicate its catalog in instruction files.
 - Check links after moving or deleting files.
+- Public-product documents must not promote local operational workflows as
+  YUTA public-service capabilities.

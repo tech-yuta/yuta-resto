@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
@@ -213,8 +215,9 @@ The cloud seed requires `CLOUD_DATABASE_URL`. It creates or updates:
 - one YuTa platform administrator without a restaurant membership;
 - the initial reputation settings.
 
-Set `YUTA_CLOUD_SEED_PASSWORD` to override the development password. It
-is mandatory when `NODE_ENV=production`.
+`YUTA_CLOUD_SEED_PASSWORD` is always required. `pnpm dev:env:sync` generates a
+random value in the ignored `packages/db-cloud/.env.local`; deployments supply
+their own value.
 
 The POS seed requires `POS_DATABASE_URL`. It creates or updates:
 
@@ -223,11 +226,11 @@ The POS seed requires `POS_DATABASE_URL`. It creates or updates:
 - combo rules and their item groups.
 
 The POS seed does not create cloud users, tenant memberships, reputation data,
-sample orders, payment history, print jobs, or device credentials. The default
-development PINs are `1234` for admin, `2345` for staff, and `3456` for
-kitchen. Override them with `YUTA_POS_SEED_ADMIN_PIN`,
-`YUTA_POS_SEED_STAFF_PIN`, and `YUTA_POS_SEED_KITCHEN_PIN`. Each value must
-contain between four and eight digits. The seed stores only scrypt hashes.
+sample orders, payment history, print jobs, or device credentials.
+`YUTA_POS_SEED_ADMIN_PIN`, `YUTA_POS_SEED_STAFF_PIN`, and
+`YUTA_POS_SEED_KITCHEN_PIN` are required and contain four to eight digits.
+`pnpm dev:env:sync` generates random local values in the ignored
+`packages/db-pos/.env.local`. The seed stores only scrypt hashes.
 
 Both seeds generate new business IDs with UUIDv7 in application code and are
 idempotent through stable natural keys.

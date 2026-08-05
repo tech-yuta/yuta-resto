@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
@@ -284,6 +284,9 @@ async function main() {
     SITE_AGENT_ALLOWED_ORIGIN: `http://localhost:${posPort}`,
     SITE_AGENT_URL: `http://127.0.0.1:${siteAgentPort}`,
     POS_INTERNET_CHECK_URL: 'http://127.0.0.1:1/offline',
+    YUTA_POS_SEED_ADMIN_PIN: String(randomInt(100_000, 1_000_000)),
+    YUTA_POS_SEED_STAFF_PIN: String(randomInt(100_000, 1_000_000)),
+    YUTA_POS_SEED_KITCHEN_PIN: String(randomInt(100_000, 1_000_000)),
   };
   delete runtimeEnv.CLOUD_DATABASE_URL;
   delete runtimeEnv.DISPLAY_DATABASE_URL;
@@ -353,7 +356,7 @@ async function main() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: managementUser.id,
-        pin: runtimeEnv.YUTA_POS_SEED_ADMIN_PIN ?? '1234',
+        pin: runtimeEnv.YUTA_POS_SEED_ADMIN_PIN,
       }),
       signal: AbortSignal.timeout(5_000),
     },

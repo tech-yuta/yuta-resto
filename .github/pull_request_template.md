@@ -13,6 +13,8 @@
 - [ ] Establishment-owned data additionally includes establishment scope.
 - [ ] Browser input is not trusted for identity, role, permission, or scope.
 - [ ] No client module imports persistence, drivers, secrets, or server env code.
+- [ ] Public product copy does not promote local operational workflows as YUTA public services.
+- [ ] No stable seed password, PIN, token, or production-like credential is documented.
 - [ ] No speculative package, table, route, or framework was introduced.
 - [ ] `pnpm architecture:check` passes.
 

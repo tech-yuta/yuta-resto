@@ -2,6 +2,8 @@
 
 Status: Current product reference; architecture sections are superseded
 
+Visibility: Engineering
+
 Owner: YUTA product and engineering
 
 Last updated: 2026-08-05
@@ -9,12 +11,9 @@ Last updated: 2026-08-05
 Authority: `docs/products/pos/README.md` and
 `docs/architecture/DATABASE_BOUNDARIES.md`
 
-> **Product-scope reference; legacy architecture superseded.** Business and UX
-> requirements in this document remain useful, but all references to shared
-> `packages/db`, cloud back-office POS management, database deployment, and future
-> cloud synchronization are superseded by
-> `docs/architecture/DATABASE_BOUNDARIES.md`, `docs/products/pos/README.md`, and
-> `docs/products/pos/OFFLINE_STRATEGY.md`.
+> **Product-scope reference.** Business and UX requirements in this document are
+> governed by `docs/architecture/DATABASE_BOUNDARIES.md`,
+> `docs/products/pos/README.md`, and `docs/products/pos/OFFLINE_STRATEGY.md`.
 
 ## 0. Purpose
 
@@ -31,12 +30,15 @@ YuTa is an existing pnpm monorepo. The POS MVP must follow the current repositor
 Use:
 
 ```txt
-apps/yuta-pos       POS, kitchen workflow, payments, and split payment MVP
-apps/backoffice     Existing restaurant back-office for POS management
-packages/db         Shared database package for YuTa ecosystem apps
+apps/yuta-pos       Local POS client, kitchen workflow, payments, and management UI
+apps/site-agent     Local API, persistence, printing, and device-integration boundary
+packages/db-pos     Local POS database schema, migrations, repositories, and seed data
 packages/core       Shared business logic where appropriate
 packages/ui         Shared UI component library (@yuta/ui)
 ```
+
+`apps/backoffice` is a cloud application and must not own or manage local POS
+operational data.
 
 Important exception:
 
@@ -44,7 +46,9 @@ Important exception:
 apps/yuta-display
 ```
 
-`apps/yuta-display` is a separate signage app and keeps its own local database setup. Do not move or merge the display database into `packages/db` as part of the POS MVP.
+`apps/yuta-display` is a separate signage app and keeps its own local database
+setup. Do not move or merge the display database into `packages/db-pos` as part
+of the POS MVP.
 
 ## 2. Tech Stack
 
@@ -250,7 +254,9 @@ Rules:
 
 ## 7. Database Rules
 
-Use PostgreSQL + Drizzle ORM in `packages/db`.
+Use PostgreSQL + Drizzle ORM in `packages/db-pos`. `apps/site-agent` is the
+runtime owner of this package; browser code and cloud applications must not
+connect to the local POS database directly.
 
 General rules:
 
@@ -704,7 +710,8 @@ Use `@yuta/ui` components and YuTa design tokens.
 
 ## 13. Admin MVP
 
-Use the existing `apps/backoffice` app for back-office POS management:
+Keep POS management local. Provide the management workflows through
+`apps/yuta-pos`, backed by `apps/site-agent`:
 
 ```txt
 Manage menu categories
@@ -739,7 +746,9 @@ Retry failed jobs
 
 Kitchen tickets are batch-based. If additional items are added after an earlier kitchen send, the next kitchen ticket should contain only the newly sent items.
 
-Later, this can become `apps/yuta-print-gateway` and convert jobs to ESC/POS for a real thermal printer.
+Physical printer integration remains behind `apps/site-agent`, which can convert
+jobs to ESC/POS for a real thermal printer without exposing device access to the
+POS browser client.
 
 ## 15. Implementation Order
 
@@ -749,17 +758,17 @@ Recommended order:
 
 ```txt
 1. Inspect repository structure
-2. Create packages/db Drizzle schema
+2. Create packages/db-pos Drizzle schema
 3. Create migrations
 4. Add seed data
-5. Implement order service
+5. Implement local order services in apps/site-agent
 6. Implement combo engine
 7. Implement payment/split service
-8. Create apps/yuta-pos shell
+8. Connect the apps/yuta-pos shell to apps/site-agent
 9. Build POS order UI
 10. Build kitchen screen inside yuta-pos
 11. Build payment and split screens
-12. Add back-office menu/combos screens to apps/backoffice
+12. Add local menu/combo management screens to apps/yuta-pos
 13. Add print job mock workflow
 14. Add unit tests
 15. Add Docker Compose following `docs/operations/DEPLOYMENT.md`.

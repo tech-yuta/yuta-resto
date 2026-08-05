@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
@@ -29,6 +31,13 @@ import database packages, drivers, server environment modules, or secrets.
 
 Platform-wide YUTA administration belongs in the future `apps/platform-admin`,
 never in the restaurant back-office.
+
+## Public-product visibility
+
+Architecture documentation may describe every maintained runtime family.
+Public YUTA product communication describes only approved cloud/public-service
+capabilities. Local operational products remain engineering-owned without
+becoming public-service claims.
 
 Create an ADR before changing application ownership, dependency direction,
 database ownership, tenant/authentication semantics, public compatibility, or

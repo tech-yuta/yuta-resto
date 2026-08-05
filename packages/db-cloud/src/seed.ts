@@ -27,8 +27,7 @@ config({ path: '.env.local' });
 config({ path: '.env' });
 
 const seedEnvSchema = z.object({
-  YUTA_CLOUD_SEED_PASSWORD: z.string().min(12).max(128).optional(),
-  YUTA_CLOUD_SEED_ADMIN_PASSWORD: z.string().min(12).max(128).optional(),
+  YUTA_CLOUD_SEED_PASSWORD: z.string().min(12).max(128),
 });
 
 const seedIdentities = {
@@ -355,14 +354,7 @@ async function upsertBookingConfiguration(
 async function createSeedPasswordHash(
   seedEnv: z.infer<typeof seedEnvSchema>,
 ): Promise<string> {
-  const configuredPassword =
-    seedEnv.YUTA_CLOUD_SEED_PASSWORD ?? seedEnv.YUTA_CLOUD_SEED_ADMIN_PASSWORD;
-  if (process.env.NODE_ENV === 'production' && !configuredPassword) {
-    throw new Error(
-      'YUTA_CLOUD_SEED_PASSWORD is required when seeding production.',
-    );
-  }
-  return hashPassword(configuredPassword ?? 'ChangeMe-YuTa-2026!');
+  return hashPassword(seedEnv.YUTA_CLOUD_SEED_PASSWORD);
 }
 
 async function upsertSeedUser(

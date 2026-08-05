@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05

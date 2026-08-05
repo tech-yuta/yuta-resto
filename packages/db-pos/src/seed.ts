@@ -162,12 +162,15 @@ const comboSeeds = [
 export async function seedPosData(
   seedDb?: PosDatabaseClient,
 ): Promise<PosSeedContext> {
+  const adminPin = readSeedPin('YUTA_POS_SEED_ADMIN_PIN');
+  const staffPin = readSeedPin('YUTA_POS_SEED_STAFF_PIN');
+  const kitchenPin = readSeedPin('YUTA_POS_SEED_KITCHEN_PIN');
   const activeDb =
     seedDb ?? (await import('./client')).createPosDatabaseClient(process.env);
   const [adminPinHash, staffPinHash, kitchenPinHash] = await Promise.all([
-    hashLocalPin(readSeedPin('YUTA_POS_SEED_ADMIN_PIN', '1234')),
-    hashLocalPin(readSeedPin('YUTA_POS_SEED_STAFF_PIN', '2345')),
-    hashLocalPin(readSeedPin('YUTA_POS_SEED_KITCHEN_PIN', '3456')),
+    hashLocalPin(adminPin),
+    hashLocalPin(staffPin),
+    hashLocalPin(kitchenPin),
   ]);
   const adminUser = await upsertLocalUser(activeDb, {
     name: 'YuTa Admin',
@@ -270,11 +273,13 @@ async function upsertLocalUser(
   return created;
 }
 
-function readSeedPin(
-  environmentKey: string,
-  developmentFallback: string,
-): string {
-  const value = process.env[environmentKey] ?? developmentFallback;
+function readSeedPin(environmentKey: string): string {
+  const value = process.env[environmentKey];
+  if (!value) {
+    throw new Error(
+      `${environmentKey} is required. Run pnpm dev:env:sync or set it explicitly.`,
+    );
+  }
   if (!/^\d{4,8}$/.test(value)) {
     throw new Error(`${environmentKey} must contain between 4 and 8 digits.`);
   }

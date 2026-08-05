@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -83,6 +83,24 @@ const feedbackSalt =
     ? existingFeedbackSalt
     : randomBytes(32).toString('hex');
 
+const cloudDatabaseEnv = readEnv('packages/db-cloud/.env.local');
+const existingSeedPassword = cloudDatabaseEnv.values.get(
+  'YUTA_CLOUD_SEED_PASSWORD',
+);
+const seedPassword =
+  existingSeedPassword && existingSeedPassword.length >= 12
+    ? existingSeedPassword
+    : randomBytes(18).toString('base64url');
+
+const posDatabaseEnv = readEnv('packages/db-pos/.env.local');
+
+function developmentPin(name) {
+  const existing = posDatabaseEnv.values.get(name);
+  return existing && /^\d{4,8}$/.test(existing)
+    ? existing
+    : String(randomInt(100_000, 1_000_000));
+}
+
 syncEnvFile('apps/backoffice/.env.local', {
   remove: ['DATABASE_URL', 'DISABLE_AUTH', 'NEXT_PUBLIC_ADMIN_URL'],
   values: {
@@ -106,11 +124,12 @@ syncEnvFile('apps/web/.env.local', {
 });
 
 syncEnvFile('packages/db-cloud/.env.local', {
-  remove: ['DATABASE_URL'],
+  remove: ['DATABASE_URL', 'YUTA_CLOUD_SEED_ADMIN_PASSWORD'],
   values: {
     CLOUD_DATABASE_URL:
       'postgres://yuta_cloud:yuta_cloud@localhost:55431/yuta_cloud',
     CLOUD_DATABASE_SSL: 'false',
+    YUTA_CLOUD_SEED_PASSWORD: seedPassword,
   },
 });
 
@@ -128,6 +147,9 @@ syncEnvFile('packages/db-pos/.env.local', {
   remove: ['DATABASE_URL', 'CLOUD_DATABASE_URL', 'DISPLAY_DATABASE_URL'],
   values: {
     POS_DATABASE_URL: 'postgres://yuta_pos:yuta_pos@localhost:55432/yuta_pos',
+    YUTA_POS_SEED_ADMIN_PIN: developmentPin('YUTA_POS_SEED_ADMIN_PIN'),
+    YUTA_POS_SEED_STAFF_PIN: developmentPin('YUTA_POS_SEED_STAFF_PIN'),
+    YUTA_POS_SEED_KITCHEN_PIN: developmentPin('YUTA_POS_SEED_KITCHEN_PIN'),
   },
 });
 

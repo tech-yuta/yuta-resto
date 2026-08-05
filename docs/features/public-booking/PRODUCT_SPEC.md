@@ -2,11 +2,18 @@
 
 Status: Current product reference
 
+Visibility: Engineering
+
 Owner: YUTA product and engineering
 
 Last updated: 2026-08-05
 
 Authority: `docs/features/public-booking/README.md` for implemented behavior
+
+This document preserves durable product requirements and future direction. The
+adjacent `README.md`, `STATUS.md`, current code, and tests define implemented
+Phase 0/1 behavior and release readiness. Historical implementation sequencing
+is not a current progress tracker.
 
 **Document status:** Master specification  
 **Target readers:** Codex, technical lead, frontend/backend developers, product designer, QA  
@@ -988,6 +995,14 @@ Every status change must be recorded with:
 
 The exact SQL schema may evolve, but the following conceptual entities are required.
 
+The implemented Phase 0/1 schema currently uses `booking_settings`,
+`booking_service_periods`, `booking_exceptions`, `reservations`,
+`reservation_status_history`, `reservation_internal_notes`,
+`booking_audit_events`, `booking_notification_deliveries`, and
+`booking_public_attempts`. The current Drizzle schema is authoritative for
+exact columns and constraints. Entities described below as optional or future
+are not claims of implemented persistence.
+
 ## 14.1 `booking_settings`
 
 One record per establishment.
@@ -1920,7 +1935,7 @@ Do not enable all establishments by default.
 
 ---
 
-## 35. MVP implementation sequence for Codex
+## 35. Historical MVP implementation sequence
 
 Recommended order:
 
@@ -2133,7 +2148,7 @@ Advanced table management: later phase
 
 ---
 
-## 40. Codex implementation rules
+## 40. Durable implementation guardrails
 
 Codex must follow these rules while implementing this specification:
 

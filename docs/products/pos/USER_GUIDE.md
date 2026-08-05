@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Local operator
+
 Owner: YUTA restaurant operations
 
 Last updated: 2026-08-05
@@ -472,8 +474,9 @@ Use the page-level `Annuler le partage` action to return to full-order payment w
 This workflow belongs to the local POS management UI backed by `site-agent`.
 It must not be exposed by the cloud `apps/backoffice` application. Open
 `/management`, select an active administrator or manager, and enter the local
-PIN. The development seed uses PIN `1234` for `YuTa Admin`; override seed PINs
-through the guarded local environment before a real restaurant installation.
+PIN. Run `pnpm dev:env:sync` to generate local seed PINs in the ignored
+`packages/db-pos/.env.local`, or provide the three `YUTA_POS_SEED_*_PIN`
+variables explicitly. Never reuse development PINs in a restaurant deployment.
 
 Open `Gestion locale > Équipe POS` to manage:
 

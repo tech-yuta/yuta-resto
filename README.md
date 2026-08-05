@@ -5,16 +5,24 @@ CSS, and shared workspace packages. Cloud SaaS, local POS, and standalone
 display runtimes share code deliberately but keep separate data ownership and
 failure domains.
 
-## Applications
+## Cloud/public-service applications
 
 - `apps/web` — public website and tenant-facing public flows (port 3000).
 - `apps/backoffice` — authenticated restaurant back-office (port 3001).
-- `apps/yuta-display` — standalone local digital signage (port 3002).
-- `apps/yuta-pos` — local-only restaurant POS client (port 3003).
-- `apps/site-agent` — local POS API/device boundary (port 3004).
 - `apps/booking-web` — independent public booking app (port 3005).
 - `apps/platform-admin` — reserved for future internal YUTA administration;
   not implemented.
+
+## Local operational products
+
+- `apps/yuta-display` — standalone local digital signage (port 3002).
+- `apps/yuta-pos` — local-only restaurant POS client (port 3003).
+- `apps/site-agent` — local POS API/device boundary (port 3004).
+
+Local products remain first-class monorepo components because they share logic,
+contracts, UI, tooling, and CI. Their presence in the repository does not make
+checkout, payment, billing, invoicing, cash-register, or money-management
+workflows public YUTA service claims.
 
 ## Shared packages
 
@@ -40,6 +48,10 @@ pnpm install
 pnpm dev:env:sync
 pnpm dev
 ```
+
+`dev:env:sync` creates or retains random local seed credentials in ignored
+`.env.local` files. Seed commands fail closed when required credentials are
+missing; no stable seed password or PIN is stored in tracked documentation.
 
 Useful application commands:
 

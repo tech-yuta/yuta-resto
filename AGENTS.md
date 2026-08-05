@@ -63,6 +63,21 @@ database boundaries, or package imports.
 
 ---
 
+## Product visibility boundary
+
+Repository ownership and public product visibility are different concerns.
+Engineering documentation may describe every maintained cloud and local
+runtime. Do not present local checkout, payment, billing, invoicing,
+cash-register, or money-management workflows as YUTA public-service
+capabilities in marketing/SEO copy, pricing, partner or bank materials,
+commercial proposals, customer-facing roadmaps, or public announcements.
+
+This restriction does not apply to technical documentation, tests, source code,
+or local operator documentation. `Engineering` and `Local operator` visibility
+labels define communication scope, not confidentiality.
+
+---
+
 ## UI Law — Mandatory for All Apps
 
 ### Single UI source
@@ -94,79 +109,11 @@ Use semantic Tailwind CSS token classes. Never use raw hex values in `className`
 | `ring-focus-ring`       | Focus rings                               |
 | `status-*`              | Success, warning, danger, and info states |
 
-### Available `@yuta/ui` components
+### Component authority
 
-```
-Button       - variants: primary | secondary | outline | ghost | danger | success
-              sizes: sm | md | lg
-              props: loading | fullWidth | asChild
-IconButton   - icon-only action button with Button variants and sizes
-Badge        - tones: neutral | brand | success | warning | danger | info
-              variants: soft | outline | solid
-              sizes: sm | md
-StatusBadge  - semantic order/status badge with icon
-Avatar      - image/fallback avatar
-AvatarGroup - stacked avatar group
-Card         - container with border + shadow-sm
-              variants: default | muted | canvas | inverse
-              padding: default | none | sm | lg
-              radius: default | sm | lg
-Input        - styled text/number/email/etc input
-              sizes: sm | md | lg
-              align: left | center | right
-Label        - form label
-Textarea     - styled textarea
-FormField    - label/content/hint/error form wrapper
-FieldError   - field-level error text
-FieldHint    - field-level helper text
-FormSection  - grouped form section with title/description
-Select       - SelectTrigger, SelectContent, SelectItem, SelectValue, SelectGroup
-Checkbox     - Radix UI checkbox, use Controller from react-hook-form
-RadioGroup   - RadioGroup and RadioGroupItem
-Switch       - Radix UI switch
-Tabs         - Tabs, TabsList, TabsTrigger, TabsContent
-Dialog       - DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
-ConfirmDialog - controlled confirmation dialog for destructive/primary confirms
-DropdownMenu - menu, item, checkbox/radio item, label, separator, shortcut, submenu
-Popover      - PopoverTrigger, PopoverContent, PopoverAnchor
-Tooltip      - TooltipProvider, Tooltip, TooltipTrigger, TooltipContent
-Alert        - Alert, AlertTitle, AlertDescription
-Progress     - accessible progress bar
-Skeleton     - loading placeholder
-LoadingOverlay - absolute loading overlay for async panels
-ErrorState   - standardized error state block
-SimpleTable  - table primitives for compact admin data
-DataTable    - typed table with loading and empty states
-Pagination   - previous/next pagination control
-FilterBar    - search/filter/action toolbar
-SearchInput  - tokenized search input
-BulkActionBar - selected-row action toolbar
-OrderCard    - POS order summary card
-OrderItemRow - POS order item row
-PaymentSummary - payment/totals summary panel
-KitchenTicket - grouped kitchen ticket
-KitchenItemStatus - kitchen item status badge
-TableCard    - restaurant table status card
-Separator    - horizontal/vertical divider
-MetricCard   - compact label/value metric block
-StatCard     - metric card with optional icon, helper, and sparkline
-ActionPanel  - framed action block with optional icon, title, description
-PageHeader   - standard page header with optional media/actions
-Panel        - card section with optional header, action, description, and body
-PanelHeader  - reusable panel header
-ListRow      - standard row with media, title, description, meta, and action
-IconTile     - tones: neutral | brand | success | warning | info | danger | inverse
-EmptyState   - centered empty-state block with icon, title, description, action
-AppShell     - fixed-height app shell with sidebar slot
-AppSidebar   - fixed app sidebar with independent nav scroll
-              includes AppSidebarHeader and AppSidebarFooter
-AppTopbar    - top application bar with search/actions slots
-AppMain      - independently scrolling main content region
-AppFooter    - compact fixed footer bar
-SegmentedNav - horizontal segmented navigation container
-Toaster      - toast via sonner
-cn()         - utility: clsx + tailwind-merge
-```
+`packages/ui/src/index.ts` is the authoritative public component export list.
+Inspect source exports and existing usage before adding an app-local primitive.
+Do not duplicate the export catalog in instruction or feature documents.
 
 ### Icons
 
@@ -194,12 +141,9 @@ export default config;
 
 ### Maintenance
 
-Whenever a component is added, renamed, or removed from `packages/ui/src/`, the agent MUST update:
-
-- The component list in this file (`AGENTS.md`)
-- The component list in `.github/copilot-instructions.md`
-
-Both files must always reflect the actual exports of `packages/ui`.
+Whenever a public component is added, renamed, or removed, update
+`packages/ui/src/index.ts` and any focused usage documentation. Do not maintain
+a second full catalog.
 
 ---
 
@@ -212,12 +156,9 @@ Both files must always reflect the actual exports of `packages/ui`.
 
 ### Tech stack
 
-```
-Next.js App Router (no Pages Router)
-React 19
-TypeScript (strict mode)
-Tailwind CSS 4
-```
+Package manifests are authoritative for framework and tool versions. Use
+Next.js App Router, TypeScript strict mode, and the repository's Tailwind CSS
+setup; do not introduce Pages Router.
 
 ### Exports
 
@@ -260,6 +201,23 @@ For POS-related work, keep these docs current:
 Do not rely on memory for newly added behavior. Document important decisions
 such as cancellation/restore rules, print job behavior, payment behavior,
 admin workflows, and known MVP limits when they change.
+
+### Task workflow and validation
+
+For meaningful changes:
+
+1. Identify the goal, scope, affected runtime/data boundaries, and risks.
+2. Inspect current code, tests, and documentation.
+3. Reuse existing contracts, repositories, pure logic, and shared UI.
+4. Implement the smallest coherent change with relevant tests.
+5. Update current documentation in the same change.
+6. Run `pnpm architecture:check` and `pnpm -r --if-present typecheck`.
+7. Run relevant package tests and application builds.
+8. Report files changed, commands run, results, skipped checks, and risks.
+
+A task is complete only when the requested scope is satisfied, runtime and
+authorization boundaries remain enforced, relevant checks pass, documentation
+is current, and no duplicated source of truth was introduced.
 
 ---
 

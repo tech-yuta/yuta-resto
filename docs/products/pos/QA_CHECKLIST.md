@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Local operator
+
 Owner: YUTA engineering and QA
 
 Last updated: 2026-08-05

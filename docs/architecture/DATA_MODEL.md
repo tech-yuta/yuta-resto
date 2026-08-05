@@ -2,6 +2,8 @@
 
 Status: Current reference
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
@@ -410,15 +412,15 @@ system user:   admin@yutapro.fr / YUTA_ADMIN / no tenant membership
 domains:       luna.localhost, luna-poitiers.localhost
 ```
 
-The three development identities use the seed password configured by:
+The three development identities use the required seed password configured by:
 
 ```text
 YUTA_CLOUD_SEED_PASSWORD
 ```
 
-`YUTA_CLOUD_SEED_ADMIN_PASSWORD` is accepted only as a temporary compatibility
-fallback. `admin@yuta.local` is a retired cloud seed identity and is disabled
-and stripped of restaurant memberships when the seed runs.
+`pnpm dev:env:sync` generates a random local value in the ignored environment
+file. `admin@yuta.local` is a retired cloud seed identity and is disabled and
+stripped of restaurant memberships when the seed runs.
 
 ## 9. Source-of-truth precedence
 

@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
@@ -27,6 +29,16 @@ Run only the relevant package tests and application builds in addition to the
 baseline. Database integration tests require their documented disposable
 database guards. Documentation-only changes do not require application builds,
 but paths and links must be verified.
+
+Repository-wide grouped checks used by CI are:
+
+```bash
+pnpm test:cloud
+pnpm test:local
+pnpm build:cloud
+```
+
+`test:local` includes the disposable PostgreSQL offline POS acceptance flow.
 
 Use `docs/tasks/TASK_TEMPLATE.md` for substantial work and an ADR for durable
 architectural decisions. Do not claim a command passed when it was not run.

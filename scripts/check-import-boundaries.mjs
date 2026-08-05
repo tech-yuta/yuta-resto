@@ -211,7 +211,7 @@ function checkGenericDatabaseUrl() {
 const boundaryRules = [
   {
     name: 'pure-shared-package',
-    roots: ['packages/core', 'packages/contracts'],
+    roots: ['packages/core', 'packages/contracts', 'packages/booking'],
     forbiddenModules: [
       '@yuta/db-cloud',
       '@yuta/db-pos',
@@ -336,6 +336,7 @@ function checkBoundaryRules() {
 function checkClientModules() {
   const clientRoots = [
     'apps/backoffice/src',
+    'apps/booking-web/src',
     'apps/web/src',
     'apps/yuta-display/src',
     'apps/yuta-pos/src',

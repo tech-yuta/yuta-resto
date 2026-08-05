@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
@@ -85,10 +87,10 @@ For the current password adapter, set:
 YUTA_CLOUD_SEED_PASSWORD
 ```
 
-Production seeding requires the password. Development may omit it and receives
-the documented temporary development password. The legacy
-`YUTA_CLOUD_SEED_ADMIN_PASSWORD` name remains accepted temporarily for local
-environment compatibility.
+Seed execution requires the password. `pnpm dev:env:sync` generates and retains
+a random local value in the ignored package environment file; deployments must
+supply their own value. No stable fallback password is stored in source or
+documentation.
 
 ## Development commands
 

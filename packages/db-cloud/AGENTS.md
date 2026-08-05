@@ -12,7 +12,8 @@ server code may import it.
 - Create only tables required by approved implemented features.
 - Do not expose rows as public contracts or leak provider secrets.
 - Never edit a deployed migration or add a production reset command.
-- Keep seeds idempotent and integration tests guarded and disposable.
+- Keep seeds idempotent, require `YUTA_CLOUD_SEED_PASSWORD`, and never add a
+  stable credential fallback. Keep integration tests guarded and disposable.
 
 Validate with architecture check and db-cloud typecheck/tests; schema changes
 also require the guarded integration suite and reviewed generated SQL.

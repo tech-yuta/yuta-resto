@@ -2,14 +2,16 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
 
 ## Product scope
 
-YUTA is a restaurant platform with deliberately separated cloud and local
-runtime families.
+YUTA intentionally maintains deliberately separated cloud and local runtime
+families in one monorepo.
 
 - Cloud: public website, restaurant back-office, public booking, identity,
   tenancy, reputation, and cloud-owned configuration.
@@ -36,8 +38,9 @@ database. Display data remains separate from both cloud and POS data.
 
 ## Active and partial work
 
-- Public booking and tenant/user foundation changes are present in the current
-  worktree and must be reconciled and validated before release.
+- Public booking Phase 0/1 is implemented but still requires release-level
+  reconciliation and validation. Its feature `STATUS.md` is authoritative for
+  remaining work.
 - Reputation still requires completion of review synchronization, controlled
   reply publication/reconciliation, AI-assisted analysis/drafting, and broader
   connector coverage.
@@ -56,3 +59,5 @@ database. Display data remains separate from both cloud and POS data.
 The database reset plan has been replaced by current architecture documents.
 Historical implementation plans and pre-reset audits are preserved by Git
 history, not the active documentation tree.
+
+The UI export catalog is maintained only in `packages/ui/src/index.ts`.

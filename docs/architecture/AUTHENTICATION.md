@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
@@ -146,20 +148,19 @@ pnpm db:cloud:migrate
 pnpm --filter @yuta/db-cloud db:seed
 ```
 
-Default development login:
+Development seed identities:
 
 ```text
 Owner: owner@luna-restaurant.fr
 Manager: manager@luna-restaurant.fr
-Password: ChangeMe-YuTa-2026!
 ```
 
-Set `YUTA_CLOUD_SEED_PASSWORD` to choose a different password. The owner and
-manager identities receive active LUNA memberships. `admin@yutapro.fr` receives
-the `YUTA_ADMIN` system role and no restaurant membership, so it cannot use the
-restaurant back-office. Production seeding refuses to run without this
-password. `YUTA_CLOUD_SEED_ADMIN_PASSWORD` remains a temporary compatibility
-fallback for existing local environments.
+Run `pnpm dev:env:sync` to create a random `YUTA_CLOUD_SEED_PASSWORD` in the
+ignored `packages/db-cloud/.env.local`, or provide the variable explicitly.
+Seed execution fails closed when it is missing. The owner and manager identities
+receive active LUNA memberships. `admin@yutapro.fr` receives the `YUTA_ADMIN`
+system role and no restaurant membership, so it cannot use the restaurant
+back-office. Never deploy development seed identities or credentials.
 
 ## Password recovery
 

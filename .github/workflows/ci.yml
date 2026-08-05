@@ -7,8 +7,13 @@ on:
 permissions:
   contents: read
 
+env:
+  CI: true
+  PNPM_VERSION: 11.8.0
+  NODE_VERSION: 24.17.0
+
 jobs:
-  architecture-and-tests:
+  architecture-and-typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -19,12 +24,12 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 11.8.0
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24.17.0
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - name: Install dependencies
@@ -43,15 +48,86 @@ jobs:
       - name: Type-check workspaces
         run: pnpm -r --if-present typecheck
 
-      - name: Run unit and contract tests
-        run: |
-          pnpm --filter @yuta/core test
-          pnpm --filter @yuta/contracts test
-          pnpm --filter @yuta/tenant test
-          pnpm --filter @yuta/db-cloud test
-          pnpm --filter @yuta/db-pos test
-          pnpm --filter @yuta/site-agent test
-          pnpm --filter @yuta/pos test
+  cloud-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
-      - name: Run offline POS acceptance test
-        run: pnpm test:pos:offline
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run cloud and shared tests
+        run: pnpm test:cloud
+
+  cloud-builds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOUD_DATABASE_URL: postgres://yuta_ci:yuta_ci@127.0.0.1:5432/yuta_ci
+      CLOUD_DATABASE_SSL: 'false'
+      AUTH_SECRET: ci-only-auth-secret-with-at-least-32-characters
+      BOOKING_RATE_LIMIT_SECRET: ci-only-booking-rate-limit-secret-32-characters
+      PUBLIC_FEEDBACK_IP_HASH_SALT: ci-only-feedback-salt-with-at-least-32-characters
+      NEXT_PUBLIC_APP_URL: http://localhost:3001
+      NEXT_PUBLIC_BACKOFFICE_URL: http://localhost:3001
+      PUBLIC_BOOKING_BASE_URL: http://localhost:3005
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build cloud applications
+        run: pnpm build:cloud
+
+  local-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run local product tests
+        run: pnpm test:local

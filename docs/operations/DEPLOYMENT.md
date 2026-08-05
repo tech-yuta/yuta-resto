@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering and operations
 
 Last updated: 2026-08-05
@@ -247,15 +249,15 @@ Test every baseline against an empty database before production.
 After the baseline, apply feature migrations in journal order. POS local
 authentication starts with `packages/db-pos/drizzle/0001_local_auth.sql`.
 
-Never use the documented development PIN defaults in a restaurant
-installation. Supply four-to-eight-digit `YUTA_POS_SEED_ADMIN_PIN`,
+Supply unique four-to-eight-digit `YUTA_POS_SEED_ADMIN_PIN`,
 `YUTA_POS_SEED_STAFF_PIN`, and `YUTA_POS_SEED_KITCHEN_PIN` values to the
 explicit POS seed maintenance job. PINs are not runtime environment variables
 and are stored only as scrypt hashes.
 
 Cloud and POS seed jobs are separate maintenance operations. A cloud seed job
-receives only `CLOUD_DATABASE_URL`; a POS seed job receives only
-`POS_DATABASE_URL`. Do not include either seed in normal application startup,
+receives `CLOUD_DATABASE_URL` and `YUTA_CLOUD_SEED_PASSWORD`; a POS seed job
+receives `POS_DATABASE_URL` and the three seed PIN variables. Do not include
+either seed in normal application startup,
 and do not run development fixtures automatically during production
 deployment.
 

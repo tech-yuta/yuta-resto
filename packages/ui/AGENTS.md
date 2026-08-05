@@ -11,6 +11,6 @@ framework, hard-coded feature colors, application/database/provider imports, or
 inline styles except for genuinely dynamic runtime values.
 
 Before adding a component, search existing exports and usage. Export new public
-components from `src/index.ts`, then update the component catalogs in root
-`AGENTS.md` and `.github/copilot-instructions.md`. Validate the UI typecheck and
-affected consuming applications.
+components from `src/index.ts`; it is the authoritative catalog, so do not
+duplicate the list in instruction files. Validate the UI typecheck and affected
+consuming applications.

@@ -9,7 +9,8 @@ seeds. `apps/site-agent` is its runtime owner.
   payment/check invariants, kitchen batches, and durable print jobs.
 - Use constraints, indexes, and transactions for operational invariants.
 - Never edit a deployed migration; review new generated SQL.
-- Keep seeds idempotent and integration tests guarded and disposable.
+- Keep seeds idempotent, require explicit seed PIN variables, and never add
+  stable credential fallbacks. Keep integration tests guarded and disposable.
 
 Validate with architecture check and db-pos typecheck/tests; schema changes also
 require the guarded integration suite.

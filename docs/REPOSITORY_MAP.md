@@ -2,6 +2,8 @@
 
 Status: Current
 
+Visibility: Engineering
+
 Owner: YUTA engineering
 
 Last updated: 2026-08-05
@@ -51,3 +53,13 @@ domain logic ---------------------------------> core / booking
 
 No application may use `@yuta/db`. No browser bundle may contain a database
 connection string, driver, secret, or trusted authorization scope.
+
+## Product visibility
+
+Keeping a local application in this monorepo does not make it a public YUTA
+service capability. Public website, SEO, pricing, partner/bank, commercial, and
+customer-facing documents must not promote local checkout, payment, billing,
+invoicing, cash-register, or money-management workflows as public services.
+
+Engineering and local operator documentation may describe maintained local
+products in full.
