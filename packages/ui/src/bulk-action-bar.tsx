@@ -29,7 +29,9 @@ export function BulkActionBar({
       <p className="text-sm font-bold text-brand-800">
         {label ?? `${selectedCount} selected`}
       </p>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+      )}
     </div>
   );
 }

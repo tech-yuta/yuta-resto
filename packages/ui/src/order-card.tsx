@@ -37,8 +37,10 @@ const orderStatusTone: Record<
   cancelled: 'danger',
 };
 
-export interface OrderCardProps
-  extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+export interface OrderCardProps extends Omit<
+  HTMLAttributes<HTMLElement>,
+  'title'
+> {
   title: ReactNode;
   orderNumber?: ReactNode;
   status: OrderCardStatus;
@@ -152,7 +154,9 @@ export function OrderItemRow({
           <p className="truncate font-black">{name}</p>
           {status}
         </div>
-        {note && <p className="mt-1 text-xs font-semibold text-muted">{note}</p>}
+        {note && (
+          <p className="mt-1 text-xs font-semibold text-muted">{note}</p>
+        )}
       </div>
       <div className="grid justify-items-end gap-2">
         {price && <span className="font-black">{price}</span>}
@@ -183,10 +187,17 @@ export function PaymentSummary({
   ...props
 }: PaymentSummaryProps) {
   return (
-    <Card padding="none" className={cn('rounded-lg shadow-none', className)} {...props}>
+    <Card
+      padding="none"
+      className={cn('rounded-lg shadow-none', className)}
+      {...props}
+    >
       <div className="grid gap-3 p-4">
         {rows.map((row, index) => (
-          <div key={index} className="flex items-center justify-between gap-3 text-sm">
+          <div
+            key={index}
+            className="flex items-center justify-between gap-3 text-sm"
+          >
             <span className="font-semibold text-muted">{row.label}</span>
             <span className="font-black">{row.value}</span>
           </div>
@@ -218,7 +229,9 @@ export function EmptyOrderState({
       <div>
         <ReceiptText className="mx-auto h-10 w-10 text-primary/35" />
         <h2 className="mt-4 text-lg font-bold">{title}</h2>
-        {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+        {description && (
+          <p className="mt-1 text-sm text-muted">{description}</p>
+        )}
         {action && <div className="mt-4 flex justify-center">{action}</div>}
       </div>
     </div>

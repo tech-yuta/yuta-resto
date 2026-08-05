@@ -9,6 +9,7 @@
   },
   "scripts": {
     "architecture:check": "node ./scripts/check-import-boundaries.mjs",
+    "docs:check": "node ./scripts/check-documentation-consistency.mjs",
     "dev": "pnpm --filter @yuta/web dev",
     "dev:backoffice": "pnpm --filter @yuta/backoffice dev",
     "dev:booking": "pnpm --filter @yuta/booking-web dev",
@@ -57,7 +58,8 @@
     "typecheck:display": "pnpm --filter @yuta/display typecheck",
     "typecheck:pos": "pnpm --filter @yuta/pos typecheck",
     "typecheck:site-agent": "pnpm --filter @yuta/site-agent typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "prettier": "^3.8.4"

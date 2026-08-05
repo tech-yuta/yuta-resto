@@ -125,8 +125,7 @@ export async function POST(
       {
         error: {
           code: 'PUBLIC_FEEDBACK_FAILED',
-          message:
-            "Votre message n'a pas pu être envoyé. Veuillez réessayer.",
+          message: "Votre message n'a pas pu être envoyé. Veuillez réessayer.",
         },
       },
       { status: 500 },

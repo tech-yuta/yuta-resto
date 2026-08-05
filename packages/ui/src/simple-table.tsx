@@ -26,7 +26,12 @@ export function SimpleTableBody({
   className,
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn('divide-y divide-border-default', className)} {...props} />;
+  return (
+    <tbody
+      className={cn('divide-y divide-border-default', className)}
+      {...props}
+    />
+  );
 }
 
 export function SimpleTableFooter({
@@ -35,7 +40,10 @@ export function SimpleTableFooter({
 }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <tfoot
-      className={cn('border-t border-border-default bg-surface-muted font-semibold', className)}
+      className={cn(
+        'border-t border-border-default bg-surface-muted font-semibold',
+        className,
+      )}
       {...props}
     />
   );
@@ -47,7 +55,10 @@ export function SimpleTableRow({
 }: HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
-      className={cn('border-border-default transition-colors hover:bg-surface-muted/70', className)}
+      className={cn(
+        'border-border-default transition-colors hover:bg-surface-muted/70',
+        className,
+      )}
       {...props}
     />
   );

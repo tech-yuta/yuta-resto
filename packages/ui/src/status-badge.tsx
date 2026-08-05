@@ -13,8 +13,10 @@ const statusConfig = {
 
 export type StatusBadgeStatus = keyof typeof statusConfig;
 
-export interface StatusBadgeProps
-  extends Omit<ComponentProps<typeof Badge>, 'tone'> {
+export interface StatusBadgeProps extends Omit<
+  ComponentProps<typeof Badge>,
+  'tone'
+> {
   status: StatusBadgeStatus;
   label?: string;
 }

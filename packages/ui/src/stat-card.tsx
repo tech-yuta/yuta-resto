@@ -19,7 +19,8 @@ const statToneVariants = cva('', {
 });
 
 export interface StatCardProps
-  extends HTMLAttributes<HTMLDivElement>,
+  extends
+    HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof statToneVariants> {
   label: ReactNode;
   value: ReactNode;
@@ -48,11 +49,7 @@ export function StatCard({
         <p className="text-xs font-medium leading-snug text-primary/60">
           {label}
         </p>
-        {icon && (
-          <IconTile tone={tone ?? 'success'}>
-            {icon}
-          </IconTile>
-        )}
+        {icon && <IconTile tone={tone ?? 'success'}>{icon}</IconTile>}
       </div>
       <div>
         <p className="text-2xl font-bold tracking-tight text-primary">

@@ -25,14 +25,22 @@ export function FilterBar({
       {...props}
     >
       {search && <div className="min-w-0 flex-1">{search}</div>}
-      {filters && <div className="flex flex-wrap items-center gap-2">{filters}</div>}
-      {actions && <div className="flex shrink-0 items-center gap-2 md:ml-auto">{actions}</div>}
+      {filters && (
+        <div className="flex flex-wrap items-center gap-2">{filters}</div>
+      )}
+      {actions && (
+        <div className="flex shrink-0 items-center gap-2 md:ml-auto">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
 
-export interface SearchInputProps
-  extends Omit<ComponentProps<typeof Input>, 'type'> {
+export interface SearchInputProps extends Omit<
+  ComponentProps<typeof Input>,
+  'type'
+> {
   label?: string;
 }
 

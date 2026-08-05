@@ -27,7 +27,11 @@ export function Panel({
   const hasHeader = title || action || description;
 
   return (
-    <Card padding={padding} className={cn('flex h-full flex-col overflow-hidden', className)} {...props}>
+    <Card
+      padding={padding}
+      className={cn('flex h-full flex-col overflow-hidden', className)}
+      {...props}
+    >
       {hasHeader && (
         <>
           <PanelHeader
@@ -39,12 +43,17 @@ export function Panel({
           {withSeparator && <Separator />}
         </>
       )}
-      <div className={cn('flex flex-1 flex-col', bodyClassName)}>{children}</div>
+      <div className={cn('flex flex-1 flex-col', bodyClassName)}>
+        {children}
+      </div>
     </Card>
   );
 }
 
-export interface PanelHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface PanelHeaderProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   title?: ReactNode;
   action?: ReactNode;
   description?: ReactNode;
@@ -59,7 +68,10 @@ export function PanelHeader({
 }: PanelHeaderProps) {
   return (
     <div
-      className={cn('flex items-center justify-between gap-3 px-5 py-5', className)}
+      className={cn(
+        'flex items-center justify-between gap-3 px-5 py-5',
+        className,
+      )}
       {...props}
     >
       <div className="min-w-0">

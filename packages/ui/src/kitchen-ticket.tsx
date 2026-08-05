@@ -5,7 +5,11 @@ import { Card } from './card';
 import { Separator } from './separator';
 import { cn } from './utils';
 
-export type KitchenItemStatusValue = 'sent' | 'preparing' | 'ready' | 'cancelled';
+export type KitchenItemStatusValue =
+  | 'sent'
+  | 'preparing'
+  | 'ready'
+  | 'cancelled';
 
 const kitchenItemStatusConfig: Record<
   KitchenItemStatusValue,
@@ -21,8 +25,10 @@ const kitchenItemStatusConfig: Record<
   cancelled: { label: 'Cancelled', tone: 'danger', variant: 'solid' },
 };
 
-export interface KitchenItemStatusProps
-  extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
+export interface KitchenItemStatusProps extends Omit<
+  HTMLAttributes<HTMLSpanElement>,
+  'children'
+> {
   status: KitchenItemStatusValue;
   label?: ReactNode;
 }
@@ -57,8 +63,10 @@ export interface KitchenTicketItem {
   actions?: ReactNode;
 }
 
-export interface KitchenTicketProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface KitchenTicketProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   title: ReactNode;
   orderNumber?: ReactNode;
   orderType?: ReactNode;

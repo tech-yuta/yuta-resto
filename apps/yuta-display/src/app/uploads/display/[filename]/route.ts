@@ -15,7 +15,11 @@ const contentTypes: Record<string, string> = {
 };
 
 function isSafeFileName(fileName: string): boolean {
-  return fileName === path.basename(fileName) && !fileName.includes('/') && !fileName.includes('\\');
+  return (
+    fileName === path.basename(fileName) &&
+    !fileName.includes('/') &&
+    !fileName.includes('\\')
+  );
 }
 
 export async function GET(

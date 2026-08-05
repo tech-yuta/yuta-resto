@@ -32,11 +32,7 @@ export function Avatar({
       {...props}
     >
       {src ? (
-        <img
-          src={src}
-          alt={alt}
-          className="h-full w-full object-cover"
-        />
+        <img src={src} alt={alt} className="h-full w-full object-cover" />
       ) : (
         <span aria-hidden={alt.length > 0}>{fallback.slice(0, 2)}</span>
       )}

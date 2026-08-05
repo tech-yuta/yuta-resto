@@ -42,7 +42,12 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (loading) {
     return (
-      <div className={cn('grid gap-2 rounded-lg border border-border-default p-3', className)}>
+      <div
+        className={cn(
+          'grid gap-2 rounded-lg border border-border-default p-3',
+          className,
+        )}
+      >
         {Array.from({ length: 5 }).map((_, index) => (
           <Skeleton key={index} className="h-12" />
         ))}
@@ -63,7 +68,12 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={cn('overflow-hidden rounded-lg border border-border-default bg-surface', className)}>
+    <div
+      className={cn(
+        'overflow-hidden rounded-lg border border-border-default bg-surface',
+        className,
+      )}
+    >
       <SimpleTable>
         <SimpleTableHeader>
           <SimpleTableRow className="hover:bg-transparent">

@@ -34,7 +34,8 @@ const iconTileVariants = cva(
 );
 
 export interface IconTileProps
-  extends HTMLAttributes<HTMLDivElement>,
+  extends
+    HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof iconTileVariants> {}
 
 export function IconTile({

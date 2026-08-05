@@ -57,7 +57,7 @@ export function MediaActions({ item, onRefresh }: MediaActionsProps) {
         <Input
           type="text"
           value={values.title}
-          onChange={e => setValues(v => ({ ...v, title: e.target.value }))}
+          onChange={(e) => setValues((v) => ({ ...v, title: e.target.value }))}
           placeholder={uiText.title}
         />
 
@@ -66,7 +66,9 @@ export function MediaActions({ item, onRefresh }: MediaActionsProps) {
           <Input
             type="number"
             value={values.duration}
-            onChange={e => setValues(v => ({ ...v, duration: Number(e.target.value) }))}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, duration: Number(e.target.value) }))
+            }
             min={1}
             placeholder={uiText.duration}
           />
@@ -76,7 +78,9 @@ export function MediaActions({ item, onRefresh }: MediaActionsProps) {
         <Input
           type="number"
           value={values.sortOrder}
-          onChange={e => setValues(v => ({ ...v, sortOrder: Number(e.target.value) }))}
+          onChange={(e) =>
+            setValues((v) => ({ ...v, sortOrder: Number(e.target.value) }))
+          }
           min={0}
           placeholder={uiText.sortOrder}
         />
@@ -85,7 +89,9 @@ export function MediaActions({ item, onRefresh }: MediaActionsProps) {
         <label className="flex items-center gap-2 text-sm text-primary">
           <Checkbox
             checked={values.isActive}
-            onCheckedChange={(checked) => setValues(v => ({ ...v, isActive: !!checked }))}
+            onCheckedChange={(checked) =>
+              setValues((v) => ({ ...v, isActive: !!checked }))
+            }
           />
           <Label>{uiText.active}</Label>
         </label>
@@ -95,7 +101,11 @@ export function MediaActions({ item, onRefresh }: MediaActionsProps) {
           <Button size="sm" onClick={handleSave} disabled={saving}>
             {saving ? uiText.loading : uiText.save}
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => setEditing(false)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setEditing(false)}
+          >
             {uiText.cancel}
           </Button>
         </div>

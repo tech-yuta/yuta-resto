@@ -41,12 +41,13 @@ export function FieldHint({
   className,
   ...props
 }: HTMLAttributes<HTMLParagraphElement>) {
-  return (
-    <p className={cn('text-sm text-muted', className)} {...props} />
-  );
+  return <p className={cn('text-sm text-muted', className)} {...props} />;
 }
 
-export interface FormSectionProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+export interface FormSectionProps extends Omit<
+  HTMLAttributes<HTMLElement>,
+  'title'
+> {
   title?: ReactNode;
   description?: ReactNode;
 }
@@ -64,9 +65,7 @@ export function FormSection({
         <div>
           {title && <h2 className="font-bold text-primary">{title}</h2>}
           {description && (
-            <p className="mt-1 text-sm font-medium text-muted">
-              {description}
-            </p>
+            <p className="mt-1 text-sm font-medium text-muted">{description}</p>
           )}
         </div>
       )}

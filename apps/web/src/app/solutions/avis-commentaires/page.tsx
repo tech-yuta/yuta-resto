@@ -95,8 +95,8 @@ export default function ReviewsSolutionPage() {
 
       <InformationSection title="Une partie de l’environnement YUTA">
         <p>
-          Le module Avis & commentaires appartient au pilier Relation client.
-          À terme, il partage le contexte de l’établissement avec les autres
+          Le module Avis & commentaires appartient au pilier Relation client. À
+          terme, il partage le contexte de l’établissement avec les autres
           modules utiles au suivi quotidien.
         </p>
         <div className="flex flex-wrap gap-3">

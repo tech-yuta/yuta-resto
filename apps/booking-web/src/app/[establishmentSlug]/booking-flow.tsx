@@ -162,12 +162,12 @@ export function BookingFlow({
   }
 
   return (
-    <div
-      className={`flex h-dvh flex-col sm:max-h-225`}
-    >
+    <div className={`flex h-dvh flex-col sm:max-h-225`}>
       <RestaurantBrand establishment={establishment} />
       <div
-        className={'flex flex-1 px-6 pb-5 sm:px-8 sm:pb-7 sm:pt-8 min-h-0 flex-col overflow-y-auto'}
+        className={
+          'flex flex-1 px-6 pb-5 sm:px-8 sm:pb-7 sm:pt-8 min-h-0 flex-col overflow-y-auto'
+        }
       >
         {step === 1 && (
           <PartyStep
@@ -248,7 +248,7 @@ export function BookingFlow({
 }
 
 function RestaurantBrand({
-  establishment
+  establishment,
 }: {
   establishment: Establishment;
   showWelcome?: boolean;

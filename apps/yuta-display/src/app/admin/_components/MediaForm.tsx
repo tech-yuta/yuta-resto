@@ -6,7 +6,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button, Input, Label, Checkbox } from '@yuta/ui';
 import { uiText } from '../../../constants/ui-text';
-import { ALLOWED_MIME_TYPES, MAX_IMAGE_SIZE, MAX_VIDEO_SIZE, isVideoMimeType } from '../../../utils/media';
+import {
+  ALLOWED_MIME_TYPES,
+  MAX_IMAGE_SIZE,
+  MAX_VIDEO_SIZE,
+  isVideoMimeType,
+} from '../../../utils/media';
 
 const schema = z.object({
   title: z.string().max(255).optional(),
@@ -58,7 +63,9 @@ export function MediaForm({ onSuccess, onCancel }: MediaFormProps) {
       return;
     }
 
-    const maxSize = isVideoMimeType(selected.type) ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+    const maxSize = isVideoMimeType(selected.type)
+      ? MAX_VIDEO_SIZE
+      : MAX_IMAGE_SIZE;
     if (selected.size > maxSize) {
       setFileError(uiText.fileTooLarge);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -89,16 +96,17 @@ export function MediaForm({ onSuccess, onCancel }: MediaFormProps) {
       });
 
       if (!uploadRes.ok) {
-        const err = await uploadRes.json() as { error?: string };
+        const err = (await uploadRes.json()) as { error?: string };
         throw new Error(err.error ?? 'Upload failed');
       }
 
-      const { fileUrl, fileName, mimeType, size } = await uploadRes.json() as {
-        fileUrl: string;
-        fileName: string;
-        mimeType: string;
-        size: number;
-      };
+      const { fileUrl, fileName, mimeType, size } =
+        (await uploadRes.json()) as {
+          fileUrl: string;
+          fileName: string;
+          mimeType: string;
+          size: number;
+        };
 
       // Step 2: create the database record
       const createRes = await fetch('/api/display-media', {
@@ -118,7 +126,7 @@ export function MediaForm({ onSuccess, onCancel }: MediaFormProps) {
       });
 
       if (!createRes.ok) {
-        const err = await createRes.json() as { error?: string };
+        const err = (await createRes.json()) as { error?: string };
         throw new Error(err.error ?? 'Failed to create media record');
       }
 
@@ -161,7 +169,9 @@ export function MediaForm({ onSuccess, onCancel }: MediaFormProps) {
           type="text"
           placeholder="Titre du média (optionnel)"
         />
-        {errors.title && <p className="text-sm text-red-500">{errors.title.message}</p>}
+        {errors.title && (
+          <p className="text-sm text-red-500">{errors.title.message}</p>
+        )}
       </div>
 
       {/* Duration — images only */}

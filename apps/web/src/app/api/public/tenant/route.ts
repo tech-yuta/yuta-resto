@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { ApiError } from '@yuta/contracts/common';
-import {
-  createDomainLookup,
-  findScopedEstablishment,
-} from '@yuta/db-cloud';
+import { createDomainLookup, findScopedEstablishment } from '@yuta/db-cloud';
 import { resolvePublicTenant, TenantError } from '@yuta/tenant';
 import { cloudDatabase as db } from '../../../../server/cloud-database';
 

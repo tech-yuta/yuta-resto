@@ -18,7 +18,10 @@ export function generateSafeFileName(originalName: string): string {
  * Falls back to <cwd>/public/uploads/display when UPLOAD_DIR is not set.
  */
 export function getUploadDir(): string {
-  return process.env.UPLOAD_DIR || path.join(process.cwd(), 'public', 'uploads', 'display');
+  return (
+    process.env.UPLOAD_DIR ||
+    path.join(process.cwd(), 'public', 'uploads', 'display')
+  );
 }
 
 /**

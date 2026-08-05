@@ -32,7 +32,9 @@ export function AdminShell({ initialMedia }: AdminShellProps) {
       <header className="border-b border-border-default bg-white px-6 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-lg font-semibold text-primary">Yuta Display</span>
+            <span className="text-lg font-semibold text-primary">
+              Yuta Display
+            </span>
             <span className="rounded-lg bg-surface-muted px-3 py-1 text-sm font-medium text-primary">
               {uiText.dashboard}
             </span>
@@ -61,7 +63,9 @@ export function AdminShell({ initialMedia }: AdminShellProps) {
         {/* Add-media form */}
         {showForm && (
           <Card>
-            <h2 className="mb-4 text-base font-semibold text-primary">{uiText.addMedia}</h2>
+            <h2 className="mb-4 text-base font-semibold text-primary">
+              {uiText.addMedia}
+            </h2>
             <MediaForm
               onSuccess={async () => {
                 setShowForm(false);

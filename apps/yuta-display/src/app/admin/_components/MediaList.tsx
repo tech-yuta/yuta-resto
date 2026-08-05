@@ -26,13 +26,27 @@ export function MediaList({ media, onRefresh }: MediaListProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border-default bg-surface-muted">
-              <th className="px-4 py-3 text-left font-medium text-primary">{uiText.preview}</th>
-              <th className="px-4 py-3 text-left font-medium text-primary">{uiText.title}</th>
-              <th className="px-4 py-3 text-left font-medium text-primary">{uiText.type}</th>
-              <th className="px-4 py-3 text-left font-medium text-primary">{uiText.duration}</th>
-              <th className="px-4 py-3 text-left font-medium text-primary">{uiText.sortOrder}</th>
-              <th className="px-4 py-3 text-left font-medium text-primary">{uiText.status}</th>
-              <th className="px-4 py-3 text-left font-medium text-primary">{uiText.actions}</th>
+              <th className="px-4 py-3 text-left font-medium text-primary">
+                {uiText.preview}
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-primary">
+                {uiText.title}
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-primary">
+                {uiText.type}
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-primary">
+                {uiText.duration}
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-primary">
+                {uiText.sortOrder}
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-primary">
+                {uiText.status}
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-primary">
+                {uiText.actions}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -53,11 +67,18 @@ export function MediaList({ media, onRefresh }: MediaListProps) {
                   {item.type === 'image' ? uiText.image : uiText.video}
                 </td>
                 <td className="px-4 py-3 text-primary">
-                  {item.type === 'image' ? `${item.duration} s` : <span className="text-primary/40">—</span>}
+                  {item.type === 'image' ? (
+                    `${item.duration} s`
+                  ) : (
+                    <span className="text-primary/40">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-primary">{item.sortOrder}</td>
                 <td className="px-4 py-3">
-                  <Badge tone={item.isActive ? 'success' : 'neutral'} variant="soft">
+                  <Badge
+                    tone={item.isActive ? 'success' : 'neutral'}
+                    variant="soft"
+                  >
                     {item.isActive ? uiText.active : uiText.inactive}
                   </Badge>
                 </td>

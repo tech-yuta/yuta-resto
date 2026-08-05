@@ -2,7 +2,10 @@ import type { HTMLAttributes, ReactNode } from 'react';
 import { CircleAlert } from 'lucide-react';
 import { cn } from './utils';
 
-export interface ErrorStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface ErrorStateProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   title: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
@@ -17,7 +20,10 @@ export function ErrorState({
 }: ErrorStateProps) {
   return (
     <div
-      className={cn('grid min-h-64 place-items-center p-8 text-center', className)}
+      className={cn(
+        'grid min-h-64 place-items-center p-8 text-center',
+        className,
+      )}
       {...props}
     >
       <div>

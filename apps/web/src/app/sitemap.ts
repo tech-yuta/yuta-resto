@@ -24,8 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority:
       route === ''
         ? 1
-        : route === '/solutions' ||
-            route === '/solutions/avis-commentaires'
+        : route === '/solutions' || route === '/solutions/avis-commentaires'
           ? 0.8
           : 0.6,
   }));

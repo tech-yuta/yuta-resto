@@ -1,12 +1,6 @@
 import type { Metadata } from 'next';
 import { Badge, Card, IconTile } from '@yuta/ui';
-import {
-  ArrowRight,
-  Boxes,
-  Gauge,
-  MessageCircle,
-  Users,
-} from 'lucide-react';
+import { ArrowRight, Boxes, Gauge, MessageCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 import {
   MarketingButton,
@@ -72,11 +66,7 @@ const pillars = [
       'Piloter l’activité et préparer la communication prend du temps lorsque les données et contenus sont dispersés.',
     workflow:
       'Des tableaux de bord et assistants ciblés aident à préparer les décisions et les contenus, sous contrôle humain.',
-    modules: [
-      'Tableaux de bord',
-      'Création visuelle',
-      'Communication',
-    ],
+    modules: ['Tableaux de bord', 'Création visuelle', 'Communication'],
     icon: Gauge,
   },
 ];

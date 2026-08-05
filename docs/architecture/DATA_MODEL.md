@@ -59,11 +59,11 @@ a restaurant/site/branch.
 
 YUTA has three independent database ownership boundaries.
 
-| Boundary   | Runtime owner                             | Connection variable    | Purpose                                                                                                     |
-| ---------- | ----------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Cloud SaaS | `packages/db-cloud`                       | `CLOUD_DATABASE_URL`   | Identity, tenancy, reputation, public booking, and approved SaaS data                                             |
-| Local POS  | `apps/site-agent` using `packages/db-pos` | `POS_DATABASE_URL`     | Local staff/PIN auth, catalog, orders, payments, checks, discounts, printing                                |
-| Display    | `apps/yuta-display/src/db`                | `DISPLAY_DATABASE_URL` | Standalone signage media                                                                                    |
+| Boundary   | Runtime owner                             | Connection variable    | Purpose                                                                      |
+| ---------- | ----------------------------------------- | ---------------------- | ---------------------------------------------------------------------------- |
+| Cloud SaaS | `packages/db-cloud`                       | `CLOUD_DATABASE_URL`   | Identity, tenancy, reputation, public booking, and approved SaaS data        |
+| Local POS  | `apps/site-agent` using `packages/db-pos` | `POS_DATABASE_URL`     | Local staff/PIN auth, catalog, orders, payments, checks, discounts, printing |
+| Display    | `apps/yuta-display/src/db`                | `DISPLAY_DATABASE_URL` | Standalone signage media                                                     |
 
 These databases use separate credentials, migrations, schemas, and failure
 domains. Browser code receives no database connection string.

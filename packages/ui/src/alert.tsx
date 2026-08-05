@@ -22,8 +22,7 @@ const alertVariants = cva('rounded-lg border p-4 text-sm', {
 });
 
 export interface AlertProps
-  extends HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof alertVariants> {
+  extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertVariants> {
   icon?: ReactNode;
 }
 
@@ -61,7 +60,9 @@ export function AlertDescription({
   className,
   ...props
 }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('mt-1 font-medium opacity-80', className)} {...props} />;
+  return (
+    <p className={cn('mt-1 font-medium opacity-80', className)} {...props} />
+  );
 }
 
 export { alertVariants };

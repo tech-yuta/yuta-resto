@@ -1,4 +1,8 @@
-export const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const ALLOWED_IMAGE_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
 export const ALLOWED_VIDEO_MIME_TYPES = ['video/mp4'] as const;
 export const ALLOWED_MIME_TYPES = [
   ...ALLOWED_IMAGE_MIME_TYPES,

@@ -77,7 +77,10 @@ export function AppSidebarFooter({
 }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>) {
   return (
     <div
-      className={cn('shrink-0 border-t border-border-default px-4 py-2', className)}
+      className={cn(
+        'shrink-0 border-t border-border-default px-4 py-2',
+        className,
+      )}
       {...props}
     >
       {children}
@@ -105,7 +108,11 @@ export function AppTopbar({
       {...props}
     >
       {search}
-      {actions && <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {actions}
+        </div>
+      )}
     </header>
   );
 }
@@ -117,7 +124,10 @@ export function AppMain({
 }: PropsWithChildren<HTMLAttributes<HTMLElement>>) {
   return (
     <main
-      className={cn('min-h-0 flex-1 overflow-y-auto px-5 pb-16 pt-8 md:px-8', className)}
+      className={cn(
+        'min-h-0 flex-1 overflow-y-auto px-5 pb-16 pt-8 md:px-8',
+        className,
+      )}
       {...props}
     >
       {children}

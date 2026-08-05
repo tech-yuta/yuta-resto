@@ -1,7 +1,10 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from './utils';
 
-export interface ListRowProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface ListRowProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   media?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
@@ -20,10 +23,7 @@ export function ListRow({
 }: ListRowProps) {
   return (
     <div
-      className={cn(
-        'flex items-center gap-3 px-5 py-3',
-        className,
-      )}
+      className={cn('flex items-center gap-3 px-5 py-3', className)}
       {...props}
     >
       {media}

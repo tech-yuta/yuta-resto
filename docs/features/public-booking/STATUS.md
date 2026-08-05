@@ -11,6 +11,8 @@ Last updated: 2026-08-05
 ## Implemented foundation
 
 - Independent `apps/booking-web` application and pure `packages/booking` domain.
+- Current application and package ownership is reconciled in the master product
+  specification.
 - Cloud persistence and server-side establishment resolution.
 - Availability/capacity rules and public creation/management foundations.
 - Back-office reservation workflows, shared contracts, and UI foundations.
@@ -22,7 +24,8 @@ Last updated: 2026-08-05
 - Validate production build environment and notification dependencies.
 - Confirm public/back-office loading, empty, error, forbidden, conflict,
   success, and recovery states.
-- Reconcile implemented behavior with `README.md` and `PRODUCT_SPEC.md`.
+- Complete a feature-by-feature reconciliation of implemented behavior against
+  `README.md` and `PRODUCT_SPEC.md`; architecture naming is already reconciled.
 - Document remaining external provider and operator dependencies.
 
 ## Validation

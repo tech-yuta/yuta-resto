@@ -1,0 +1,5 @@
+**/.next/**
+**/next-env.d.ts
+**/drizzle/meta/**
+apps/yuta-pos/public/sw.js
+pnpm-lock.yaml

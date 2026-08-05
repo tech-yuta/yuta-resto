@@ -8,7 +8,11 @@
  * Inline <style> is used intentionally: CSS custom properties and @layer
  * are sometimes unreliable on older Tizen / HbbTV browsers.
  */
-export default function DisplayLayout({ children }: { children: React.ReactNode }) {
+export default function DisplayLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <>
       {/* PWA manifest — "display": "fullscreen" hides browser chrome when added to home screen */}
@@ -17,7 +21,10 @@ export default function DisplayLayout({ children }: { children: React.ReactNode 
       {/* Mobile/TV fullscreen meta tags */}
       <meta name="mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent"
+      />
 
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

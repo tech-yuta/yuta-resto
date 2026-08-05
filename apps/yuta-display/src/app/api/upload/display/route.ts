@@ -17,7 +17,10 @@ export async function POST(request: Request) {
     const blob = file as File;
 
     if (!validateMimeType(blob.type)) {
-      return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Unsupported file type' },
+        { status: 400 },
+      );
     }
 
     if (!validateFileSize(blob.size, blob.type)) {

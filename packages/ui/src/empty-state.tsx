@@ -1,7 +1,10 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from './utils';
 
-export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface EmptyStateProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   icon?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
@@ -18,7 +21,10 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={cn('grid min-h-64 place-items-center p-8 text-center', className)}
+      className={cn(
+        'grid min-h-64 place-items-center p-8 text-center',
+        className,
+      )}
       {...props}
     >
       <div>

@@ -1,253 +1,207 @@
-# AGENTS.md — YuTa Monorepo
+# YUTA Monorepo Agent Instructions
 
-## Workspace Overview
+## Repository model
 
-This is the YuTa internal restaurant tool monorepo.
+YUTA is a modular restaurant platform monorepo containing cloud services, local
+operational products, and shared foundation packages.
 
-```
-apps/backoffice     — Restaurant back-office (port 3001)
-apps/booking-web    — Public restaurant booking app (port 3005)
-apps/web            — Public web app (port 3000)
-apps/yuta-display   — Digital signage display (port 3002)
-apps/yuta-pos       — Local-only restaurant POS client (port 3003)
-apps/site-agent     — Target local POS API/device integration boundary (port 3004)
-packages/db-cloud   — Target cloud SaaS database package
-packages/db-pos     — Target local POS database package
-packages/auth       — Authentication contracts and cryptographic primitives
-packages/contracts  — Shared transport contracts and Zod schemas
-packages/tenant     — Trusted cloud tenant context and authorization guards
-packages/booking    — Pure public-booking domain logic
-packages/core       — Shared business logic, tool registry
-packages/ui         — Shared UI component library (@yuta/ui)
-```
+### Cloud and public services
 
-Future apps may include: `yuta-staff` and `yuta-crm`.
+- `apps/web` — public YUTA website and approved tenant-facing public flows.
+- `apps/backoffice` — authenticated restaurant back-office.
+- `apps/booking-web` — independent public booking application.
+- `apps/platform-admin` — reserved for future platform-wide YUTA administration;
+  not implemented.
 
-## Instruction and documentation order
+### Local operational products
+
+- `apps/yuta-pos` — local restaurant operational client.
+- `apps/site-agent` — local API, POS persistence, printing, realtime, and device
+  boundary.
+- `apps/yuta-display` — standalone local digital signage.
+
+Local products are maintained first-class monorepo components. They are not
+legacy.
+
+### Shared foundation
+
+- `packages/auth`
+- `packages/contracts`
+- `packages/core`
+- `packages/booking`
+- `packages/tenant`
+- `packages/db-cloud`
+- `packages/db-pos`
+- `packages/ui`
+
+Package manifests are authoritative for versions and scripts.
+
+## Instruction order
 
 Before editing:
 
 1. Read this file.
 2. Read `docs/README.md` and `docs/CURRENT_STATE.md`.
 3. Read the nearest nested `AGENTS.md`.
-4. Read the relevant architecture, feature, product, or operations document.
-5. Inspect the implementation and tests.
+4. Read the relevant current architecture, feature, product, or operations doc.
+5. Inspect current code and tests.
 
 The nearest nested `AGENTS.md` has priority for its directory. Current approved
 documentation defines intended behavior; code and tests are implementation
-evidence. Report conflicts rather than silently choosing one.
+evidence. Report conflicts instead of silently choosing.
 
-The legacy shared `packages/db` has been removed.
-The authoritative current architecture is documented under `docs/architecture/`.
+## Product visibility
 
-- `apps/backoffice` and server-side cloud features in `apps/web` use
-  `packages/db-cloud`.
-- `apps/yuta-pos` accesses local operational data through `apps/site-agent`;
-  `site-agent` is the runtime owner of `packages/db-pos`.
-- POS operational data must never be stored in or synchronized to the cloud
-  database.
-- `apps/yuta-display` is a standalone local product and keeps its single-owner
-  database under `apps/yuta-display/src/db`.
-- Do not create `packages/db-display` unless a second legitimate server-side
-  consumer needs the display schema or repositories.
-- Do not introduce a compatibility package that re-exports the new databases
-  through `@yuta/db`.
-- The future internal YUTA administration application is reserved as
-  `apps/platform-admin`; do not use `apps/backoffice` for platform administration.
-- `apps/booking-web` is an independent public cloud application. It resolves an
-  establishment server-side and uses `packages/db-cloud`; its browser bundle
-  must never receive database credentials or trusted tenant scope.
+Repository ownership and public product visibility are separate.
 
-Run `pnpm architecture:check` after changing dependencies, environment access,
-database boundaries, or package imports.
+Engineering and local-operator documentation may describe all maintained local
+products. Do not present local checkout, payment, billing, invoicing,
+cash-register, or money-management workflows as public YUTA service
+capabilities in marketing, SEO, pricing, partner/bank materials, commercial
+proposals, customer-facing roadmaps, or public announcements.
 
----
+Visibility labels define communication scope, not confidentiality. Never commit
+secrets to this public repository.
 
-## Product visibility boundary
+## Runtime and database ownership
 
-Repository ownership and public product visibility are different concerns.
-Engineering documentation may describe every maintained cloud and local
-runtime. Do not present local checkout, payment, billing, invoicing,
-cash-register, or money-management workflows as YUTA public-service
-capabilities in marketing/SEO copy, pricing, partner or bank materials,
-commercial proposals, customer-facing roadmaps, or public announcements.
+- Cloud server code uses `@yuta/db-cloud`.
+- `apps/yuta-pos` accesses persistence and devices through `apps/site-agent`.
+- `apps/site-agent` is the runtime owner of `@yuta/db-pos`.
+- `apps/yuta-display` owns its standalone display persistence.
+- Cloud, POS, and Display use separate database names, users, credentials,
+  migrations, environment files, and failure domains.
+- POS operational data must not be stored in or synchronized to cloud
+  persistence.
+- Display persistence remains separate from cloud and POS.
+- Browser bundles receive no database drivers, URLs, secrets, or trusted scope.
+- Do not recreate the removed `@yuta/db` compatibility package.
 
-This restriction does not apply to technical documentation, tests, source code,
-or local operator documentation. `Engineering` and `Local operator` visibility
-labels define communication scope, not confidentiality.
+Run `pnpm architecture:check` after changing dependencies, imports, environment
+access, migrations, or runtime ownership.
 
----
+## Cloud tenancy and authorization
 
-## UI Law — Mandatory for All Apps
+The persisted hierarchy is:
 
-### Single UI source
-
-All apps MUST use `@yuta/ui` (`packages/ui`).
-
-NEVER introduce MUI, Ant Design, Chakra UI, Mantine, or any other component library.
-
-### Design tokens
-
-Use semantic Tailwind CSS token classes. Never use raw hex values in `className` or `style={{}}`. Core UI components must use role-based tokens, not product/story color names.
-
-| Token family            | Purpose                                   |
-| ----------------------- | ----------------------------------------- |
-| `brand-*`               | Brand palette foundation                  |
-| `neutral-*`             | Neutral palette foundation                |
-| `bg-canvas`             | Page background                           |
-| `bg-surface`            | Default card, panel, input surface        |
-| `bg-surface-muted`      | Subtle backgrounds and hover states       |
-| `bg-surface-selected`   | Selected or brand-tinted soft surface     |
-| `text-primary`          | Primary text                              |
-| `text-secondary`        | Secondary text                            |
-| `text-muted`            | Muted text                                |
-| `text-inverse`          | Text on dark or solid backgrounds         |
-| `border-border-default` | Default borders and dividers              |
-| `border-border-strong`  | Stronger borders                          |
-| `bg-action-primary`     | Primary action background                 |
-| `bg-action-danger`      | Destructive action background             |
-| `ring-focus-ring`       | Focus rings                               |
-| `status-*`              | Success, warning, danger, and info states |
-
-### Component authority
-
-`packages/ui/src/index.ts` is the authoritative public component export list.
-Inspect source exports and existing usage before adding an app-local primitive.
-Do not duplicate the export catalog in instruction or feature documents.
-
-### Icons
-
-Use `lucide-react` only. Never `@mui/icons-material`.
-
-### Typography
-
-Public YuTa websites and the restaurant back-office use Geist Sans for all UI
-text, with `Inter, sans-serif` as the fallback stack. Do not use serif fonts.
-
-### CSS setup per app
-
-`globals.css` must start with:
-
-```css
-@import '@yuta/ui/styles/global.css';
+```text
+organization
+└── establishment
 ```
 
-`postcss.config.mjs` must contain:
+`tenant` is trusted runtime authorization context, not a table and not browser
+input.
 
-```js
-const config = { plugins: { '@tailwindcss/postcss': {} } };
-export default config;
+For tenant-owned cloud data:
+
+- organization-owned operations include `organizationId`;
+- establishment-owned operations include `organizationId` and
+  `establishmentId`;
+- lookup by resource ID alone is forbidden;
+- browser-provided organization, establishment, membership, role, permission,
+  and entitlement values are untrusted;
+- authenticated context comes from a validated server session and active
+  membership;
+- public context comes from verified server-side hostname/domain resolution;
+- authorization is enforced on the server and fails closed;
+- sensitive operations include cross-tenant denial tests.
+
+## Package boundaries
+
+- `@yuta/contracts` owns transport schemas and inferred serialization-safe types.
+- `@yuta/core` and `@yuta/booking` remain pure and deterministic.
+- `@yuta/auth` contains portable authentication primitives, not persistence or
+  framework integration.
+- `@yuta/tenant` contains trusted context and guards, not database adapters.
+- `@yuta/db-cloud` and `@yuta/db-pos` do not import one another.
+- `@yuta/ui` contains reusable presentation primitives, not feature business
+  logic.
+- Do not create speculative packages, apps, tables, routes, or compatibility
+  layers.
+
+## Code and UI standards
+
+- Use TypeScript strict mode and avoid `any`.
+- Validate untrusted boundary input with Zod.
+- Use named exports only.
+- Prefer Server Components in Next.js applications.
+- Add `'use client'` only for browser state, effects, events, or APIs.
+- Keep side effects at application or infrastructure boundaries.
+- Do not introduce a new UI, icon, validation, state-management, or data-access
+  framework without an accepted ADR.
+- Reuse `@yuta/ui`, semantic tokens, and `lucide-react`; do not use raw color
+  values or another component library.
+- `packages/ui/src/index.ts` is the authoritative UI export catalog.
+- Preserve accessible names, keyboard behavior, and visible focus.
+- Implement relevant loading, empty, error, forbidden, conflict, success, and
+  recovery states.
+
+Public YUTA websites and the restaurant back-office use Geist Sans with
+`Inter, sans-serif` as fallback. Application `globals.css` files start with
+`@import '@yuta/ui/styles/global.css';`, and Tailwind CSS uses
+`@tailwindcss/postcss` through `postcss.config.mjs`.
+
+Code, identifiers, comments, logs, commits, and technical documentation are
+English. User-facing language follows the nearest application instructions.
+
+## Task workflow
+
+For meaningful work:
+
+1. Define goal, scope, affected runtime/data boundaries, and risks.
+2. Inspect current implementation, tests, and documentation.
+3. Reuse current contracts, repositories, pure logic, and shared UI.
+4. Implement the smallest coherent change.
+5. Add or update tests with behavior changes.
+6. Update current documentation in the same change.
+7. Run relevant checks.
+8. Report changed files, commands, results, skipped checks, and risks.
+
+Avoid opportunistic repository-wide refactors.
+
+## Validation
+
+Always run:
+
+```bash
+pnpm docs:check
+pnpm architecture:check
+pnpm -r --if-present typecheck
 ```
 
-### Maintenance
+For formatting-sensitive changes:
 
-Whenever a public component is added, renamed, or removed, update
-`packages/ui/src/index.ts` and any focused usage documentation. Do not maintain
-a second full catalog.
-
----
-
-## General Rules
-
-### Language
-
-- Code, comments, types, variable names, commit messages: **English**
-- UI text per app: see app-specific AGENTS.md (e.g., French for `yuta-display`)
-
-### Tech stack
-
-Package manifests are authoritative for framework and tool versions. Use
-Next.js App Router, TypeScript strict mode, and the repository's Tailwind CSS
-setup; do not introduce Pages Router.
-
-### Exports
-
-Named exports only. No default exports.
-
-### Components
-
-- PascalCase filenames and component names
-- Prefer Server Components
-- Use `'use client'` only when interactivity is required
-
-### TypeScript
-
-- Strict mode enabled
-- No `any`
-- Validate external input with Zod
-
-### State management
-
-No Redux, MobX, or Zustand unless explicitly added. Use React state and Server Components.
-
-### Documentation maintenance
-
-Whenever an agent changes app behavior, user flows, routes, setup commands,
-deployment behavior, database behavior, or operational rules, the agent MUST
-update the relevant docs in the same change.
-
-The documentation index is `docs/README.md`. Update current documents in place;
-do not add implementation reports or overlapping `final`, `new`, `v2`, or
-`latest` documents. Use an ADR for durable architectural decisions and Git
-history for completed execution history.
-
-For POS-related work, keep these docs current:
-
-- `docs/products/pos/USER_GUIDE.md` for operator-facing usage flows.
-- `docs/products/pos/README.md` for POS architecture, scope, and implementation notes.
-- `docs/operations/LOCAL_DEVELOPMENT.md` for local database setup changes.
-- `docs/operations/DEPLOYMENT.md` for production or Docker deployment changes.
-
-Do not rely on memory for newly added behavior. Document important decisions
-such as cancellation/restore rules, print job behavior, payment behavior,
-admin workflows, and known MVP limits when they change.
-
-### Task workflow and validation
-
-For meaningful changes:
-
-1. Identify the goal, scope, affected runtime/data boundaries, and risks.
-2. Inspect current code, tests, and documentation.
-3. Reuse existing contracts, repositories, pure logic, and shared UI.
-4. Implement the smallest coherent change with relevant tests.
-5. Update current documentation in the same change.
-6. Run `pnpm architecture:check` and `pnpm -r --if-present typecheck`.
-7. Run relevant package tests and application builds.
-8. Report files changed, commands run, results, skipped checks, and risks.
-
-A task is complete only when the requested scope is satisfied, runtime and
-authorization boundaries remain enforced, relevant checks pass, documentation
-is current, and no duplicated source of truth was introduced.
-
----
-
-## Deployment Rules
-
-Shared production deployment conventions live in:
-
-```txt
-docs/operations/DEPLOYMENT.md
+```bash
+pnpm format:check
 ```
 
-All new YuTa apps with Docker deployment must follow those conventions unless
-the user explicitly requests a different production topology.
+Run relevant tests and builds:
 
-Key defaults:
+```bash
+pnpm test:cloud
+pnpm test:local
+pnpm build:cloud
+```
 
-- Cloud and local runtime families use separate database names, credentials,
-  migrations, and failure domains.
-- Cloud apps receive `CLOUD_DATABASE_URL`; only `site-agent` receives
-  `POS_DATABASE_URL`; standalone display server code receives
-  `DISPLAY_DATABASE_URL`.
-- Browser bundles receive no database connection string.
-- Local deployments may use the existing PostgreSQL server and
-  `postgres_default` network, but cloud, POS, and display databases must remain
-  logically isolated.
-- Use Docker hostnames in database URLs, never container IP addresses.
-- Keep production env files next to the app as `apps/<app-name>/.env.production`.
-- Run Docker Compose from the repository root with `--env-file` and `-f`.
-- Use a one-shot `migrate` service for database migrations.
-- Run migrations with `--build` so the latest migration files are included.
-- For runtime uploads, keep folders with `.gitkeep` and ignore uploaded media.
-- If uploaded files return `404` in Next.js standalone mode, add a `GET` route
-  that serves files from `UPLOAD_DIR`.
+Use narrower package commands when the task affects only one area. State every
+expected check that was not run.
+
+## Documentation and deployment
+
+The documentation index is `docs/README.md`.
+
+Update current docs when changing behavior, architecture, data ownership,
+security, environment variables, setup, deployment, operations, or product
+visibility. Use an ADR for durable decisions. Use `STATUS.md` or GitHub Issues
+for temporary progress. Do not add overlapping `final`, `new`, `v2`, `v3`, or
+implementation-report documents to the active documentation tree.
+
+Deployment authority is `docs/operations/DEPLOYMENT.md`. Do not duplicate its
+procedures here or change runtime topology without an accepted ADR.
+
+## Completion
+
+A task is complete only when requested scope is satisfied, runtime/database/
+tenant/security boundaries remain enforced, relevant checks pass, current
+documentation is accurate, no duplicate source of truth is introduced, and the
+completion report is truthful.

@@ -23,7 +23,10 @@ export async function GET(request: Request) {
     const media = await DisplayMediaService.getAll();
     return NextResponse.json(media);
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch media' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch media' },
+      { status: 500 },
+    );
   }
 }
 
@@ -45,12 +48,20 @@ export async function POST(request: Request) {
     const result = createSchema.safeParse(body);
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error.flatten() }, { status: 400 });
+      return NextResponse.json(
+        { error: result.error.flatten() },
+        { status: 400 },
+      );
     }
 
-    const media = await DisplayMediaService.create(result.data as CreateDisplayMediaInput);
+    const media = await DisplayMediaService.create(
+      result.data as CreateDisplayMediaInput,
+    );
     return NextResponse.json(media, { status: 201 });
   } catch {
-    return NextResponse.json({ error: 'Failed to create media' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create media' },
+      { status: 500 },
+    );
   }
 }

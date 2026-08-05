@@ -20,7 +20,10 @@ export async function PATCH(
     const result = updateSchema.safeParse(body);
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error.flatten() }, { status: 400 });
+      return NextResponse.json(
+        { error: result.error.flatten() },
+        { status: 400 },
+      );
     }
 
     const media = await DisplayMediaService.update(id, result.data);
@@ -30,7 +33,10 @@ export async function PATCH(
 
     return NextResponse.json(media);
   } catch {
-    return NextResponse.json({ error: 'Failed to update media' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update media' },
+      { status: 500 },
+    );
   }
 }
 
@@ -49,6 +55,9 @@ export async function DELETE(
     await DisplayMediaService.delete(id);
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete media' },
+      { status: 500 },
+    );
   }
 }

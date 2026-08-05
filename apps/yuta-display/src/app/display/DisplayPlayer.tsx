@@ -18,7 +18,9 @@ export function DisplayPlayer() {
     const el = document.documentElement;
     const requestFS =
       el.requestFullscreen?.bind(el) ??
-      (el as Element & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen?.bind(el);
+      (
+        el as Element & { webkitRequestFullscreen?: () => Promise<void> }
+      ).webkitRequestFullscreen?.bind(el);
     if (requestFS) {
       requestFS().catch(() => {
         // Silently ignore — some TV browsers block programmatic fullscreen
@@ -28,7 +30,7 @@ export function DisplayPlayer() {
   }, []);
 
   const advance = useCallback(() => {
-    setIndex(current => {
+    setIndex((current) => {
       const len = itemsRef.current.length;
       if (len === 0) return 0;
       return (current + 1) % len;
@@ -45,7 +47,7 @@ export function DisplayPlayer() {
 
       itemsRef.current = data as DisplayPlaylistItem[];
       setItems(data as DisplayPlaylistItem[]);
-      setIndex(current => (current >= data.length ? 0 : current));
+      setIndex((current) => (current >= data.length ? 0 : current));
     } catch {
       // Keep the current playlist if the server is temporarily unavailable.
     }
@@ -58,7 +60,10 @@ export function DisplayPlayer() {
 
   // Periodic playlist refresh
   useEffect(() => {
-    const interval = setInterval(() => void fetchPlaylist(), REFRESH_INTERVAL_MS);
+    const interval = setInterval(
+      () => void fetchPlaylist(),
+      REFRESH_INTERVAL_MS,
+    );
     return () => clearInterval(interval);
   }, [fetchPlaylist]);
 
@@ -85,7 +90,14 @@ export function DisplayPlayer() {
   if (items.length === 0) {
     return (
       <div style={containerStyle}>
-        <p style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '2rem' }}>
+        <p
+          style={{
+            fontSize: '1.5rem',
+            color: 'rgba(255,255,255,0.4)',
+            textAlign: 'center',
+            padding: '2rem',
+          }}
+        >
           {uiText.noActiveMedia}
         </p>
       </div>

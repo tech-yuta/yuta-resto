@@ -9,7 +9,9 @@ export default function Error({
 }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas px-4 text-center">
-      <p className="text-lg font-semibold text-primary">Une erreur est survenue.</p>
+      <p className="text-lg font-semibold text-primary">
+        Une erreur est survenue.
+      </p>
       <p className="text-sm text-primary/50">{error.message}</p>
       <button
         onClick={reset}

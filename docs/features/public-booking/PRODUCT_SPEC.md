@@ -20,7 +20,7 @@ is not a current progress tracker.
 **Project:** YUTA  
 **Application:** Public restaurant booking  
 **Primary language of the product:** French  
-**Documentation language:** English  
+**Documentation language:** English
 
 ---
 
@@ -85,26 +85,37 @@ The long-term product must support:
 
 ## 3. Position inside the YUTA ecosystem
 
-The public booking application must be implemented as a separate deployable application inside the YUTA monorepo.
+The public booking application is a separate deployable cloud application
+inside the YUTA monorepo.
 
-Recommended structure:
+Current relevant structure:
 
 ```text
 apps/
-├── web/                 # Public marketing website for YUTA
-├── app/                 # Restaurant back-office
-├── admin/               # YUTA super-admin
-└── booking-web/         # Public booking application
+├── web/                 # Public YUTA marketing website
+├── backoffice/          # Authenticated restaurant back-office
+├── booking-web/         # Independent public booking application
+└── platform-admin/      # Reserved future YUTA administration app; not implemented
 
 packages/
-├── db/                  # Database schema and data access
-├── tenant/              # Tenant and establishment resolution
-├── contracts/           # Shared API contracts and domain types
-├── ui/                  # Shared design system
-├── booking/             # Booking domain logic
-├── notifications/       # Email/SMS notification abstractions
-└── observability/       # Logging, monitoring, tracing helpers
+├── db-cloud/            # Cloud schema, migrations, repositories, and adapters
+├── tenant/              # Trusted tenant resolution and authorization guards
+├── auth/                # Portable authentication primitives
+├── contracts/           # Shared transport contracts and Zod schemas
+├── core/                # Pure shared domain logic
+├── booking/             # Pure booking-domain logic
+└── ui/                  # Shared design system
 ```
+
+`apps/platform-admin` is a reserved future boundary and is not implemented.
+Restaurant booking administration belongs in `apps/backoffice`.
+
+Notification providers and observability helpers currently remain application
+or infrastructure concerns. Do not represent them as existing shared packages
+until an approved task and ADR justify extraction.
+
+`docs/REPOSITORY_MAP.md` and accepted ADRs are authoritative for current
+repository ownership if this long-term product specification becomes stale.
 
 ### 3.1 Why it must be a separate application
 
@@ -120,7 +131,10 @@ The booking application has different constraints from the YUTA marketing site a
 - it must resolve a restaurant before rendering the page;
 - it must remain usable even when restaurant staff are not logged in.
 
-The booking application may share packages, database, infrastructure, and design primitives with other YUTA applications, but its runtime and deployment must remain independent.
+The booking application may share contracts, pure domain logic, cloud
+persistence adapters, infrastructure, and design primitives with other YUTA
+applications, but its runtime and deployment remain independent. Database
+access is server-only.
 
 ---
 
@@ -836,7 +850,7 @@ interface BookingSettings {
   maximumOnlinePartySize: number;
   minimumOnlinePartySize: number;
 
-  confirmationMode: "automatic" | "manual";
+  confirmationMode: 'automatic' | 'manual';
   pendingConsumesCapacity: boolean;
   defaultDurationMinutes: number;
   lateArrivalToleranceMinutes: number;
@@ -916,12 +930,12 @@ interface BookingException {
   establishmentId: string;
   date: string;
   type:
-    | "closed_day"
-    | "closed_interval"
-    | "special_hours"
-    | "capacity_override"
-    | "private_event"
-    | "online_booking_disabled";
+    | 'closed_day'
+    | 'closed_interval'
+    | 'special_hours'
+    | 'capacity_override'
+    | 'private_event'
+    | 'online_booking_disabled';
   startTime?: string | null;
   endTime?: string | null;
   capacity?: number | null;
@@ -940,13 +954,13 @@ Recommended statuses:
 
 ```ts
 type ReservationStatus =
-  | "pending"
-  | "confirmed"
-  | "declined"
-  | "cancelled"
-  | "seated"
-  | "completed"
-  | "no_show";
+  | 'pending'
+  | 'confirmed'
+  | 'declined'
+  | 'cancelled'
+  | 'seated'
+  | 'completed'
+  | 'no_show';
 ```
 
 Optional future statuses:
@@ -1059,7 +1073,7 @@ interface Reservation {
   campaign?: string | null;
 
   status: ReservationStatus;
-  confirmationMode: "automatic" | "manual";
+  confirmationMode: 'automatic' | 'manual';
 
   cancellationReason?: string | null;
   internalNote?: string | null;
@@ -1353,8 +1367,8 @@ interface BookingTheme {
   coverImageUrl?: string | null;
   primaryColor?: string | null;
   accentColor?: string | null;
-  surfaceStyle?: "light" | "warm" | "neutral";
-  borderRadius?: "small" | "medium" | "large";
+  surfaceStyle?: 'light' | 'warm' | 'neutral';
+  borderRadius?: 'small' | 'medium' | 'large';
 }
 ```
 
@@ -1451,18 +1465,18 @@ Supported base sources:
 
 ```ts
 type ReservationSource =
-  | "public_booking_page"
-  | "google"
-  | "facebook"
-  | "instagram"
-  | "tiktok"
-  | "website"
-  | "qr_code"
-  | "phone"
-  | "walk_in"
-  | "backoffice"
-  | "partner"
-  | "other";
+  | 'public_booking_page'
+  | 'google'
+  | 'facebook'
+  | 'instagram'
+  | 'tiktok'
+  | 'website'
+  | 'qr_code'
+  | 'phone'
+  | 'walk_in'
+  | 'backoffice'
+  | 'partner'
+  | 'other';
 ```
 
 Track standard campaign parameters when present:

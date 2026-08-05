@@ -493,7 +493,11 @@ function findBestMatch(
     }
   }
 
-  return candidates.toSorted((left, right) => compareMatchesForBestDiscount(rule, left, right))[0] ?? null;
+  return (
+    candidates.toSorted((left, right) =>
+      compareMatchesForBestDiscount(rule, left, right),
+    )[0] ?? null
+  );
 }
 
 function findGroupMatches(
@@ -600,8 +604,14 @@ function compareMatchesForBestDiscount(
 }
 
 function matchDiscountValue(rule: ComboRule, match: MatchedUnit[]): number {
-  const originalTotal = match.reduce((total, item) => total + item.unitPriceCents, 0);
-  const extraTotal = match.reduce((total, item) => total + item.extraPriceCents, 0);
+  const originalTotal = match.reduce(
+    (total, item) => total + item.unitPriceCents,
+    0,
+  );
+  const extraTotal = match.reduce(
+    (total, item) => total + item.extraPriceCents,
+    0,
+  );
   const comboTotal = calculateComboTotal(rule, match, extraTotal);
 
   if (comboTotal === null) {
@@ -611,7 +621,10 @@ function matchDiscountValue(rule: ComboRule, match: MatchedUnit[]): number {
   return originalTotal - comboTotal;
 }
 
-function compareMatchesForBestDiscountWithoutRule(left: MatchedUnit[], right: MatchedUnit[]): number {
+function compareMatchesForBestDiscountWithoutRule(
+  left: MatchedUnit[],
+  right: MatchedUnit[],
+): number {
   const leftNetValue = matchNetValue(left);
   const rightNetValue = matchNetValue(right);
 

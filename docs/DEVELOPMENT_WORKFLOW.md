@@ -21,6 +21,8 @@ Baseline checks:
 ```bash
 pnpm install
 pnpm dev:env:sync
+pnpm docs:check
+pnpm format:check
 pnpm architecture:check
 pnpm -r --if-present typecheck
 ```
@@ -39,6 +41,15 @@ pnpm build:cloud
 ```
 
 `test:local` includes the disposable PostgreSQL offline POS acceptance flow.
+
+`docs:check` enforces the current-document index, metadata, local Markdown
+links, Booking architecture aliases, and instruction-file consistency.
+`format:check` covers Prettier-managed repository files; generated Next.js
+declarations, Drizzle metadata, the generated POS service worker, and the pnpm
+lockfile are excluded through `.prettierignore`.
+
+Dependabot currently monitors GitHub Actions only. npm/pnpm version updates stay
+manual until GitHub Dependabot supports the repository's pnpm 11 lockfile.
 
 Use `docs/tasks/TASK_TEMPLATE.md` for substantial work and an ADR for durable
 architectural decisions. Do not claim a command passed when it was not run.

@@ -4,7 +4,12 @@ import { Badge } from './badge';
 import { Card } from './card';
 import { cn } from './utils';
 
-export type TableCardStatus = 'available' | 'occupied' | 'reserved' | 'dirty' | 'disabled';
+export type TableCardStatus =
+  | 'available'
+  | 'occupied'
+  | 'reserved'
+  | 'dirty'
+  | 'disabled';
 
 const tableStatusConfig: Record<
   TableCardStatus,
@@ -20,8 +25,10 @@ const tableStatusConfig: Record<
   disabled: { label: 'Disabled', tone: 'neutral' },
 };
 
-export interface TableCardProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface TableCardProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   label: ReactNode;
   status: TableCardStatus;
   statusLabel?: ReactNode;
@@ -46,13 +53,18 @@ export function TableCard({
 
   return (
     <Card
-      className={cn('grid min-h-40 content-between gap-4 shadow-none', className)}
+      className={cn(
+        'grid min-h-40 content-between gap-4 shadow-none',
+        className,
+      )}
       {...props}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-xl font-black">{label}</h3>
-          {zone && <p className="mt-1 text-sm font-semibold text-muted">{zone}</p>}
+          {zone && (
+            <p className="mt-1 text-sm font-semibold text-muted">{zone}</p>
+          )}
         </div>
         <Badge tone={config.tone} variant="soft">
           {statusLabel ?? config.label}
@@ -66,7 +78,9 @@ export function TableCard({
               {capacity}
             </span>
           )}
-          {amount && <span className="text-lg font-black text-primary">{amount}</span>}
+          {amount && (
+            <span className="text-lg font-black text-primary">{amount}</span>
+          )}
         </div>
         {action}
       </div>
