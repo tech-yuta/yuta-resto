@@ -13,15 +13,32 @@ apps/yuta-pos       — Local-only restaurant POS client (port 3003)
 apps/site-agent     — Target local POS API/device integration boundary (port 3004)
 packages/db-cloud   — Target cloud SaaS database package
 packages/db-pos     — Target local POS database package
+packages/auth       — Authentication contracts and cryptographic primitives
+packages/contracts  — Shared transport contracts and Zod schemas
+packages/tenant     — Trusted cloud tenant context and authorization guards
+packages/booking    — Pure public-booking domain logic
 packages/core       — Shared business logic, tool registry
 packages/ui         — Shared UI component library (@yuta/ui)
 ```
 
-Future apps may include: `yuta-staff`, `yuta-reservation`, `yuta-crm`.
+Future apps may include: `yuta-staff` and `yuta-crm`.
+
+## Instruction and documentation order
+
+Before editing:
+
+1. Read this file.
+2. Read `docs/README.md` and `docs/CURRENT_STATE.md`.
+3. Read the nearest nested `AGENTS.md`.
+4. Read the relevant architecture, feature, product, or operations document.
+5. Inspect the implementation and tests.
+
+The nearest nested `AGENTS.md` has priority for its directory. Current approved
+documentation defines intended behavior; code and tests are implementation
+evidence. Report conflicts rather than silently choosing one.
 
 The legacy shared `packages/db` has been removed.
-The authoritative target architecture is
-`docs/YUTA_DATABASE_ARCHITECTURE_RESET_SPEC.md`.
+The authoritative current architecture is documented under `docs/architecture/`.
 
 - `apps/backoffice` and server-side cloud features in `apps/web` use
   `packages/db-cloud`.
@@ -37,6 +54,12 @@ The authoritative target architecture is
   through `@yuta/db`.
 - The future internal YUTA administration application is reserved as
   `apps/platform-admin`; do not use `apps/backoffice` for platform administration.
+- `apps/booking-web` is an independent public cloud application. It resolves an
+  establishment server-side and uses `packages/db-cloud`; its browser bundle
+  must never receive database credentials or trusted tenant scope.
+
+Run `pnpm architecture:check` after changing dependencies, environment access,
+database boundaries, or package imports.
 
 ---
 
@@ -222,12 +245,17 @@ Whenever an agent changes app behavior, user flows, routes, setup commands,
 deployment behavior, database behavior, or operational rules, the agent MUST
 update the relevant docs in the same change.
 
+The documentation index is `docs/README.md`. Update current documents in place;
+do not add implementation reports or overlapping `final`, `new`, `v2`, or
+`latest` documents. Use an ADR for durable architectural decisions and Git
+history for completed execution history.
+
 For POS-related work, keep these docs current:
 
-- `docs/POS_USER_GUIDE.md` for operator-facing usage flows.
-- `docs/YUTA_POS.md` for POS architecture, scope, and implementation notes.
-- `docs/LOCAL_DATABASE.md` for local database setup changes.
-- `docs/DEPLOYMENT.md` for production or Docker deployment changes.
+- `docs/products/pos/USER_GUIDE.md` for operator-facing usage flows.
+- `docs/products/pos/README.md` for POS architecture, scope, and implementation notes.
+- `docs/operations/LOCAL_DEVELOPMENT.md` for local database setup changes.
+- `docs/operations/DEPLOYMENT.md` for production or Docker deployment changes.
 
 Do not rely on memory for newly added behavior. Document important decisions
 such as cancellation/restore rules, print job behavior, payment behavior,
@@ -240,7 +268,7 @@ admin workflows, and known MVP limits when they change.
 Shared production deployment conventions live in:
 
 ```txt
-docs/DEPLOYMENT.md
+docs/operations/DEPLOYMENT.md
 ```
 
 All new YuTa apps with Docker deployment must follow those conventions unless
