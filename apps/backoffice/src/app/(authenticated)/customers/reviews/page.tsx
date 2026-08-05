@@ -86,13 +86,13 @@ export default async function Page({
       permissions: {
         canManageFeedback:
           tenant.actor.type === 'user' &&
-          ['owner', 'admin', 'manager'].includes(tenant.actor.role),
+          ['OWNER', 'MANAGER'].includes(tenant.actor.role),
         canCreateReply:
           tenant.actor.type === 'user' &&
-          ['owner', 'admin', 'manager', 'employee'].includes(tenant.actor.role),
+          ['OWNER', 'MANAGER', 'STAFF'].includes(tenant.actor.role),
         canCreateNote:
           tenant.actor.type === 'user' &&
-          ['owner', 'admin', 'manager', 'employee'].includes(tenant.actor.role),
+          ['OWNER', 'MANAGER', 'STAFF'].includes(tenant.actor.role),
       },
     };
     return <ReviewsPage data={data} />;

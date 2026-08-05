@@ -9,6 +9,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { users } from './users';
 
 export const organizationStatusEnum = pgEnum('organization_status', [
@@ -22,14 +23,12 @@ export const domainStatusEnum = pgEnum('domain_status', [
 ]);
 export const membershipStatusEnum = pgEnum('membership_status', [
   'active',
-  'invited',
   'suspended',
 ]);
 export const cloudRoleEnum = pgEnum('cloud_role', [
-  'owner',
-  'admin',
-  'manager',
-  'employee',
+  'OWNER',
+  'MANAGER',
+  'STAFF',
 ]);
 
 const createdAt = () =>
@@ -56,7 +55,7 @@ export const organizations = pgTable(
     updatedAt: updatedAt(),
   },
   (table) => [
-    uniqueIndex('organizations_slug_unique_idx').on(table.slug),
+    uniqueIndex('organizations_slug_unique_idx').on(sql`lower(${table.slug})`),
     index('organizations_status_idx').on(table.status),
   ],
 );
@@ -79,10 +78,7 @@ export const establishments = pgTable(
     updatedAt: updatedAt(),
   },
   (table) => [
-    uniqueIndex('establishments_org_slug_unique_idx').on(
-      table.organizationId,
-      table.slug,
-    ),
+    uniqueIndex('establishments_slug_unique_idx').on(sql`lower(${table.slug})`),
     index('establishments_organization_id_idx').on(table.organizationId),
     index('establishments_status_idx').on(table.status),
   ],
@@ -120,7 +116,7 @@ export const tenantMemberships = pgTable(
     id: uuid('id').primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => users.id, { onDelete: 'restrict' }),
     organizationId: uuid('organization_id')
       .notNull()
       .references(() => organizations.id),
@@ -129,6 +125,9 @@ export const tenantMemberships = pgTable(
     ),
     role: cloudRoleEnum('role').notNull(),
     status: membershipStatusEnum('status').default('active').notNull(),
+    joinedAt: timestamp('joined_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

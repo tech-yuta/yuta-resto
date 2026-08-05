@@ -4,6 +4,7 @@ import { v7 as uuidv7, version as uuidVersion } from 'uuid';
 import {
   authAuditEvents,
   authLoginAttempts,
+  authSelectionTickets,
   authSessions,
   cloudRoleEnum,
   directCustomerFeedback,
@@ -28,6 +29,7 @@ const tablesWithBusinessIds: PgTable[] = [
   tenantDomains,
   tenantMemberships,
   authSessions,
+  authSelectionTickets,
   passwordResetTokens,
   authLoginAttempts,
   authAuditEvents,
@@ -55,12 +57,7 @@ describe('cloud schema boundaries', () => {
   });
 
   it('keeps POS-only roles out of cloud memberships', () => {
-    expect(cloudRoleEnum.enumValues).toEqual([
-      'owner',
-      'admin',
-      'manager',
-      'employee',
-    ]);
+    expect(cloudRoleEnum.enumValues).toEqual(['OWNER', 'MANAGER', 'STAFF']);
   });
 
   it('uses an RFC UUIDv7 generator for seed-created records', () => {

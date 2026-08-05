@@ -5,6 +5,7 @@ import type {
   OrganizationUser,
 } from '@yuta/contracts/cloud-admin';
 import type { TenantRole } from '@yuta/tenant';
+import { createHash } from 'node:crypto';
 import { and, asc, count, eq, inArray, isNull, ne } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
 import type { CloudDatabaseClient } from './client';
@@ -61,9 +62,9 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
     const rows = await repositoryDb
       .select({
         userId: users.id,
-        userName: users.name,
+        userName: users.displayName,
         userEmail: users.email,
-        userIsActive: users.isActive,
+        userStatus: users.status,
         membershipId: tenantMemberships.id,
         establishmentId: establishments.id,
         establishmentName: establishments.name,
@@ -85,15 +86,15 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
           inArray(tenantMemberships.establishmentId, input.establishmentIds),
         ),
       )
-      .orderBy(asc(users.name), asc(establishments.name));
+      .orderBy(asc(users.displayName), asc(establishments.name));
 
     const usersById = new Map<string, OrganizationUser>();
     for (const row of rows) {
       const organizationUser = usersById.get(row.userId) ?? {
         id: row.userId,
-        name: row.userName,
+        name: row.userName ?? row.userEmail,
         email: row.userEmail,
-        isActive: row.userIsActive,
+        isActive: row.userStatus === 'ACTIVE',
         memberships: [],
       };
       organizationUser.memberships.push({
@@ -110,7 +111,7 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
 
   async function createOrAttachUser(input: {
     actorUserId: string;
-    actorRole: 'owner' | 'admin';
+    actorRole: 'OWNER' | 'MANAGER';
     organizationId: string;
     allowedEstablishmentIds: string[];
     name: string;
@@ -150,7 +151,7 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
         .limit(1);
       let user = existingUser;
       const created = !user;
-      if (user && !user.isActive) {
+      if (user && user.status !== 'ACTIVE') {
         throw new TenantUserError(
           'The existing user account is inactive.',
           'USER_INACTIVE',
@@ -161,10 +162,11 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
           .insert(users)
           .values({
             id: uuidv7(),
-            name: input.name,
+            authProviderId: createPasswordProviderId(input.email),
+            displayName: input.name,
             email: input.email,
             passwordHash: await hashPassword(input.password),
-            isActive: true,
+            status: 'ACTIVE',
           })
           .returning();
         user = createdUser;
@@ -187,14 +189,11 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
           ),
         );
       if (
-        input.actorRole === 'admin' &&
-        existingMemberships.some(
-          (membership) =>
-            membership.role === 'owner' || membership.role === 'admin',
-        )
+        input.actorRole !== 'OWNER' &&
+        existingMemberships.some((membership) => membership.role !== 'STAFF')
       ) {
         throw new TenantUserError(
-          'An administrator cannot manage owner or administrator memberships.',
+          'A manager cannot manage owner or manager memberships.',
           'ROLE_NOT_ALLOWED',
         );
       }
@@ -238,7 +237,7 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
   async function updateMembership(input: {
     actorUserId: string;
     actorMembershipId: string;
-    actorRole: 'owner' | 'admin';
+    actorRole: 'OWNER' | 'MANAGER';
     organizationId: string;
     allowedEstablishmentIds: string[];
     membershipId: string;
@@ -286,20 +285,15 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
           'MEMBERSHIP_NOT_FOUND',
         );
       }
-      if (
-        input.actorRole === 'admin' &&
-        (target.membership.role === 'owner' ||
-          target.membership.role === 'admin')
-      ) {
+      if (input.actorRole !== 'OWNER' && target.membership.role !== 'STAFF') {
         throw new TenantUserError(
-          'An administrator cannot manage owner or administrator memberships.',
+          'A manager cannot manage owner or manager memberships.',
           'ROLE_NOT_ALLOWED',
         );
       }
-
       const removesOwner =
-        target.membership.role === 'owner' &&
-        (input.role !== 'owner' || input.status !== 'active');
+        target.membership.role === 'OWNER' &&
+        (input.role !== 'OWNER' || input.status !== 'active');
       if (removesOwner) {
         const [ownerCount] = await transaction
           .select({ value: count() })
@@ -307,14 +301,18 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
           .where(
             and(
               eq(tenantMemberships.organizationId, input.organizationId),
-              eq(tenantMemberships.role, 'owner'),
+              eq(
+                tenantMemberships.establishmentId,
+                target.membership.establishmentId,
+              ),
+              eq(tenantMemberships.role, 'OWNER'),
               eq(tenantMemberships.status, 'active'),
               ne(tenantMemberships.id, target.membership.id),
             ),
           );
         if ((ownerCount?.value ?? 0) === 0) {
           throw new TenantUserError(
-            'The organization must retain an active owner.',
+            'The establishment must retain an active owner.',
             'LAST_OWNER_REQUIRED',
           );
         }
@@ -323,7 +321,16 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
       await transaction
         .update(tenantMemberships)
         .set({ role: input.role, status: input.status })
-        .where(eq(tenantMemberships.id, target.membership.id));
+        .where(
+          and(
+            eq(tenantMemberships.id, target.membership.id),
+            eq(tenantMemberships.organizationId, input.organizationId),
+            eq(
+              tenantMemberships.establishmentId,
+              target.membership.establishmentId,
+            ),
+          ),
+        );
 
       if (input.status === 'suspended') {
         await transaction
@@ -367,6 +374,10 @@ export function createTenantUserRepository(repositoryDb: CloudDatabaseClient) {
   };
 }
 
+function createPasswordProviderId(email: string): string {
+  return `password:${createHash('sha256').update(email).digest('hex')}`;
+}
+
 function assertEstablishmentsAllowed(
   requestedIds: string[],
   allowedIds: string[],
@@ -386,12 +397,12 @@ function assertEstablishmentsAllowed(
 }
 
 function assertRoleCanBeAssigned(
-  actorRole: 'owner' | 'admin',
+  actorRole: 'OWNER' | 'MANAGER',
   role: TenantRole,
 ): void {
-  if (actorRole === 'admin' && (role === 'owner' || role === 'admin')) {
+  if (actorRole === 'MANAGER' && role !== 'STAFF') {
     throw new TenantUserError(
-      'An administrator cannot assign this role.',
+      'A manager can assign only the staff role.',
       'ROLE_NOT_ALLOWED',
     );
   }

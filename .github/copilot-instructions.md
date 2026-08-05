@@ -19,20 +19,23 @@ The `@yuta/ui` package is built on:
 
 All color and shadow values must use semantic YuTa design tokens, never raw hex values in className. Core UI components use role-based names rather than product/story color names.
 
-| Token family | Usage |
-| ------------ | ----- |
-| `brand-*` | Brand palette foundation |
-| `neutral-*` | Neutral palette foundation |
-| `bg-canvas` | Page background |
-| `bg-surface` | Card, panel, and input surface |
-| `bg-surface-muted` | Subtle backgrounds and hover states |
-| `bg-surface-selected` | Selected or brand-tinted soft surface |
-| `text-primary`, `text-secondary`, `text-muted`, `text-inverse` | Text roles |
-| `border-border-default`, `border-border-strong` | Borders and dividers |
-| `bg-action-primary`, `bg-action-danger` | Action backgrounds |
-| `ring-focus-ring` | Focus rings |
-| `status-*` | Success, warning, danger, and info states |
-| `shadow-xs`, `shadow-sm`, `shadow-md`, `shadow-lg` | Elevation |
+Public YuTa websites and the restaurant back-office use Geist Sans for all UI
+text, with `Inter, sans-serif` as the fallback stack. Do not use serif fonts.
+
+| Token family                                                   | Usage                                     |
+| -------------------------------------------------------------- | ----------------------------------------- |
+| `brand-*`                                                      | Brand palette foundation                  |
+| `neutral-*`                                                    | Neutral palette foundation                |
+| `bg-canvas`                                                    | Page background                           |
+| `bg-surface`                                                   | Card, panel, and input surface            |
+| `bg-surface-muted`                                             | Subtle backgrounds and hover states       |
+| `bg-surface-selected`                                          | Selected or brand-tinted soft surface     |
+| `text-primary`, `text-secondary`, `text-muted`, `text-inverse` | Text roles                                |
+| `border-border-default`, `border-border-strong`                | Borders and dividers                      |
+| `bg-action-primary`, `bg-action-danger`                        | Action backgrounds                        |
+| `ring-focus-ring`                                              | Focus rings                               |
+| `status-*`                                                     | Success, warning, danger, and info states |
+| `shadow-xs`, `shadow-sm`, `shadow-md`, `shadow-lg`             | Elevation                                 |
 
 Correct:
 

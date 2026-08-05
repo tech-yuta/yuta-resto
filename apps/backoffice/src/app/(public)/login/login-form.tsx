@@ -21,10 +21,12 @@ export function LoginForm({
   returnTo,
   passwordReset,
   membershipError,
+  selectionError,
 }: {
   returnTo: string;
   passwordReset: boolean;
   membershipError: boolean;
+  selectionError: boolean;
 }) {
   const [state, formAction] = useActionState(loginAction, initialState);
 
@@ -49,6 +51,13 @@ export function LoginForm({
           <Alert tone="danger">
             <AlertDescription>
               Aucun établissement actif n&apos;est associé à ce compte.
+            </AlertDescription>
+          </Alert>
+        )}
+        {selectionError && (
+          <Alert tone="danger">
+            <AlertDescription>
+              Votre demande de sélection a expiré. Reconnectez-vous.
             </AlertDescription>
           </Alert>
         )}

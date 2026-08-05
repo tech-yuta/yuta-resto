@@ -9,7 +9,11 @@ const tenantUserRepository = createTenantUserRepository(cloudDatabase);
 
 export default async function SettingsUsersPage() {
   const { session, tenant } = await requireUserManagementTenant();
-  if (tenant.actor.type !== 'user' || !tenant.establishmentId) {
+  if (
+    tenant.actor.type !== 'user' ||
+    !tenant.establishmentId ||
+    (tenant.actor.role !== 'OWNER' && tenant.actor.role !== 'MANAGER')
+  ) {
     throw new Error('User management requires an authenticated tenant user.');
   }
 
@@ -17,7 +21,7 @@ export default async function SettingsUsersPage() {
     await tenantUserRepository.listManageableEstablishments({
       organizationId: tenant.organizationId,
       establishmentId:
-        tenant.actor.role === 'admin' ? tenant.establishmentId : undefined,
+        tenant.actor.role === 'MANAGER' ? tenant.establishmentId : undefined,
     });
   const organizationUsers = await tenantUserRepository.listOrganizationUsers({
     organizationId: tenant.organizationId,
@@ -31,7 +35,7 @@ export default async function SettingsUsersPage() {
       currentUserId={session.userId}
       currentMembershipId={tenant.actor.membershipId}
       currentEstablishmentId={tenant.establishmentId}
-      actorRole={tenant.actor.role === 'owner' ? 'owner' : 'admin'}
+      actorRole={tenant.actor.role}
     />
   );
 }

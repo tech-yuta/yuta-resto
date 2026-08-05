@@ -1,12 +1,17 @@
 import { hashPassword } from '@yuta/auth';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { config } from 'dotenv';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { v7 as uuidv7 } from 'uuid';
+import { z } from 'zod';
 import type { CloudDatabaseClient } from './client';
 import {
   establishments,
+  authSelectionTickets,
+  authSessions,
+  bookingServicePeriods,
+  bookingSettings,
   organizations,
   reputationSettings,
   tenantDomains,
@@ -21,51 +26,150 @@ import {
 config({ path: '.env.local' });
 config({ path: '.env' });
 
+const seedEnvSchema = z.object({
+  YUTA_CLOUD_SEED_PASSWORD: z.string().min(12).max(128).optional(),
+  YUTA_CLOUD_SEED_ADMIN_PASSWORD: z.string().min(12).max(128).optional(),
+});
+
+const seedIdentities = {
+  owner: {
+    authProviderId: 'password:owner@luna-restaurant.fr',
+    email: 'owner@luna-restaurant.fr',
+    displayName: 'Propriétaire LUNA',
+    systemRole: null,
+  },
+  manager: {
+    authProviderId: 'password:manager@luna-restaurant.fr',
+    email: 'manager@luna-restaurant.fr',
+    displayName: 'Manager LUNA',
+    systemRole: null,
+  },
+  platformAdmin: {
+    authProviderId: 'password:admin@yutapro.fr',
+    email: 'admin@yutapro.fr',
+    displayName: 'Administrateur YuTa',
+    systemRole: 'YUTA_ADMIN' as const,
+  },
+} as const;
+
 export type CloudSeedContext = {
   organization: Organization;
   establishment: Establishment;
-  adminUser: CloudUser;
+  poitiersEstablishment: Establishment;
+  ownerUser: CloudUser;
+  managerUser: CloudUser;
+  platformAdminUser: CloudUser;
 };
 
 export async function seedCloudData(
   seedDb?: CloudDatabaseClient,
 ): Promise<CloudSeedContext> {
+  const seedEnv = seedEnvSchema.parse(process.env);
   const activeDb =
     seedDb ?? (await import('./client')).createCloudDatabaseClient(process.env);
   const organization = await upsertOrganization(activeDb);
-  const establishment = await upsertEstablishment(activeDb, organization.id);
+  const establishment = await upsertEstablishment(activeDb, organization.id, {
+    name: 'LUNA',
+    slug: 'luna',
+  });
+  const poitiersEstablishment = await upsertEstablishment(
+    activeDb,
+    organization.id,
+    { name: 'LuNa Poitiers', slug: 'luna-poitiers' },
+  );
 
   await upsertTenantDomain(activeDb, {
     organizationId: organization.id,
     establishmentId: establishment.id,
+    hostname: 'luna.localhost',
+  });
+  await upsertTenantDomain(activeDb, {
+    organizationId: organization.id,
+    establishmentId: poitiersEstablishment.id,
+    hostname: 'luna-poitiers.localhost',
   });
   await upsertEntitlements(activeDb, {
     organizationId: organization.id,
     establishmentId: establishment.id,
   });
+  await upsertEntitlements(activeDb, {
+    organizationId: organization.id,
+    establishmentId: poitiersEstablishment.id,
+  });
 
-  const adminUser = await upsertCloudAdmin(activeDb);
-  await upsertOwnerMembership(activeDb, {
-    userId: adminUser.id,
+  const passwordHash = await createSeedPasswordHash(seedEnv);
+  const ownerUser = await upsertSeedUser(
+    activeDb,
+    seedIdentities.owner,
+    passwordHash,
+  );
+  const managerUser = await upsertSeedUser(
+    activeDb,
+    seedIdentities.manager,
+    passwordHash,
+  );
+  const platformAdminUser = await upsertSeedUser(
+    activeDb,
+    seedIdentities.platformAdmin,
+    passwordHash,
+  );
+  await upsertMembership(activeDb, {
+    userId: ownerUser.id,
     organizationId: organization.id,
     establishmentId: establishment.id,
+    role: 'OWNER',
   });
+  await upsertMembership(activeDb, {
+    userId: ownerUser.id,
+    organizationId: organization.id,
+    establishmentId: poitiersEstablishment.id,
+    role: 'OWNER',
+  });
+  await upsertMembership(activeDb, {
+    userId: managerUser.id,
+    organizationId: organization.id,
+    establishmentId: establishment.id,
+    role: 'MANAGER',
+  });
+  await removeRestaurantAccess(activeDb, platformAdminUser.id);
+  await disableLegacyCloudAdmin(activeDb);
   await upsertReputationSettings(activeDb, {
     organizationId: organization.id,
     establishmentId: establishment.id,
+    publicFeedbackSlug: 'luna',
+  });
+  await upsertReputationSettings(activeDb, {
+    organizationId: organization.id,
+    establishmentId: poitiersEstablishment.id,
+    publicFeedbackSlug: 'luna-poitiers',
+  });
+  await upsertBookingConfiguration(activeDb, {
+    organizationId: organization.id,
+    establishmentId: establishment.id,
+  });
+  await upsertBookingConfiguration(activeDb, {
+    organizationId: organization.id,
+    establishmentId: poitiersEstablishment.id,
   });
 
-  return { organization, establishment, adminUser };
+  return {
+    organization,
+    establishment,
+    poitiersEstablishment,
+    ownerUser,
+    managerUser,
+    platformAdminUser,
+  };
 }
 
 async function upsertOrganization(
   seedDb: CloudDatabaseClient,
 ): Promise<Organization> {
   const existing = await seedDb.query.organizations.findFirst({
-    where: eq(organizations.slug, 'fast-viet'),
+    where: eq(organizations.slug, 'luna'),
   });
   const values = {
-    name: 'FAST VIET',
+    name: 'LUNA',
     status: 'active' as const,
     locale: 'fr-FR',
     timezone: 'Europe/Paris',
@@ -78,29 +182,32 @@ async function upsertOrganization(
       .set(values)
       .where(eq(organizations.id, existing.id))
       .returning();
+    console.log('Reused LUNA organization.');
     return updated;
   }
 
   const [created] = await seedDb
     .insert(organizations)
-    .values({ id: uuidv7(), slug: 'fast-viet', ...values })
+    .values({ id: uuidv7(), slug: 'luna', ...values })
     .returning();
+  console.log('Created LUNA organization.');
   return created;
 }
 
 async function upsertEstablishment(
   seedDb: CloudDatabaseClient,
   organizationId: string,
+  identity: { name: string; slug: string },
 ): Promise<Establishment> {
   const existing = await seedDb.query.establishments.findFirst({
     where: and(
       eq(establishments.organizationId, organizationId),
-      eq(establishments.slug, 'luna-chasseneuil-du-poitou'),
+      eq(establishments.slug, identity.slug),
     ),
   });
   const values = {
     organizationId,
-    name: 'LUNA Chasseneuil-du-Poitou',
+    name: identity.name,
     status: 'active' as const,
     locale: 'fr-FR',
     timezone: 'Europe/Paris',
@@ -112,6 +219,7 @@ async function upsertEstablishment(
       .set(values)
       .where(eq(establishments.id, existing.id))
       .returning();
+    console.log(`Reused ${identity.name} establishment.`);
     return updated;
   }
 
@@ -119,22 +227,28 @@ async function upsertEstablishment(
     .insert(establishments)
     .values({
       id: uuidv7(),
-      slug: 'luna-chasseneuil-du-poitou',
+      slug: identity.slug,
       ...values,
     })
     .returning();
+  console.log(`Created ${identity.name} establishment.`);
   return created;
 }
 
 async function upsertTenantDomain(
   seedDb: CloudDatabaseClient,
-  scope: { organizationId: string; establishmentId: string },
+  scope: {
+    organizationId: string;
+    establishmentId: string;
+    hostname: string;
+  },
 ): Promise<void> {
   const existing = await seedDb.query.tenantDomains.findFirst({
-    where: eq(tenantDomains.hostname, 'luna.localhost'),
+    where: eq(tenantDomains.hostname, scope.hostname),
   });
+  const { hostname, ...tenantScope } = scope;
   const values = {
-    ...scope,
+    ...tenantScope,
     status: 'active' as const,
     isPrimary: true,
     verifiedAt: new Date(),
@@ -150,7 +264,7 @@ async function upsertTenantDomain(
 
   await seedDb
     .insert(tenantDomains)
-    .values({ id: uuidv7(), hostname: 'luna.localhost', ...values });
+    .values({ id: uuidv7(), hostname, ...values });
 }
 
 async function upsertEntitlements(
@@ -161,6 +275,7 @@ async function upsertEntitlements(
     'menu.public',
     'reservations.public',
     'reputation.enabled',
+    'booking.enabled',
   ]) {
     await seedDb
       .insert(tenantEntitlements)
@@ -176,24 +291,96 @@ async function upsertEntitlements(
   }
 }
 
-async function upsertCloudAdmin(
+async function upsertBookingConfiguration(
   seedDb: CloudDatabaseClient,
-): Promise<CloudUser> {
-  const configuredPassword = process.env.YUTA_CLOUD_SEED_ADMIN_PASSWORD;
+  scope: { organizationId: string; establishmentId: string },
+): Promise<void> {
+  await seedDb
+    .insert(bookingSettings)
+    .values({
+      id: uuidv7(),
+      ...scope,
+      enabled: true,
+      confirmationMode: 'MANUAL',
+      publicEmail: 'contact@luna-restaurant.fr',
+      publicPhone: '+33549000000',
+      address: 'Poitiers, France',
+      welcomeMessage: 'RÃ©servez votre table chez LuNa.',
+      bookingPolicy:
+        "Votre demande sera confirmÃ©e par l'Ã©quipe du restaurant.",
+    })
+    .onConflictDoUpdate({
+      target: [bookingSettings.organizationId, bookingSettings.establishmentId],
+      set: { enabled: true, confirmationMode: 'MANUAL' },
+    });
+
+  const existing = await seedDb
+    .select({ id: bookingServicePeriods.id })
+    .from(bookingServicePeriods)
+    .where(
+      and(
+        eq(bookingServicePeriods.organizationId, scope.organizationId),
+        eq(bookingServicePeriods.establishmentId, scope.establishmentId),
+      ),
+    )
+    .limit(1);
+  if (existing.length > 0) return;
+
+  for (let dayOfWeek = 1; dayOfWeek <= 6; dayOfWeek += 1) {
+    await seedDb.insert(bookingServicePeriods).values([
+      {
+        id: uuidv7(),
+        ...scope,
+        dayOfWeek,
+        name: 'DÃ©jeuner',
+        startTime: '12:00',
+        endTime: '14:00',
+        capacity: 40,
+        sortOrder: 10,
+      },
+      {
+        id: uuidv7(),
+        ...scope,
+        dayOfWeek,
+        name: 'DÃ®ner',
+        startTime: '19:00',
+        endTime: '22:00',
+        capacity: 50,
+        sortOrder: 20,
+      },
+    ]);
+  }
+}
+
+async function createSeedPasswordHash(
+  seedEnv: z.infer<typeof seedEnvSchema>,
+): Promise<string> {
+  const configuredPassword =
+    seedEnv.YUTA_CLOUD_SEED_PASSWORD ?? seedEnv.YUTA_CLOUD_SEED_ADMIN_PASSWORD;
   if (process.env.NODE_ENV === 'production' && !configuredPassword) {
     throw new Error(
-      'YUTA_CLOUD_SEED_ADMIN_PASSWORD is required when seeding production.',
+      'YUTA_CLOUD_SEED_PASSWORD is required when seeding production.',
     );
   }
-  const passwordHash = await hashPassword(
-    configuredPassword ?? 'ChangeMe-YuTa-2026!',
-  );
+  return hashPassword(configuredPassword ?? 'ChangeMe-YuTa-2026!');
+}
+
+async function upsertSeedUser(
+  seedDb: CloudDatabaseClient,
+  identity: {
+    authProviderId: string;
+    email: string;
+    displayName: string;
+    systemRole: 'YUTA_ADMIN' | null;
+  },
+  passwordHash: string,
+): Promise<CloudUser> {
   const existing = await seedDb.query.users.findFirst({
-    where: eq(users.email, 'admin@yuta.local'),
+    where: sql`lower(${users.email}) = ${identity.email}`,
   });
   const values = {
-    name: 'YuTa Admin',
-    isActive: true,
+    ...identity,
+    status: 'ACTIVE' as const,
     passwordHash,
     emailVerifiedAt: existing?.emailVerifiedAt ?? new Date(),
   };
@@ -204,6 +391,7 @@ async function upsertCloudAdmin(
       .set(values)
       .where(eq(users.id, existing.id))
       .returning();
+    console.log(`Reused seed identity ${identity.email}.`);
     return updated;
   }
 
@@ -211,19 +399,20 @@ async function upsertCloudAdmin(
     .insert(users)
     .values({
       id: uuidv7(),
-      email: 'admin@yuta.local',
       ...values,
     })
     .returning();
+  console.log(`Created seed identity ${identity.email}.`);
   return created;
 }
 
-async function upsertOwnerMembership(
+async function upsertMembership(
   seedDb: CloudDatabaseClient,
   scope: {
     userId: string;
     organizationId: string;
     establishmentId: string;
+    role: 'OWNER' | 'MANAGER';
   },
 ): Promise<void> {
   const existing = await seedDb.query.tenantMemberships.findFirst({
@@ -235,7 +424,6 @@ async function upsertOwnerMembership(
   });
   const values = {
     ...scope,
-    role: 'owner' as const,
     status: 'active' as const,
   };
 
@@ -244,15 +432,54 @@ async function upsertOwnerMembership(
       .update(tenantMemberships)
       .set(values)
       .where(eq(tenantMemberships.id, existing.id));
+    console.log(`Reused LUNA ${scope.role} membership.`);
     return;
   }
 
   await seedDb.insert(tenantMemberships).values({ id: uuidv7(), ...values });
+  console.log(`Created LUNA ${scope.role} membership.`);
+}
+
+async function removeRestaurantAccess(
+  seedDb: CloudDatabaseClient,
+  userId: string,
+): Promise<void> {
+  await seedDb.delete(authSessions).where(eq(authSessions.userId, userId));
+  await seedDb
+    .delete(authSelectionTickets)
+    .where(eq(authSelectionTickets.userId, userId));
+  await seedDb
+    .delete(tenantMemberships)
+    .where(eq(tenantMemberships.userId, userId));
+}
+
+async function disableLegacyCloudAdmin(
+  seedDb: CloudDatabaseClient,
+): Promise<void> {
+  const legacyUser = await seedDb.query.users.findFirst({
+    where: sql`lower(${users.email}) = 'admin@yuta.local'`,
+  });
+  if (!legacyUser) return;
+
+  await removeRestaurantAccess(seedDb, legacyUser.id);
+  await seedDb
+    .update(users)
+    .set({
+      status: 'DISABLED',
+      systemRole: null,
+      authVersion: sql`${users.authVersion} + 1`,
+    })
+    .where(eq(users.id, legacyUser.id));
+  console.log('Disabled legacy cloud identity admin@yuta.local.');
 }
 
 async function upsertReputationSettings(
   seedDb: CloudDatabaseClient,
-  scope: { organizationId: string; establishmentId: string },
+  scope: {
+    organizationId: string;
+    establishmentId: string;
+    publicFeedbackSlug: string;
+  },
 ): Promise<void> {
   const values = {
     ...scope,
@@ -261,7 +488,6 @@ async function upsertReputationSettings(
     replySignature: "L'équipe LUNA",
     defaultReplyLanguage: 'fr',
     publicFeedbackEnabled: true,
-    publicFeedbackSlug: 'luna',
     negativeRatingThreshold: 3,
   };
   const existing = await seedDb.query.reputationSettings.findFirst({

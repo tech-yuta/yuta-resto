@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { SystemRole } from '@yuta/contracts/tenant-foundation';
 
 export const emailSchema = z
   .string()
@@ -21,7 +22,7 @@ export const resetPasswordInputSchema = z.object({
 });
 
 export const switchTenantInputSchema = z.object({
-  establishmentId: z.string().uuid(),
+  membershipId: z.string().uuid(),
   returnTo: z.string().optional(),
 });
 
@@ -30,16 +31,23 @@ export type AuthenticatedSession = Readonly<{
   userId: string;
   userName: string;
   userEmail: string;
+  systemRole: SystemRole | null;
   organizationId: string;
   establishmentId: string;
   expiresAt: Date;
 }>;
 
 export type AvailableTenant = Readonly<{
+  membershipId: string;
   organizationId: string;
   organizationName: string;
+  organizationSlug: string;
   establishmentId: string;
   establishmentName: string;
+  establishmentSlug: string;
+  role: 'OWNER' | 'MANAGER' | 'STAFF';
+  locale: string;
+  timezone: string;
 }>;
 
 export type AuthErrorCode =
@@ -48,6 +56,7 @@ export type AuthErrorCode =
   | 'SESSION_INVALID'
   | 'SESSION_EXPIRED'
   | 'NO_ACTIVE_MEMBERSHIP'
+  | 'SELECTION_TICKET_INVALID'
   | 'TENANT_ACCESS_DENIED'
   | 'RESET_TOKEN_INVALID';
 

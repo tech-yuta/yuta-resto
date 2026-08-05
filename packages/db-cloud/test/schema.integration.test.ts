@@ -44,7 +44,8 @@ integrationTest('cloud schema integration', () => {
     });
     await db.insert(users).values({
       id: userId,
-      name: 'Cloud Schema Tester',
+      authProviderId: `test:${userId}`,
+      displayName: 'Cloud Schema Tester',
       email: `cloud-schema-${userId}@example.test`,
     });
   });
@@ -72,7 +73,7 @@ integrationTest('cloud schema integration', () => {
         userId,
         organizationId,
         establishmentId,
-        role: 'owner',
+        role: 'OWNER',
       })
       .returning();
 

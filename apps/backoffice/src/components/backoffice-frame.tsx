@@ -175,7 +175,7 @@ export function BackofficeFrame({
   currentUser: { name: string; email: string };
   tenantSwitcher: {
     tenants: AvailableTenant[];
-    currentEstablishmentId: string;
+    currentMembershipId: string;
   };
   canManageUsers: boolean;
 }) {
@@ -256,7 +256,7 @@ export function BackofficeFrame({
             <>
               <TenantSwitcher
                 tenants={tenantSwitcher.tenants}
-                currentEstablishmentId={tenantSwitcher.currentEstablishmentId}
+                currentMembershipId={tenantSwitcher.currentMembershipId}
                 className="hidden w-56 md:flex"
               />
               <IconButton
@@ -390,7 +390,7 @@ function MobileMenuDrawer({
   pathname: string;
   tenantSwitcher: {
     tenants: AvailableTenant[];
-    currentEstablishmentId: string;
+    currentMembershipId: string;
   };
   canManageUsers: boolean;
   onClose: () => void;
@@ -442,7 +442,7 @@ function MobileMenuDrawer({
         <nav className="min-h-0 flex-1 overflow-y-auto p-4">
           <TenantSwitcher
             tenants={tenantSwitcher.tenants}
-            currentEstablishmentId={tenantSwitcher.currentEstablishmentId}
+            currentMembershipId={tenantSwitcher.currentMembershipId}
             className="mb-4 md:hidden"
           />
           <BackofficeNavigation

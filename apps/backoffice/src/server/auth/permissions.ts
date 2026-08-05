@@ -14,18 +14,30 @@ export type ReputationPermission =
   | 'reputation.settings.manage'
   | 'reputation.connector.manage';
 
+export type BookingPermission =
+  | 'booking.read'
+  | 'booking.operate'
+  | 'booking.settings.manage';
+
 const permissionRoles: Record<ReputationPermission, readonly TenantRole[]> = {
-  'reputation.read': ['owner', 'admin', 'manager', 'employee'],
-  'reputation.feedback.manage': ['owner', 'admin', 'manager'],
-  'reputation.reply.create': ['owner', 'admin', 'manager', 'employee'],
-  'reputation.reply.publish': ['owner', 'admin', 'manager'],
-  'reputation.incident.create': ['owner', 'admin', 'manager', 'employee'],
-  'reputation.incident.manage': ['owner', 'admin', 'manager'],
-  'reputation.analytics.read': ['owner', 'admin', 'manager'],
-  'reputation.note.create': ['owner', 'admin', 'manager', 'employee'],
-  'reputation.settings.manage': ['owner', 'admin'],
-  'reputation.connector.manage': ['owner', 'admin'],
+  'reputation.read': ['OWNER', 'MANAGER', 'STAFF'],
+  'reputation.feedback.manage': ['OWNER', 'MANAGER'],
+  'reputation.reply.create': ['OWNER', 'MANAGER', 'STAFF'],
+  'reputation.reply.publish': ['OWNER', 'MANAGER'],
+  'reputation.incident.create': ['OWNER', 'MANAGER', 'STAFF'],
+  'reputation.incident.manage': ['OWNER', 'MANAGER'],
+  'reputation.analytics.read': ['OWNER', 'MANAGER'],
+  'reputation.note.create': ['OWNER', 'MANAGER', 'STAFF'],
+  'reputation.settings.manage': ['OWNER'],
+  'reputation.connector.manage': ['OWNER'],
 };
+
+const bookingPermissionRoles: Record<BookingPermission, readonly TenantRole[]> =
+  {
+    'booking.read': ['OWNER', 'MANAGER', 'STAFF'],
+    'booking.operate': ['OWNER', 'MANAGER', 'STAFF'],
+    'booking.settings.manage': ['OWNER', 'MANAGER'],
+  };
 
 export function requireReputationPermission(
   context: TenantContext,
@@ -34,6 +46,22 @@ export function requireReputationPermission(
   if (
     context.actor.type !== 'user' ||
     !permissionRoles[permission].includes(context.actor.role)
+  ) {
+    throw new TenantError(
+      'Permission denied.',
+      'CROSS_TENANT_ACCESS_DENIED',
+      403,
+    );
+  }
+}
+
+export function requireBookingPermission(
+  context: TenantContext,
+  permission: BookingPermission,
+): void {
+  if (
+    context.actor.type !== 'user' ||
+    !bookingPermissionRoles[permission].includes(context.actor.role)
   ) {
     throw new TenantError(
       'Permission denied.',

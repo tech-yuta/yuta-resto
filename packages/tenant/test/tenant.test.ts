@@ -62,7 +62,7 @@ describe('@yuta/tenant', () => {
         userId: organizationId,
         organizationId,
         establishmentId,
-        role: 'manager',
+        role: 'MANAGER',
         status: 'active',
       }),
     };
@@ -77,7 +77,7 @@ describe('@yuta/tenant', () => {
         entitlements: [],
       },
     });
-    expect(context.actor).toMatchObject({ role: 'manager', membershipId });
+    expect(context.actor).toMatchObject({ role: 'MANAGER', membershipId });
     expect(() =>
       assertEstablishmentScope({
         context,

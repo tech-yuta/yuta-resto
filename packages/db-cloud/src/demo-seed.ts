@@ -137,21 +137,21 @@ export async function seedCloudReputationDemo(
 
   try {
     const organization = await activeDb.query.organizations.findFirst({
-      where: eq(organizations.slug, 'fast-viet'),
+      where: eq(organizations.slug, 'luna'),
     });
     const establishment = organization
       ? await activeDb.query.establishments.findFirst({
           where: and(
             eq(establishments.organizationId, organization.id),
-            eq(establishments.slug, 'luna-chasseneuil-du-poitou'),
+            eq(establishments.slug, 'luna'),
           ),
         })
       : undefined;
-    const adminUser = await activeDb.query.users.findFirst({
-      where: eq(users.email, 'admin@yuta.local'),
+    const ownerUser = await activeDb.query.users.findFirst({
+      where: eq(users.email, 'owner@luna-restaurant.fr'),
     });
 
-    if (!organization || !establishment || !adminUser) {
+    if (!organization || !establishment || !ownerUser) {
       throw new Error(
         'Run the cloud foundation seed before the reputation demo seed.',
       );
@@ -178,7 +178,7 @@ export async function seedCloudReputationDemo(
         sentiment: item.sentiment,
         urgency: item.urgency,
         status: item.status,
-        assignedToUserId: 'assigned' in item ? adminUser.id : null,
+        assignedToUserId: 'assigned' in item ? ownerUser.id : null,
         publishedAt: receivedAt,
         receivedAt,
         lastSyncedAt: receivedAt,
@@ -249,10 +249,10 @@ export async function seedCloudReputationDemo(
         status: reply.status,
         generatedByAi: reply.generatedByAi,
         originalAiContent: reply.generatedByAi ? reply.content : null,
-        createdByUserId: adminUser.id,
-        editedByUserId: reply.generatedByAi ? null : adminUser.id,
-        approvedByUserId: reply.status === 'PUBLISHED' ? adminUser.id : null,
-        publishedByUserId: reply.status === 'PUBLISHED' ? adminUser.id : null,
+        createdByUserId: ownerUser.id,
+        editedByUserId: reply.generatedByAi ? null : ownerUser.id,
+        approvedByUserId: reply.status === 'PUBLISHED' ? ownerUser.id : null,
+        publishedByUserId: reply.status === 'PUBLISHED' ? ownerUser.id : null,
         publishedAt: reply.publishedAt,
       };
 
@@ -286,7 +286,7 @@ export async function seedCloudReputationDemo(
         organizationId: organization.id,
         feedbackItemId,
         content: note.content,
-        createdByUserId: adminUser.id,
+        createdByUserId: ownerUser.id,
       };
 
       await activeDb

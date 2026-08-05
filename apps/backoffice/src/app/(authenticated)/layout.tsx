@@ -4,6 +4,7 @@ import {
   requireAuthenticatedTenant,
 } from '../../server/auth/session';
 import type { ReactNode } from 'react';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,7 @@ export default async function AuthenticatedLayout({
   children: ReactNode;
 }) {
   const { session, tenant } = await requireAuthenticatedTenant();
+  if (tenant.actor.type !== 'user') redirect('/login');
   const availableTenants = await authRepository.listAvailableTenants(
     session.userId,
   );
@@ -24,11 +26,11 @@ export default async function AuthenticatedLayout({
       }}
       tenantSwitcher={{
         tenants: availableTenants,
-        currentEstablishmentId: session.establishmentId,
+        currentMembershipId: tenant.actor.membershipId,
       }}
       canManageUsers={
         tenant.actor.type === 'user' &&
-        (tenant.actor.role === 'owner' || tenant.actor.role === 'admin')
+        (tenant.actor.role === 'OWNER' || tenant.actor.role === 'MANAGER')
       }
     >
       {children}

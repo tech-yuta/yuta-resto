@@ -50,6 +50,30 @@ export const authSessions = pgTable(
   ],
 );
 
+export const authSelectionTickets = pgTable(
+  'auth_selection_tickets',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull(),
+    authVersion: integer('auth_version').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    ipHash: varchar('ip_hash', { length: 64 }),
+    userAgent: varchar('user_agent', { length: 500 }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('auth_selection_tickets_token_hash_unique_idx').on(
+      table.tokenHash,
+    ),
+    index('auth_selection_tickets_user_id_idx').on(table.userId),
+    index('auth_selection_tickets_expires_at_idx').on(table.expiresAt),
+  ],
+);
+
 export const passwordResetTokens = pgTable(
   'password_reset_tokens',
   {
@@ -120,4 +144,5 @@ export const authAuditEvents = pgTable(
 );
 
 export type AuthSession = typeof authSessions.$inferSelect;
+export type AuthSelectionTicket = typeof authSelectionTickets.$inferSelect;
 export type AuthAuditEvent = typeof authAuditEvents.$inferSelect;

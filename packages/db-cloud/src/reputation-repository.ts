@@ -266,7 +266,7 @@ function requireAdminEstablishment(context: TenantContext): string {
 }
 
 function feedbackVisibilityCondition(context: TenantContext) {
-  return context.actor.type === 'user' && context.actor.role === 'employee'
+  return context.actor.type === 'user' && context.actor.role === 'STAFF'
     ? eq(feedbackItems.assignedToUserId, context.actor.userId)
     : undefined;
 }
@@ -458,10 +458,10 @@ export async function listAssignableReputationUsers(
   context: TenantContext,
 ): Promise<AssignableReputationUser[]> {
   const establishmentId = requireAdminEstablishment(context);
-  return repositoryDb
+  const rows = await repositoryDb
     .select({
       id: users.id,
-      name: users.name,
+      name: users.displayName,
       email: users.email,
       role: tenantMemberships.role,
     })
@@ -472,10 +472,14 @@ export async function listAssignableReputationUsers(
         eq(tenantMemberships.organizationId, context.organizationId),
         eq(tenantMemberships.establishmentId, establishmentId),
         eq(tenantMemberships.status, 'active'),
-        eq(users.isActive, true),
+        eq(users.status, 'ACTIVE'),
       ),
     )
-    .orderBy(asc(users.name));
+    .orderBy(asc(users.displayName));
+  return rows.map((row) => ({
+    ...row,
+    name: row.name ?? row.email ?? 'Utilisateur',
+  }));
 }
 
 export async function findGoogleReputationConnector(
@@ -721,7 +725,7 @@ export async function updateFeedback(
             eq(tenantMemberships.organizationId, context.organizationId),
             eq(tenantMemberships.establishmentId, establishmentId),
             eq(tenantMemberships.status, 'active'),
-            eq(users.isActive, true),
+            eq(users.status, 'ACTIVE'),
           ),
         )
         .limit(1);

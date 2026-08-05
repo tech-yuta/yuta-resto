@@ -19,7 +19,7 @@ export async function switchTenantAction(
   formData: FormData,
 ): Promise<TenantSwitchActionState> {
   const parsed = switchTenantInputSchema.safeParse({
-    establishmentId: formData.get('establishmentId'),
+    membershipId: formData.get('membershipId'),
     returnTo: formData.get('returnTo')?.toString(),
   });
   if (!parsed.success) {
@@ -36,7 +36,7 @@ export async function switchTenantAction(
   try {
     result = await authRepository.switchTenant({
       token: currentToken,
-      establishmentId: parsed.data.establishmentId,
+      membershipId: parsed.data.membershipId,
     });
   } catch (error: unknown) {
     if (error instanceof AuthError) {

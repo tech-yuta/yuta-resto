@@ -43,18 +43,18 @@ describe('@yuta/auth', () => {
     );
   });
 
-  it('accepts only UUID establishment identifiers for tenant switching', () => {
+  it('accepts only UUID membership identifiers for tenant switching', () => {
     expect(
       switchTenantInputSchema.parse({
-        establishmentId: '00000000-0000-4000-8000-000000000001',
+        membershipId: '00000000-0000-4000-8000-000000000001',
         returnTo: '/customers/reviews',
       }),
     ).toEqual({
-      establishmentId: '00000000-0000-4000-8000-000000000001',
+      membershipId: '00000000-0000-4000-8000-000000000001',
       returnTo: '/customers/reviews',
     });
     expect(() =>
-      switchTenantInputSchema.parse({ establishmentId: 'untrusted-slug' }),
+      switchTenantInputSchema.parse({ membershipId: 'untrusted-slug' }),
     ).toThrow();
   });
 });

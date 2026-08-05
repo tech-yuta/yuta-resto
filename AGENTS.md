@@ -6,10 +6,11 @@ This is the YuTa internal restaurant tool monorepo.
 
 ```
 apps/backoffice     — Restaurant back-office (port 3001)
+apps/booking-web    — Public restaurant booking app (port 3005)
 apps/web            — Public web app (port 3000)
 apps/yuta-display   — Digital signage display (port 3002)
-apps/yuta-pos       — Local-only restaurant POS client
-apps/site-agent     — Target local POS API/device integration boundary
+apps/yuta-pos       — Local-only restaurant POS client (port 3003)
+apps/site-agent     — Target local POS API/device integration boundary (port 3004)
 packages/db-cloud   — Target cloud SaaS database package
 packages/db-pos     — Target local POS database package
 packages/core       — Shared business logic, tool registry
@@ -147,6 +148,11 @@ cn()         - utility: clsx + tailwind-merge
 ### Icons
 
 Use `lucide-react` only. Never `@mui/icons-material`.
+
+### Typography
+
+Public YuTa websites and the restaurant back-office use Geist Sans for all UI
+text, with `Inter, sans-serif` as the fallback stack. Do not use serif fonts.
 
 ### CSS setup per app
 

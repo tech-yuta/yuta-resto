@@ -18,6 +18,7 @@ YuTa has separate cloud and restaurant-local runtime families.
 ```text
 apps/web
 apps/backoffice
+apps/booking-web
 optional cloud worker
         |
 packages/db-cloud
@@ -33,13 +34,14 @@ Cloud must contain no POS operational tables.
 
 ### Vercel Git deployment policy
 
-The Vercel projects for `apps/backoffice` and `apps/web` keep their GitHub
+The Vercel projects for `apps/backoffice`, `apps/web`, and `apps/booking-web` keep their GitHub
 repository connection, but automatic deployments from commits are disabled.
 Each Vercel project must use its application folder as the Root Directory:
 
 ```text
 apps/backoffice
 apps/web
+apps/booking-web
 ```
 
 Both folders contain a `vercel.json` with
@@ -64,6 +66,20 @@ The Google Business Profile OAuth callback is
 `https://app.yutapro.fr/api/reputation/google/oauth/callback`. Back-office
 session cookies remain host-only; do not set a shared `.yutapro.fr` cookie
 domain.
+
+The public booking application uses a separate project and domain:
+
+```text
+Project name:   yuta-booking-web
+Root Directory: apps/booking-web
+Domain:         reservation.yutapro.fr
+```
+
+Set `PUBLIC_BOOKING_BASE_URL=https://reservation.yutapro.fr` and a unique
+`BOOKING_RATE_LIMIT_SECRET` of at least 32 random characters. The booking app
+receives `CLOUD_DATABASE_URL` but no authentication cookie secret and no local
+POS/display database URL. Its `vercel.json` also disables automatic Git
+deployments.
 
 ### Restaurant local
 
@@ -117,6 +133,8 @@ AUTH_SECRET=...
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_TOKEN_ENCRYPTION_KEY=...
+PUBLIC_BOOKING_BASE_URL=https://reservation.yutapro.fr
+BOOKING_RATE_LIMIT_SECRET=...
 ```
 
 Only cloud server processes receive these values.

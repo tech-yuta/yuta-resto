@@ -1,0 +1,8 @@
+ALTER TABLE "booking_exceptions" ADD CONSTRAINT "booking_exceptions_capacity_check" CHECK ("booking_exceptions"."capacity_override" is null or "booking_exceptions"."capacity_override" >= 0);--> statement-breakpoint
+ALTER TABLE "booking_service_periods" ADD CONSTRAINT "booking_service_periods_day_check" CHECK ("booking_service_periods"."day_of_week" between 0 and 6);--> statement-breakpoint
+ALTER TABLE "booking_service_periods" ADD CONSTRAINT "booking_service_periods_time_check" CHECK ("booking_service_periods"."end_time" > "booking_service_periods"."start_time");--> statement-breakpoint
+ALTER TABLE "booking_service_periods" ADD CONSTRAINT "booking_service_periods_capacity_check" CHECK ("booking_service_periods"."capacity" > 0);--> statement-breakpoint
+ALTER TABLE "booking_settings" ADD CONSTRAINT "booking_settings_party_size_check" CHECK ("booking_settings"."minimum_party_size" > 0 and "booking_settings"."maximum_party_size" >= "booking_settings"."minimum_party_size");--> statement-breakpoint
+ALTER TABLE "booking_settings" ADD CONSTRAINT "booking_settings_intervals_check" CHECK ("booking_settings"."slot_interval_minutes" > 0 and "booking_settings"."average_duration_minutes" > 0 and "booking_settings"."minimum_notice_minutes" >= 0 and "booking_settings"."booking_window_days" >= 0 and "booking_settings"."cancellation_deadline_minutes" >= 0);--> statement-breakpoint
+ALTER TABLE "reservations" ADD CONSTRAINT "reservations_party_size_check" CHECK ("reservations"."party_size" > 0);--> statement-breakpoint
+ALTER TABLE "reservations" ADD CONSTRAINT "reservations_time_order_check" CHECK ("reservations"."end_at" > "reservations"."start_at");

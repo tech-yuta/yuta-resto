@@ -25,17 +25,16 @@ const initialState: TenantSwitchActionState = { error: null };
 
 export function TenantSwitcher({
   tenants,
-  currentEstablishmentId,
+  currentMembershipId,
   className,
 }: {
   tenants: AvailableTenant[];
-  currentEstablishmentId: string;
+  currentMembershipId: string;
   className?: string;
 }) {
   const pathname = usePathname();
-  const [selectedEstablishmentId, setSelectedEstablishmentId] = useState(
-    currentEstablishmentId,
-  );
+  const [selectedMembershipId, setSelectedMembershipId] =
+    useState(currentMembershipId);
   const [state, formAction] = useActionState(switchTenantAction, initialState);
   const tenantsByOrganization = groupTenantsByOrganization(tenants);
 
@@ -47,9 +46,9 @@ export function TenantSwitcher({
       <input type="hidden" name="returnTo" value={pathname} />
       <div className="min-w-0 flex-1">
         <Select
-          name="establishmentId"
-          value={selectedEstablishmentId}
-          onValueChange={setSelectedEstablishmentId}
+          name="membershipId"
+          value={selectedMembershipId}
+          onValueChange={setSelectedMembershipId}
           disabled={tenants.length < 2}
           required
         >
@@ -68,8 +67,8 @@ export function TenantSwitcher({
                 <SelectLabel>{organization.name}</SelectLabel>
                 {organization.tenants.map((tenant) => (
                   <SelectItem
-                    key={tenant.establishmentId}
-                    value={tenant.establishmentId}
+                    key={tenant.membershipId}
+                    value={tenant.membershipId}
                   >
                     {tenant.establishmentName}
                   </SelectItem>
@@ -86,8 +85,7 @@ export function TenantSwitcher({
       </div>
       <TenantSwitchSubmit
         disabled={
-          tenants.length < 2 ||
-          selectedEstablishmentId === currentEstablishmentId
+          tenants.length < 2 || selectedMembershipId === currentMembershipId
         }
       />
     </form>

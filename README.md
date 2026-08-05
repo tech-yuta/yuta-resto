@@ -8,6 +8,7 @@ TypeScript, Tailwind CSS, and shared workspace packages.
 - `apps/web` - public YuTa website and product landing page for restaurants.
 - `apps/backoffice` - restaurant customer back-office for organizations,
   establishments, reputation, reservations, and cloud configuration.
+- `apps/booking-web` - independent public reservation flow (port 3005).
 - `apps/platform-admin` - reserved name for the future internal YUTA
   administration application; it is not implemented yet.
 - `apps/yuta-pos` - local-only restaurant POS client for orders, payments,
@@ -63,6 +64,7 @@ Useful app scripts:
 
 ```bash
 pnpm dev:backoffice
+pnpm dev:booking
 pnpm dev:pos
 pnpm dev:site-agent
 pnpm dev:display

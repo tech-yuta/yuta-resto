@@ -115,6 +115,7 @@ Generate one clean initial migration per database boundary
 YUTA-RESTO/
 ├── apps/
 │   ├── backoffice/                # Cloud, authenticated, multi-tenant
+│   ├── booking-web/               # Cloud, public booking, slug-scoped
 │   ├── web/                       # Cloud/public website and public SaaS pages
 │   ├── yuta-pos/                  # Local-only POS client
 │   ├── yuta-display/              # Local-only display app

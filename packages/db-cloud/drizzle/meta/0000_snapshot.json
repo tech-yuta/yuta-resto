@@ -1,5 +1,5 @@
 {
-  "id": "e21b6c7c-9685-45bc-b261-4f6021671145",
+  "id": "638f7875-f033-45ff-8fb2-be0dc42a81de",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2045,19 +2045,13 @@
         }
       },
       "indexes": {
-        "establishments_org_slug_unique_idx": {
-          "name": "establishments_org_slug_unique_idx",
+        "establishments_slug_unique_idx": {
+          "name": "establishments_slug_unique_idx",
           "columns": [
             {
-              "expression": "organization_id",
-              "isExpression": false,
+              "expression": "lower(\"slug\")",
               "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -2189,9 +2183,9 @@
           "name": "organizations_slug_unique_idx",
           "columns": [
             {
-              "expression": "slug",
-              "isExpression": false,
+              "expression": "lower(\"slug\")",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -2512,6 +2506,13 @@
           "notNull": true,
           "default": "'active'"
         },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2603,7 +2604,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
+          "onDelete": "restrict",
           "onUpdate": "no action"
         },
         "tenant_memberships_organization_id_organizations_id_fk": {
@@ -2649,11 +2650,17 @@
           "primaryKey": true,
           "notNull": true
         },
-        "name": {
-          "name": "name",
-          "type": "varchar(255)",
+        "auth_provider_id": {
+          "name": "auth_provider_id",
+          "type": "varchar(191)",
           "primaryKey": false,
           "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": false
         },
         "email": {
           "name": "email",
@@ -2661,12 +2668,20 @@
           "primaryKey": false,
           "notNull": true
         },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
+        "status": {
+          "name": "status",
+          "type": "user_status",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": "'ACTIVE'"
+        },
+        "system_role": {
+          "name": "system_role",
+          "type": "system_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "password_hash": {
           "name": "password_hash",
@@ -2713,9 +2728,9 @@
           "name": "users_email_unique_idx",
           "columns": [
             {
-              "expression": "email",
-              "isExpression": false,
+              "expression": "lower(\"email\")",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -2724,11 +2739,26 @@
           "method": "btree",
           "with": {}
         },
-        "users_is_active_idx": {
-          "name": "users_is_active_idx",
+        "users_status_idx": {
+          "name": "users_status_idx",
           "columns": [
             {
-              "expression": "is_active",
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_system_role_idx": {
+          "name": "users_system_role_idx",
+          "columns": [
+            {
+              "expression": "system_role",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2742,7 +2772,15 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "users_auth_provider_id_unique": {
+          "name": "users_auth_provider_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "auth_provider_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2850,10 +2888,9 @@
       "name": "cloud_role",
       "schema": "public",
       "values": [
-        "owner",
-        "admin",
-        "manager",
-        "employee"
+        "OWNER",
+        "MANAGER",
+        "STAFF"
       ]
     },
     "public.domain_status": {
@@ -2870,7 +2907,6 @@
       "schema": "public",
       "values": [
         "active",
-        "invited",
         "suspended"
       ]
     },
@@ -2880,6 +2916,22 @@
       "values": [
         "active",
         "disabled"
+      ]
+    },
+    "public.system_role": {
+      "name": "system_role",
+      "schema": "public",
+      "values": [
+        "YUTA_ADMIN",
+        "YUTA_SUPPORT"
+      ]
+    },
+    "public.user_status": {
+      "name": "user_status",
+      "schema": "public",
+      "values": [
+        "ACTIVE",
+        "DISABLED"
       ]
     }
   },

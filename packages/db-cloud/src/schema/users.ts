@@ -1,7 +1,7 @@
 import {
-  boolean,
   index,
   integer,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -9,14 +9,25 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+
+export const userStatusEnum = pgEnum('user_status', ['ACTIVE', 'DISABLED']);
+export const systemRoleEnum = pgEnum('system_role', [
+  'YUTA_ADMIN',
+  'YUTA_SUPPORT',
+]);
 
 export const users = pgTable(
   'users',
   {
     id: uuid('id').primaryKey(),
-    name: varchar('name', { length: 255 }).notNull(),
+    authProviderId: varchar('auth_provider_id', { length: 191 })
+      .notNull()
+      .unique(),
+    displayName: varchar('display_name', { length: 160 }),
     email: varchar('email', { length: 320 }).notNull(),
-    isActive: boolean('is_active').default(true).notNull(),
+    status: userStatusEnum('status').default('ACTIVE').notNull(),
+    systemRole: systemRoleEnum('system_role'),
     passwordHash: text('password_hash'),
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
@@ -30,8 +41,9 @@ export const users = pgTable(
       .$onUpdateFn(() => new Date()),
   },
   (table) => [
-    uniqueIndex('users_email_unique_idx').on(table.email),
-    index('users_is_active_idx').on(table.isActive),
+    uniqueIndex('users_email_unique_idx').on(sql`lower(${table.email})`),
+    index('users_status_idx').on(table.status),
+    index('users_system_role_idx').on(table.systemRole),
   ],
 );
 

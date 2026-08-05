@@ -22,6 +22,7 @@ export default async function LoginPage({
       returnTo={safeReturnTo(query.returnTo)}
       passwordReset={query.reset === '1'}
       membershipError={query.error === 'membership'}
+      selectionError={query.error === 'selection'}
     />
   );
 }

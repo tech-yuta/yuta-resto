@@ -201,12 +201,13 @@ pnpm db:pos:seed
 
 The cloud seed requires `CLOUD_DATABASE_URL`. It creates or updates:
 
-- the initial organization and establishment;
-- the development hostname and cloud entitlements;
-- one cloud owner account and membership;
+- the LUNA organization with LUNA and LuNa Poitiers establishments;
+- development hostnames and cloud entitlements for both establishments;
+- LUNA owner and manager accounts with their establishment memberships;
+- one YuTa platform administrator without a restaurant membership;
 - the initial reputation settings.
 
-Set `YUTA_CLOUD_SEED_ADMIN_PASSWORD` to override the development password. It
+Set `YUTA_CLOUD_SEED_PASSWORD` to override the development password. It
 is mandatory when `NODE_ENV=production`.
 
 The POS seed requires `POS_DATABASE_URL`. It creates or updates:

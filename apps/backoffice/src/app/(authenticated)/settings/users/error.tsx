@@ -7,7 +7,7 @@ export default function UserManagementError() {
   return (
     <ErrorState
       title="Accès non autorisé"
-      description="Seuls les owners et administrateurs autorisés peuvent gérer les utilisateurs de cet établissement."
+      description="Seuls les propriétaires et responsables autorisés peuvent gérer les utilisateurs de cet établissement."
       action={
         <Button asChild variant="secondary">
           <Link href="/today">Retour au tableau de bord</Link>

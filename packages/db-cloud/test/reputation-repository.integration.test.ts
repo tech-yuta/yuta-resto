@@ -49,7 +49,7 @@ integrationTest('reputation repository integration', () => {
     actor: {
       type: 'user',
       userId: actorUserId,
-      role: 'owner',
+      role: 'OWNER',
       membershipId,
     },
     locale: 'fr-FR',
@@ -73,12 +73,14 @@ integrationTest('reputation repository integration', () => {
     await db.insert(users).values([
       {
         id: actorUserId,
-        name: 'Integration Owner',
+        authProviderId: `test:${actorUserId}`,
+        displayName: 'Integration Owner',
         email: `owner-${organizationId}@example.test`,
       },
       {
         id: assigneeUserId,
-        name: 'Integration Assignee',
+        authProviderId: `test:${assigneeUserId}`,
+        displayName: 'Integration Assignee',
         email: `assignee-${organizationId}@example.test`,
       },
     ]);
@@ -88,7 +90,7 @@ integrationTest('reputation repository integration', () => {
         userId: actorUserId,
         organizationId,
         establishmentId,
-        role: 'owner',
+        role: 'OWNER',
         status: 'active',
       },
       {
@@ -96,7 +98,7 @@ integrationTest('reputation repository integration', () => {
         userId: assigneeUserId,
         organizationId,
         establishmentId,
-        role: 'manager',
+        role: 'MANAGER',
         status: 'active',
       },
     ]);
@@ -194,7 +196,7 @@ integrationTest('reputation repository integration', () => {
       actor: {
         type: 'user',
         userId: assigneeUserId,
-        role: 'employee',
+        role: 'STAFF',
         membershipId: uuidv7(),
       },
     };

@@ -5,6 +5,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
   BACKOFFICE_SESSION_COOKIE,
+  BACKOFFICE_SELECTION_COOKIE,
   authRepository,
   createLoginRateLimitKey,
   hashClientAddress,
@@ -35,6 +36,8 @@ export async function loginAction(
 
   const requestHeaders = await headers();
   const clientAddress = getClientAddress(requestHeaders);
+  let destination = safeReturnTo(formData.get('returnTo')?.toString());
+
   try {
     const result = await authRepository.signIn({
       ...parsed.data,
@@ -48,14 +51,28 @@ export async function loginAction(
     });
 
     const cookieStore = await cookies();
-    cookieStore.set(BACKOFFICE_SESSION_COOKIE, result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      expires: result.session.expiresAt,
-      priority: 'high',
-    });
+    if (result.type === 'SELECTION_REQUIRED') {
+      cookieStore.delete(BACKOFFICE_SESSION_COOKIE);
+      cookieStore.set(BACKOFFICE_SELECTION_COOKIE, result.selectionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        expires: result.expiresAt,
+        priority: 'high',
+      });
+      destination = `/select-establishment?returnTo=${encodeURIComponent(destination)}`;
+    } else {
+      cookieStore.delete(BACKOFFICE_SELECTION_COOKIE);
+      cookieStore.set(BACKOFFICE_SESSION_COOKIE, result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        expires: result.session.expiresAt,
+        priority: 'high',
+      });
+    }
   } catch (error: unknown) {
     if (error instanceof AuthError) {
       if (error.code === 'LOGIN_RATE_LIMITED') {
@@ -63,13 +80,21 @@ export async function loginAction(
           error: 'Trop de tentatives. Patientez 15 minutes avant de réessayer.',
         };
       }
-      return { error: 'Adresse e-mail ou mot de passe incorrect.' };
+      if (error.code === 'NO_ACTIVE_MEMBERSHIP') {
+        const cookieStore = await cookies();
+        cookieStore.delete(BACKOFFICE_SESSION_COOKIE);
+        cookieStore.delete(BACKOFFICE_SELECTION_COOKIE);
+        destination = '/access/no-establishment';
+      } else {
+        return { error: 'Adresse e-mail ou mot de passe incorrect.' };
+      }
+    } else {
+      console.error('Back-office login failed.', error);
+      return {
+        error: 'La connexion est momentanément indisponible.',
+      };
     }
-    console.error('Back-office login failed.', error);
-    return {
-      error: 'La connexion est momentanément indisponible.',
-    };
   }
 
-  redirect(safeReturnTo(formData.get('returnTo')?.toString()));
+  redirect(destination);
 }

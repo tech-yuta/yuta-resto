@@ -17,13 +17,22 @@ roles, PIN sessions, and audit records through `site-agent`/`db-pos`.
 1. `/login` validates the submitted email and password on the server.
 2. Passwords are verified with Node.js scrypt. Plaintext passwords are never
    stored.
-3. A cryptographically random session token is returned in an HttpOnly cookie.
-4. PostgreSQL stores only the SHA-256 hash of the session token.
-5. The authenticated layout validates the session and active user.
-6. The session organization and establishment are checked against an active
+3. Active establishment memberships are resolved using zero/one/many rules.
+4. With one membership, a cryptographically random scoped session token is
+   returned in an HttpOnly cookie.
+5. With several memberships, a single-use 10-minute selection ticket is stored
+   as a separate HttpOnly cookie until the user chooses a membership.
+6. PostgreSQL stores only SHA-256 hashes of session and selection tokens.
+7. The authenticated layout validates the session and active user.
+8. The session organization and establishment are checked against an active
    `tenant_memberships` record.
-7. `resolveAuthenticatedTenant` produces the trusted tenant context used by
+9. `resolveAuthenticatedTenant` produces the trusted tenant context used by
    repositories and permission checks.
+
+Users without an active restaurant membership are redirected to
+`/access/no-establishment`. Users with several memberships select one at
+`/select-establishment` before a scoped session is created. The selection
+ticket has no tenant scope and cannot authorize protected back-office routes.
 
 Browser input, query parameters, and cookies are never trusted as sources for a
 user role, organization, establishment, entitlement, or permission.
@@ -38,16 +47,16 @@ when an active establishment-level membership exists for each target.
 Switching is a server-side operation:
 
 1. The current session token is validated again.
-2. The target establishment UUID is checked against an active membership, an
+2. The target membership UUID is checked against the current user, an
    active organization, and an active establishment.
 3. The current database session is revoked.
 4. A new database session and opaque cookie token are issued for the selected
    organization and establishment.
 5. The current page is reloaded using the new trusted tenant context.
 
-The client cannot provide or override an organization identifier. It submits
-only the target establishment UUID, and the organization is derived from the
-validated membership. If membership access was removed after the selector was
+The client cannot provide or override organization or establishment identifiers.
+It submits only the target membership UUID, and both scope identifiers are
+derived from the validated membership. If membership access was removed after the selector was
 rendered, the switch is rejected and the existing session remains unchanged.
 
 ## Cookie policy
@@ -81,15 +90,17 @@ operation periodically.
 
 ## Authorization
 
-The global `users` record is the login identity. `tenant_memberships.role` is
-the authorization source of truth. The legacy `users.role` field remains for
-the POS until its authorization layer is migrated.
+The global `users` record is the login identity. External identities map through
+`users.auth_provider_id`; provider payloads do not enter domain code.
+`tenant_memberships.role` is the restaurant authorization source of truth.
+`users.system_role` is reserved for explicit YUTA platform access and never
+bypasses restaurant membership checks. POS authentication remains local.
 
 Reputation permissions are enforced server-side:
 
-- Owner/admin: all reputation permissions.
-- Manager: read, draft/publish replies, incidents, and analytics.
-- Employee: read, create drafts, and create incidents.
+- OWNER: all reputation permissions.
+- MANAGER: read, draft/publish replies, incidents, analytics, and staff access management.
+- STAFF: read, create drafts, and create incidents.
 - Other roles: no reputation access by default.
 
 Client-side button visibility is only a usability aid and must not replace the
@@ -100,10 +111,10 @@ server permission check.
 `/settings/users` is the tenant-aware access management surface:
 
 - The "Utilisateurs & accès" navigation item is shown only to owners and
-  administrators.
+  managers.
 - Owners can manage active establishments across their current organization.
-- Administrators can manage only the currently selected establishment.
-- Administrators cannot assign or modify owner and administrator roles.
+- Managers can manage staff only in the currently selected establishment.
+- Managers cannot assign or modify owner or manager roles.
 - The membership used by the current session cannot modify or suspend itself.
 - The last active owner membership in an organization cannot be downgraded or
   suspended.
@@ -132,19 +143,22 @@ pnpm --filter @yuta/db-cloud db:seed
 Default development login:
 
 ```text
-Email: admin@yuta.local
+Owner: owner@luna-restaurant.fr
+Manager: manager@luna-restaurant.fr
 Password: ChangeMe-YuTa-2026!
 ```
 
-Set `YUTA_CLOUD_SEED_ADMIN_PASSWORD` before seeding to choose a different
-password. The seeded administrator receives the owner membership so
-organization-wide membership management can be tested locally. Production
-seeding refuses to run without this variable.
+Set `YUTA_CLOUD_SEED_PASSWORD` to choose a different password. The owner and
+manager identities receive active LUNA memberships. `admin@yutapro.fr` receives
+the `YUTA_ADMIN` system role and no restaurant membership, so it cannot use the
+restaurant back-office. Production seeding refuses to run without this
+password. `YUTA_CLOUD_SEED_ADMIN_PASSWORD` remains a temporary compatibility
+fallback for existing local environments.
 
 ## Password recovery
 
 The reset-token storage and password reset page are implemented. Automated
 delivery is intentionally not active because the repository does not yet have a
-trusted transactional email service. Until one is configured, an administrator
+trusted transactional email service. Until one is configured, an owner or manager
 must create and deliver the short-lived token through an approved operational
 channel.

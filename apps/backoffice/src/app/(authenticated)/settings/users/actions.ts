@@ -1,10 +1,7 @@
 'use server';
 
 import { emailSchema, passwordSchema } from '@yuta/auth';
-import {
-  createTenantUserRepository,
-  TenantUserError,
-} from '@yuta/db-cloud';
+import { createTenantUserRepository, TenantUserError } from '@yuta/db-cloud';
 import { tenantRoleSchema, type TenantContext } from '@yuta/tenant';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -116,21 +113,21 @@ export async function updateTenantMembershipAction(
 }
 
 async function getManagementScope(tenant: TenantContext): Promise<{
-  actorRole: 'owner' | 'admin';
+  actorRole: 'OWNER' | 'MANAGER';
   establishmentIds: string[];
 }> {
   if (
     tenant.actor.type !== 'user' ||
-    (tenant.actor.role !== 'owner' && tenant.actor.role !== 'admin') ||
+    (tenant.actor.role !== 'OWNER' && tenant.actor.role !== 'MANAGER') ||
     !tenant.establishmentId
   ) {
-    throw new Error('User management requires an owner or administrator.');
+    throw new Error('User management requires an owner or manager.');
   }
   const establishments =
     await tenantUserRepository.listManageableEstablishments({
       organizationId: tenant.organizationId,
       establishmentId:
-        tenant.actor.role === 'admin' ? tenant.establishmentId : undefined,
+        tenant.actor.role === 'MANAGER' ? tenant.establishmentId : undefined,
     });
   return {
     actorRole: tenant.actor.role,

@@ -1,11 +1,8 @@
 import { z } from 'zod';
 
-export const tenantRoleSchema = z.enum([
-  'owner',
-  'admin',
-  'manager',
-  'employee',
-]);
+export * from './foundation';
+
+export const tenantRoleSchema = z.enum(['OWNER', 'MANAGER', 'STAFF']);
 export type TenantRole = z.infer<typeof tenantRoleSchema>;
 export type TenantActor = Readonly<
   | { type: 'public' }
@@ -47,7 +44,7 @@ export type MembershipRecord = Readonly<{
   organizationId: string;
   establishmentId: string | null;
   role: TenantRole;
-  status: 'active' | 'invited' | 'suspended';
+  status: 'active' | 'suspended';
 }>;
 export interface MembershipLookupPort {
   findActiveMembership(

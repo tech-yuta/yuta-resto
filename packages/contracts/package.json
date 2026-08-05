@@ -13,6 +13,7 @@
     "./orders": "./src/orders/index.ts",
     "./reputation": "./src/reputation/index.ts",
     "./reservations": "./src/reservations/index.ts",
+    "./tenant-foundation": "./src/tenant-foundation/index.ts",
     "./display": "./src/display/index.ts"
   },
   "scripts": {

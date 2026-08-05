@@ -1,4 +1,4 @@
-export type CloudTenantRole = 'owner' | 'admin' | 'manager' | 'employee';
+export type CloudTenantRole = 'OWNER' | 'MANAGER' | 'STAFF';
 
 export type AssignableReputationUser = {
   id: string;
@@ -7,7 +7,7 @@ export type AssignableReputationUser = {
   role: CloudTenantRole;
 };
 
-export type MembershipStatus = 'active' | 'invited' | 'suspended';
+export type MembershipStatus = 'active' | 'suspended';
 
 export type ManageableEstablishment = {
   id: string;

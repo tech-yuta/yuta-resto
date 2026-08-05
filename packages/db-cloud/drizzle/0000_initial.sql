@@ -8,10 +8,12 @@ CREATE TYPE "public"."feedback_status" AS ENUM('NEW', 'TO_PROCESS', 'DRAFTED', '
 CREATE TYPE "public"."feedback_type" AS ENUM('PUBLIC_REVIEW', 'DIRECT_FEEDBACK');--> statement-breakpoint
 CREATE TYPE "public"."feedback_urgency" AS ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');--> statement-breakpoint
 CREATE TYPE "public"."feedback_service_period" AS ENUM('LUNCH', 'DINNER', 'OTHER');--> statement-breakpoint
-CREATE TYPE "public"."cloud_role" AS ENUM('owner', 'admin', 'manager', 'employee');--> statement-breakpoint
+CREATE TYPE "public"."cloud_role" AS ENUM('OWNER', 'MANAGER', 'STAFF');--> statement-breakpoint
 CREATE TYPE "public"."domain_status" AS ENUM('pending', 'active', 'disabled');--> statement-breakpoint
-CREATE TYPE "public"."membership_status" AS ENUM('active', 'invited', 'suspended');--> statement-breakpoint
+CREATE TYPE "public"."membership_status" AS ENUM('active', 'suspended');--> statement-breakpoint
 CREATE TYPE "public"."organization_status" AS ENUM('active', 'disabled');--> statement-breakpoint
+CREATE TYPE "public"."system_role" AS ENUM('YUTA_ADMIN', 'YUTA_SUPPORT');--> statement-breakpoint
+CREATE TYPE "public"."user_status" AS ENUM('ACTIVE', 'DISABLED');--> statement-breakpoint
 CREATE TABLE "auth_audit_events" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"event" varchar(100) NOT NULL,
@@ -238,21 +240,25 @@ CREATE TABLE "tenant_memberships" (
 	"establishment_id" uuid,
 	"role" "cloud_role" NOT NULL,
 	"status" "membership_status" DEFAULT 'active' NOT NULL,
+	"joined_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY NOT NULL,
-	"name" varchar(255) NOT NULL,
+	"auth_provider_id" varchar(191) NOT NULL,
+	"display_name" varchar(160),
 	"email" varchar(320) NOT NULL,
-	"is_active" boolean DEFAULT true NOT NULL,
+	"status" "user_status" DEFAULT 'ACTIVE' NOT NULL,
+	"system_role" "system_role",
 	"password_hash" text,
 	"email_verified_at" timestamp with time zone,
 	"last_login_at" timestamp with time zone,
 	"auth_version" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "users_auth_provider_id_unique" UNIQUE("auth_provider_id")
 );
 --> statement-breakpoint
 ALTER TABLE "auth_audit_events" ADD CONSTRAINT "auth_audit_events_actor_user_id_users_id_fk" FOREIGN KEY ("actor_user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -289,7 +295,7 @@ ALTER TABLE "tenant_domains" ADD CONSTRAINT "tenant_domains_organization_id_orga
 ALTER TABLE "tenant_domains" ADD CONSTRAINT "tenant_domains_establishment_id_establishments_id_fk" FOREIGN KEY ("establishment_id") REFERENCES "public"."establishments"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tenant_entitlements" ADD CONSTRAINT "tenant_entitlements_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tenant_entitlements" ADD CONSTRAINT "tenant_entitlements_establishment_id_establishments_id_fk" FOREIGN KEY ("establishment_id") REFERENCES "public"."establishments"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tenant_memberships" ADD CONSTRAINT "tenant_memberships_establishment_id_establishments_id_fk" FOREIGN KEY ("establishment_id") REFERENCES "public"."establishments"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "auth_audit_events_actor_user_id_idx" ON "auth_audit_events" USING btree ("actor_user_id");--> statement-breakpoint
@@ -324,10 +330,10 @@ CREATE UNIQUE INDEX "reputation_connectors_location_provider_unique_idx" ON "rep
 CREATE INDEX "reputation_connectors_status_idx" ON "reputation_connectors" USING btree ("status");--> statement-breakpoint
 CREATE UNIQUE INDEX "reputation_settings_location_unique_idx" ON "reputation_settings" USING btree ("organization_id","establishment_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "reputation_settings_public_slug_unique_idx" ON "reputation_settings" USING btree ("public_feedback_slug");--> statement-breakpoint
-CREATE UNIQUE INDEX "establishments_org_slug_unique_idx" ON "establishments" USING btree ("organization_id","slug");--> statement-breakpoint
+CREATE UNIQUE INDEX "establishments_slug_unique_idx" ON "establishments" USING btree (lower("slug"));--> statement-breakpoint
 CREATE INDEX "establishments_organization_id_idx" ON "establishments" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "establishments_status_idx" ON "establishments" USING btree ("status");--> statement-breakpoint
-CREATE UNIQUE INDEX "organizations_slug_unique_idx" ON "organizations" USING btree ("slug");--> statement-breakpoint
+CREATE UNIQUE INDEX "organizations_slug_unique_idx" ON "organizations" USING btree (lower("slug"));--> statement-breakpoint
 CREATE INDEX "organizations_status_idx" ON "organizations" USING btree ("status");--> statement-breakpoint
 CREATE UNIQUE INDEX "tenant_domains_hostname_unique_idx" ON "tenant_domains" USING btree ("hostname");--> statement-breakpoint
 CREATE INDEX "tenant_domains_scope_idx" ON "tenant_domains" USING btree ("organization_id","establishment_id");--> statement-breakpoint
@@ -335,5 +341,6 @@ CREATE INDEX "tenant_entitlements_scope_idx" ON "tenant_entitlements" USING btre
 CREATE UNIQUE INDEX "tenant_memberships_scope_unique_idx" ON "tenant_memberships" USING btree ("user_id","organization_id","establishment_id");--> statement-breakpoint
 CREATE INDEX "tenant_memberships_user_id_idx" ON "tenant_memberships" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "tenant_memberships_scope_idx" ON "tenant_memberships" USING btree ("organization_id","establishment_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "users_email_unique_idx" ON "users" USING btree ("email");--> statement-breakpoint
-CREATE INDEX "users_is_active_idx" ON "users" USING btree ("is_active");
+CREATE UNIQUE INDEX "users_email_unique_idx" ON "users" USING btree (lower("email"));--> statement-breakpoint
+CREATE INDEX "users_status_idx" ON "users" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "users_system_role_idx" ON "users" USING btree ("system_role");

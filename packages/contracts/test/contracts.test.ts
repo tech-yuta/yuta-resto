@@ -7,6 +7,7 @@ import {
   createReservationInputSchema,
   cursorPaginationQuerySchema,
   kitchenOrderCreatedEventSchema,
+  cloudUserSchema,
   moneySchema,
   localOrderCommandSchema,
   localPosApiBasePath,
@@ -15,6 +16,7 @@ import {
   saveReplySchema,
   updateFeedbackSchema,
   uuidV7Schema,
+  tenantMembershipContractSchema,
 } from '../src';
 
 const id = '11111111-1111-4111-8111-111111111111';
@@ -207,5 +209,28 @@ describe('@yuta/contracts', () => {
         content: 'Rappeler le client demain.',
       }).content,
     ).toBe('Rappeler le client demain.');
+  });
+
+  it('keeps system roles separate from tenant membership roles', () => {
+    expect(
+      cloudUserSchema.parse({
+        id,
+        email: 'owner@example.test',
+        displayName: 'Owner',
+        status: 'ACTIVE',
+        systemRole: 'YUTA_SUPPORT',
+      }).systemRole,
+    ).toBe('YUTA_SUPPORT');
+    expect(
+      tenantMembershipContractSchema.safeParse({
+        id,
+        organizationId: id,
+        establishmentId: id,
+        userId: id,
+        role: 'YUTA_ADMIN',
+        status: 'active',
+        joinedAt: new Date(),
+      }).success,
+    ).toBe(false);
   });
 });

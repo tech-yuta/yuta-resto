@@ -46,10 +46,9 @@ const initialActionState: UserManagementActionState = {
 };
 
 const roleLabels: Record<TenantRole, string> = {
-  owner: 'Propriétaire',
-  admin: 'Administrateur',
-  manager: 'Responsable',
-  employee: 'Employé',
+  OWNER: 'Propriétaire',
+  MANAGER: 'Responsable',
+  STAFF: 'Employé',
 };
 
 const allRoles = Object.keys(roleLabels) as TenantRole[];
@@ -67,7 +66,7 @@ export function UsersPage({
   currentUserId: string;
   currentMembershipId: string;
   currentEstablishmentId: string;
-  actorRole: 'owner' | 'admin';
+  actorRole: 'OWNER' | 'MANAGER';
 }) {
   const [query, setQuery] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -131,9 +130,9 @@ export function UsersPage({
       <Panel
         title="Membres de l'organisation"
         description={
-          actorRole === 'owner'
+          actorRole === 'OWNER'
             ? "Vous gérez tous les établissements actifs de l'organisation."
-            : "Un administrateur gère uniquement l'établissement actuellement sélectionné."
+            : "Un responsable gère uniquement l'établissement actuellement sélectionné."
         }
         action={
           <SearchInput
@@ -209,7 +208,7 @@ function UserAccessCard({
   currentMembershipId,
 }: {
   user: OrganizationUser;
-  actorRole: 'owner' | 'admin';
+  actorRole: 'OWNER' | 'MANAGER';
   currentUserId: string;
   currentMembershipId: string;
 }) {
@@ -262,7 +261,7 @@ function MembershipEditor({
   userIsActive,
 }: {
   membership: OrganizationUserMembership;
-  actorRole: 'owner' | 'admin';
+  actorRole: 'OWNER' | 'MANAGER';
   currentMembershipId: string;
   userIsActive: boolean;
 }) {
@@ -271,14 +270,13 @@ function MembershipEditor({
     initialActionState,
   );
   const isCurrentMembership = membership.id === currentMembershipId;
-  const protectedFromAdmin =
-    actorRole === 'admin' &&
-    (membership.role === 'owner' || membership.role === 'admin');
-  const locked = isCurrentMembership || protectedFromAdmin || !userIsActive;
+  const protectedFromManager =
+    actorRole === 'MANAGER' && membership.role !== 'STAFF';
+  const locked = isCurrentMembership || protectedFromManager || !userIsActive;
   const assignableRoles =
-    actorRole === 'owner'
+    actorRole === 'OWNER'
       ? allRoles
-      : allRoles.filter((role) => role !== 'owner' && role !== 'admin');
+      : allRoles.filter((role) => role === 'STAFF');
 
   return (
     <form
@@ -292,13 +290,7 @@ function MembershipEditor({
             {membership.establishmentName}
           </p>
           <Badge
-            tone={
-              membership.status === 'active'
-                ? 'success'
-                : membership.status === 'invited'
-                  ? 'info'
-                  : 'warning'
-            }
+            tone={membership.status === 'active' ? 'success' : 'warning'}
             variant="soft"
             size="sm"
           >
@@ -310,7 +302,7 @@ function MembershipEditor({
             </Badge>
           )}
         </div>
-        {protectedFromAdmin && (
+        {protectedFromManager && (
           <p className="mt-1 text-xs text-muted">
             Seul un owner peut modifier cet accès.
           </p>
@@ -405,7 +397,7 @@ function CreateUserDialog({
   onOpenChange(open: boolean): void;
   establishments: ManageableEstablishment[];
   currentEstablishmentId: string;
-  actorRole: 'owner' | 'admin';
+  actorRole: 'OWNER' | 'MANAGER';
 }) {
   const [state, formAction] = useActionState(
     createTenantUserAction,
@@ -415,9 +407,9 @@ function CreateUserDialog({
     currentEstablishmentId,
   ]);
   const assignableRoles =
-    actorRole === 'owner'
+    actorRole === 'OWNER'
       ? allRoles
-      : allRoles.filter((role) => role !== 'owner' && role !== 'admin');
+      : allRoles.filter((role) => role === 'STAFF');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -568,6 +560,5 @@ function membershipStatusLabel(
   status: OrganizationUserMembership['status'],
 ): string {
   if (status === 'active') return 'Actif';
-  if (status === 'invited') return 'Invité';
   return 'Suspendu';
 }

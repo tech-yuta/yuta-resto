@@ -271,6 +271,12 @@ const boundaryRules = [
     forbiddenTokens: ['POS_DATABASE_URL', 'DISPLAY_DATABASE_URL'],
   },
   {
+    name: 'booking-web-cloud-only',
+    roots: ['apps/booking-web'],
+    forbiddenModules: ['@yuta/db-pos', '@yuta/local-runtime'],
+    forbiddenTokens: ['POS_DATABASE_URL', 'DISPLAY_DATABASE_URL'],
+  },
+  {
     name: 'cloud-database-package',
     roots: ['packages/db-cloud'],
     forbiddenModules: ['@yuta/db-pos'],

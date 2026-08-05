@@ -8,8 +8,10 @@ import {
 } from '@yuta/db-cloud';
 import {
   requireEntitlement,
+  requireEstablishment,
   requireRole,
   resolveAuthenticatedTenant,
+  TenantError,
   type TenantContext,
 } from '@yuta/tenant';
 import { cookies } from 'next/headers';
@@ -17,8 +19,10 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { cloudDatabase } from '../cloud-database';
 import { requireReputationPermission } from './permissions';
+import { requireBookingPermission } from './permissions';
 
 export const BACKOFFICE_SESSION_COOKIE = 'yuta_backoffice_session';
+export const BACKOFFICE_SELECTION_COOKIE = 'yuta_backoffice_selection';
 
 const authRepository = createAuthRepository(cloudDatabase);
 
@@ -70,16 +74,27 @@ export async function requireAuthenticatedTenant(returnTo = '/today'): Promise<{
     organizationId: session.organizationId,
     establishmentId: session.establishmentId,
   });
-  if (!metadata) redirect('/login?error=membership');
+  if (!metadata) redirectToScopeRecovery(returnTo);
 
-  const tenant = await resolveAuthenticatedTenant({
-    userId: session.userId,
-    organizationId: session.organizationId,
-    establishmentId: session.establishmentId,
-    membershipLookup: createMembershipLookup(cloudDatabase),
-    tenantMetadata: metadata,
-  });
-  return { session, tenant };
+  try {
+    const tenant = await resolveAuthenticatedTenant({
+      userId: session.userId,
+      organizationId: session.organizationId,
+      establishmentId: session.establishmentId,
+      membershipLookup: createMembershipLookup(cloudDatabase),
+      tenantMetadata: metadata,
+    });
+    return { session, tenant };
+  } catch (error: unknown) {
+    if (error instanceof TenantError) redirectToScopeRecovery(returnTo);
+    throw error;
+  }
+}
+
+function redirectToScopeRecovery(returnTo: string): never {
+  redirect(
+    `/resolve-establishment?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`,
+  );
 }
 
 export async function requireReputationTenant(
@@ -99,8 +114,20 @@ export async function requireUserManagementTenant(): Promise<{
   tenant: TenantContext;
 }> {
   const context = await requireAuthenticatedTenant('/settings/users');
-  requireRole(context.tenant, ['owner', 'admin']);
+  requireRole(context.tenant, ['OWNER', 'MANAGER']);
   return context;
+}
+
+export async function requireBookingTenant(
+  returnTo = '/operations/reservations',
+) {
+  const context = await requireAuthenticatedTenant(returnTo);
+  requireEstablishment(context.tenant);
+  requireEntitlement(context.tenant, 'booking.enabled');
+  requireBookingPermission(context.tenant, 'booking.read');
+  return context as typeof context & {
+    tenant: typeof context.tenant & { establishmentId: string };
+  };
 }
 
 export function safeReturnTo(value: string | null | undefined): string {
