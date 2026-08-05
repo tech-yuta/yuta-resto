@@ -78,6 +78,7 @@ the shared operations documents until a dedicated product document is needed.
 - [`decisions/ADR-001-runtime-families-and-product-visibility.md`](decisions/ADR-001-runtime-families-and-product-visibility.md)
 - [`decisions/ADR-002-independent-public-booking-application.md`](decisions/ADR-002-independent-public-booking-application.md)
 - [`decisions/ADR-003-database-ownership-boundaries.md`](decisions/ADR-003-database-ownership-boundaries.md)
+- [`decisions/ADR-004-independent-public-feedback-application.md`](decisions/ADR-004-independent-public-feedback-application.md)
 
 Completed task specifications are removed after durable behavior is reflected
 in current feature documentation and remaining work is captured in `STATUS.md`.

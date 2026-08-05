@@ -78,6 +78,18 @@ The command updates only development files, removes obsolete generic
 `DATABASE_URL` and `DISABLE_AUTH` keys, and refuses to run when
 `NODE_ENV=production`. It never edits `.env.production`.
 
+It configures `apps/feedback-web/.env.local` with the cloud development URL and
+a retained or newly generated feedback IP-hash salt. Run the public feedback
+app on port 3006:
+
+```bash
+pnpm dev:feedback
+```
+
+After the cloud schema and seed are available, open
+`http://localhost:3006/luna`. The localhost slug lookup exists only in
+development; production requires an active verified hostname.
+
 ## Environment ownership
 
 - Cloud server code may receive `CLOUD_DATABASE_URL`.

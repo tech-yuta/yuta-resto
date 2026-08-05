@@ -9,12 +9,13 @@ Owner: YUTA engineering
 Last updated: 2026-08-05
 
 This document tracks the Phase 1 reputation module implemented across
-`apps/backoffice`, `apps/web`, `packages/contracts`, and the cloud database
-boundary.
+`apps/backoffice`, `apps/feedback-web`, `packages/contracts`, and the cloud
+database boundary. General marketing and legal content remains in `apps/web`.
 
-The persistence package is `packages/db-cloud`; back-office and public web server
-code use it through `CLOUD_DATABASE_URL`. Reputation data is cloud-only and always
-scoped by `organization_id` and, where applicable, `establishment_id`.
+The persistence package is `packages/db-cloud`; back-office and feedback-web
+server code use it through `CLOUD_DATABASE_URL`. Reputation data is cloud-only
+and always scoped by `organization_id` and, where applicable,
+`establishment_id`.
 
 The implementation sequence and current task status are maintained in
 `docs/features/reputation/STATUS.md`. Update that tracker whenever Phase 1 work
@@ -24,7 +25,8 @@ is completed, added, deferred, or reordered.
 
 - Back-office inbox: `/customers/reviews` in `apps/backoffice`.
 - Review detail route: `/customers/reviews/[reviewId]`.
-- Public feedback form: `/{tenantSlug}/feedback` in `apps/web`.
+- Public YUTA Avis landing page: `/` in `apps/feedback-web`.
+- Public feedback form: `/{tenantSlug}` in `apps/feedback-web`.
 - Public submission endpoint:
   `POST /api/public/feedback/{tenantSlug}`.
 
@@ -50,12 +52,15 @@ also contain `establishmentId`. Repository reads require a trusted tenant
 context. Public submissions resolve their tenant from the request hostname and
 verify that the route slug matches the location reputation settings.
 
-For local development only, `localhost/{tenantSlug}/feedback` may resolve the
-seeded tenant by its public feedback slug. This fallback is disabled in
-production. Production must use a verified hostname in `tenant_domains`.
+For local development only,
+`http://localhost:3006/{tenantSlug}` may resolve the seeded tenant by
+its public feedback slug. This fallback is disabled in production. Production
+must use a verified hostname in `tenant_domains` routed to `apps/feedback-web`.
 
 ## Public feedback behavior
 
+- The restaurant feedback UI is a five-step mobile-first flow: welcome, rating,
+  topics, private comment/contact details, and confirmation.
 - Rating is required and must be between 1 and 5.
 - Topics and the comment are optional.
 - Contact information is optional.
@@ -70,7 +75,7 @@ production. Production must use a verified hostname in `tenant_domains`.
 - Customer email and phone are not sent to an AI provider.
 
 Set `PUBLIC_FEEDBACK_IP_HASH_SALT` to a long random value in every production
-web environment. Production submissions fail closed if it is missing.
+feedback-web environment. Production submissions fail closed if it is missing.
 
 ## Development data
 
@@ -85,12 +90,12 @@ The idempotent database seed creates:
 After migrating and seeding, use:
 
 ```text
-http://localhost:3000/luna/feedback
+http://localhost:3006/luna
 http://localhost:3001/customers/reviews
 ```
 
 The hostname-scoped public URL is also available through
-`http://luna.localhost:3000/luna/feedback` when the local environment resolves
+`http://luna.localhost:3006/luna` when the local environment resolves
 `luna.localhost`.
 
 ## Authentication boundary

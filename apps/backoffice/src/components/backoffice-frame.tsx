@@ -13,163 +13,30 @@ import {
   Button,
   IconButton,
   SearchInput,
+  YutaBrandMark,
   cn,
 } from '@yuta/ui';
-import {
-  Archive,
-  ArrowLeftRight,
-  Bell,
-  CalendarCheck,
-  CalendarDays,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  ClipboardCheck,
-  FileText,
-  Heart,
-  LayoutDashboard,
-  LayoutGrid,
-  LogOut,
-  Mail,
-  Menu,
-  Megaphone,
-  MessageSquare,
-  PackageCheck,
-  Palette,
-  Scale,
-  Shield,
-  ShoppingCart,
-  Star,
-  Store,
-  Tag,
-  Truck,
-  UserCog,
-  Users,
-  X,
-} from 'lucide-react';
+import { Bell, ChevronLeft, LogOut, Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { logoutAction } from '../app/(authenticated)/actions';
+import {
+  getActiveNavigationHref,
+  getVisibleNavigationSections,
+  type BackofficeNavigationItem,
+  type NavigationCapabilities,
+} from './backoffice-navigation';
 import { TenantSwitcher } from './tenant-switcher';
-
-type NavItem = {
-  label: string;
-  icon: React.ElementType;
-  href: string;
-  note?: string;
-  sub?: boolean;
-  requiresUserManagement?: boolean;
-};
-
-type NavSection = {
-  title?: string;
-  items: NavItem[];
-};
-
-const navSections: NavSection[] = [
-  {
-    items: [{ label: "Aujourd'hui", icon: LayoutDashboard, href: '/today' }],
-  },
-  {
-    title: 'Operations',
-    items: [
-      { label: 'Commandes', icon: ShoppingCart, href: '/operations/orders' },
-      { label: 'Tables & salle', icon: LayoutGrid, href: '/operations/tables' },
-      {
-        label: 'Reservations',
-        icon: CalendarCheck,
-        href: '/operations/reservations',
-      },
-    ],
-  },
-  {
-    title: 'Stock',
-    items: [
-      { label: 'Inventaire', icon: Archive, href: '/stock/inventory' },
-      { label: 'Fournisseurs', icon: Truck, href: '/stock/suppliers' },
-      {
-        label: 'Entrees / sorties',
-        icon: ArrowLeftRight,
-        href: '/stock/movements',
-      },
-    ],
-  },
-  {
-    title: 'Equipe',
-    items: [
-      { label: 'Planning', icon: CalendarDays, href: '/team/planning' },
-      { label: 'Pointage', icon: Clock, href: '/team/time-tracking' },
-      {
-        label: 'Taches du jour',
-        icon: ClipboardCheck,
-        href: '/team/daily-tasks',
-      },
-      { label: 'Roles & acces', icon: Shield, href: '/team/roles' },
-    ],
-  },
-  {
-    title: 'Conformite & veille',
-    items: [
-      {
-        label: 'Veille & Conformite',
-        icon: Scale,
-        href: '/compliance/monitoring',
-      },
-    ],
-  },
-  {
-    title: 'Clients',
-    items: [
-      { label: 'Clients', icon: Users, href: '/customers/directory' },
-      { label: 'Fidelite', icon: Heart, href: '/customers/loyalty' },
-      {
-        label: 'Avis & commentaires',
-        icon: MessageSquare,
-        href: '/customers/reviews',
-      },
-      { label: 'Emails', icon: Mail, href: '/customers/emails' },
-    ],
-  },
-  {
-    title: 'Marketing & contenu',
-    items: [
-      {
-        label: 'Création visuelle',
-        icon: Palette,
-        href: '/marketing/creative-studio',
-      },
-      { label: 'Pages & contenus', icon: FileText, href: '/marketing/content' },
-      { label: 'Promotions', icon: Tag, href: '#' },
-      { label: 'Campagnes', icon: Megaphone, href: '/marketing/campaigns' },
-    ],
-  },
-  {
-    title: 'Parametres',
-    items: [
-      { label: 'Restaurant', icon: Store, href: '/settings/restaurant' },
-      {
-        label: 'Utilisateurs & accès',
-        icon: UserCog,
-        href: '/settings/users',
-        requiresUserManagement: true,
-      },
-      {
-        label: 'Modules & abonnement',
-        icon: PackageCheck,
-        href: '/settings/billing',
-      },
-    ],
-  },
-];
 
 export function BackofficeFrame({
   children,
   currentUser,
   tenantSwitcher,
   canManageUsers,
+  canManageBookingSettings,
+  bookingEnabled,
+  reputationEnabled,
 }: {
   children: ReactNode;
   currentUser: { name: string; email: string };
@@ -178,6 +45,9 @@ export function BackofficeFrame({
     currentMembershipId: string;
   };
   canManageUsers: boolean;
+  canManageBookingSettings: boolean;
+  bookingEnabled: boolean;
+  reputationEnabled: boolean;
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -222,7 +92,12 @@ export function BackofficeFrame({
         >
           <BackofficeNavigation
             pathname={pathname}
-            canManageUsers={canManageUsers}
+            capabilities={{
+              bookingEnabled,
+              reputationEnabled,
+              canManageBookingSettings,
+              canManageUsers,
+            }}
           />
         </AppSidebar>
       }
@@ -309,6 +184,9 @@ export function BackofficeFrame({
         pathname={pathname}
         tenantSwitcher={tenantSwitcher}
         canManageUsers={canManageUsers}
+        canManageBookingSettings={canManageBookingSettings}
+        bookingEnabled={bookingEnabled}
+        reputationEnabled={reputationEnabled}
         onClose={() => setMobileMenuOpen(false)}
       />
     </AppShell>
@@ -321,14 +199,7 @@ function BackofficeBrand() {
   return (
     <>
       <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-surface-selected">
-        <Image
-          src="/images/logo.svg"
-          alt="YuTa"
-          width={28}
-          height={28}
-          priority
-          className="h-7 w-7 object-contain"
-        />
+        <YutaBrandMark showName={false} iconClassName="h-7 w-7" />
       </div>
       <div className="min-w-0">
         <p className="truncate text-sm font-bold">Espace restaurateur YUTA</p>
@@ -342,36 +213,32 @@ function BackofficeBrand() {
 
 function BackofficeNavigation({
   pathname,
-  canManageUsers,
+  capabilities,
   onNavigate,
 }: {
   pathname: string;
-  canManageUsers: boolean;
+  capabilities: NavigationCapabilities;
   onNavigate?: () => void;
 }) {
+  const sections = getVisibleNavigationSections(capabilities);
+  const activeHref = getActiveNavigationHref(pathname, sections);
+
   return (
     <>
-      {navSections.map((section, sectionIndex) => (
-        <div
-          key={section.title ?? 'main'}
-          className={sectionIndex > 0 ? 'mt-4' : ''}
-        >
-          {section.title && (
-            <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary/40">
-              {section.title}
-            </p>
-          )}
+      {sections.map((section, sectionIndex) => (
+        <div key={section.title} className={sectionIndex > 0 ? 'mt-4' : ''}>
+          <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-primary/40">
+            {section.title}
+          </p>
           <div className="grid gap-0.5">
-            {section.items
-              .filter((item) => !item.requiresUserManagement || canManageUsers)
-              .map((item) => (
-                <NavLink
-                  key={item.label}
-                  item={item}
-                  pathname={pathname}
-                  onNavigate={onNavigate}
-                />
-              ))}
+            {section.items.map((item) => (
+              <NavLink
+                key={item.label}
+                item={item}
+                active={item.href === activeHref}
+                onNavigate={onNavigate}
+              />
+            ))}
           </div>
         </div>
       ))}
@@ -384,6 +251,9 @@ function MobileMenuDrawer({
   pathname,
   tenantSwitcher,
   canManageUsers,
+  canManageBookingSettings,
+  bookingEnabled,
+  reputationEnabled,
   onClose,
 }: {
   open: boolean;
@@ -393,6 +263,9 @@ function MobileMenuDrawer({
     currentMembershipId: string;
   };
   canManageUsers: boolean;
+  canManageBookingSettings: boolean;
+  bookingEnabled: boolean;
+  reputationEnabled: boolean;
   onClose: () => void;
 }) {
   return (
@@ -447,7 +320,12 @@ function MobileMenuDrawer({
           />
           <BackofficeNavigation
             pathname={pathname}
-            canManageUsers={canManageUsers}
+            capabilities={{
+              bookingEnabled,
+              reputationEnabled,
+              canManageBookingSettings,
+              canManageUsers,
+            }}
             onNavigate={onClose}
           />
         </nav>
@@ -472,47 +350,30 @@ function MobileMenuDrawer({
 
 function NavLink({
   item,
-  pathname,
+  active,
   onNavigate,
 }: {
-  item: NavItem;
-  pathname: string;
+  item: BackofficeNavigationItem;
+  active: boolean;
   onNavigate?: () => void;
 }) {
   const Icon = item.icon;
-  const isActive =
-    item.href === '/'
-      ? pathname === '/'
-      : item.href !== '#' && pathname.startsWith(item.href);
-  const isDisabled = item.href === '#';
 
   return (
     <Link
       href={item.href}
-      aria-disabled={isDisabled}
-      onClick={(event) => {
-        if (isDisabled) {
-          event.preventDefault();
-          return;
-        }
+      onClick={() => {
         onNavigate?.();
       }}
       className={cn(
         'flex min-h-9 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold transition-colors',
-        item.sub && 'pl-6',
-        isActive
+        active
           ? 'bg-surface-muted text-primary'
           : 'text-primary/60 hover:bg-surface-muted hover:text-primary',
-        isDisabled && 'cursor-default',
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate">{item.label}</span>
-      {item.note && (
-        <span className="rounded-md bg-status-info-soft px-1.5 py-0.5 text-[10px] font-black uppercase text-primary/60">
-          {item.note}
-        </span>
-      )}
     </Link>
   );
 }

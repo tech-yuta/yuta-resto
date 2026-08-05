@@ -7,9 +7,10 @@ operational products, and shared foundation packages.
 
 ### Cloud and public services
 
-- `apps/web` — public YUTA website and approved tenant-facing public flows.
+- `apps/web` — public YUTA website and approved general tenant-facing flows.
 - `apps/backoffice` — authenticated restaurant back-office.
 - `apps/booking-web` — independent public booking application.
+- `apps/feedback-web` — independent public direct-feedback application.
 - `apps/platform-admin` — reserved for future platform-wide YUTA administration;
   not implemented.
 

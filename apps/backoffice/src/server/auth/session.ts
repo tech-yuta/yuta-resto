@@ -113,7 +113,7 @@ export async function requireUserManagementTenant(): Promise<{
   session: AuthenticatedSession;
   tenant: TenantContext;
 }> {
-  const context = await requireAuthenticatedTenant('/settings/users');
+  const context = await requireAuthenticatedTenant('/team/users-access');
   requireRole(context.tenant, ['OWNER', 'MANAGER']);
   return context;
 }

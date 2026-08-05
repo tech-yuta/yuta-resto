@@ -1,0 +1,45 @@
+import { findPublicFeedbackConfiguration } from '@yuta/db-cloud';
+import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
+import { cloudDatabase as db } from '../../server/cloud-database';
+import { resolveFeedbackTenant } from '../../server/resolve-public-feedback';
+import { FeedbackForm } from './feedback-form';
+
+export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
+export default async function FeedbackPage({
+  params,
+}: {
+  params: Promise<{ tenantSlug: string }>;
+}) {
+  const { tenantSlug } = await params;
+  const requestHeaders = await headers();
+  const tenant = await resolveFeedbackTenant(
+    requestHeaders.get('host') ?? '',
+    tenantSlug,
+  ).catch(() => null);
+  if (!tenant) notFound();
+
+  const configuration = await findPublicFeedbackConfiguration(
+    db,
+    tenant,
+    tenantSlug,
+  );
+  if (!configuration?.enabled) notFound();
+
+  return (
+    <FeedbackForm
+      tenantSlug={configuration.slug}
+      establishmentName={configuration.establishmentName}
+      externalLinks={{
+        google: configuration.googleReviewUrl,
+        facebook: configuration.facebookReviewUrl,
+        instagram: configuration.instagramUrl,
+      }}
+    />
+  );
+}

@@ -3,6 +3,9 @@
 @source '../../';
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     font-family: var(--font-geist-sans), Inter, sans-serif;
   }
@@ -13,5 +16,11 @@
   }
   button:disabled {
     cursor: not-allowed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }

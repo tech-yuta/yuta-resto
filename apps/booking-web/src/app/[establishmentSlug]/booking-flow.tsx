@@ -8,10 +8,12 @@ import {
   FormField,
   IconButton,
   Input,
+  PoweredByYuta,
   Progress,
+  YutaBrandMark,
+  yutaLogoAsset,
   cn,
 } from '@yuta/ui';
-import yutaOfficialLogo from '../../../../backoffice/public/images/logo.svg';
 import {
   ArrowRight,
   CalendarDays,
@@ -234,15 +236,7 @@ export function BookingFlow({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border-default px-5 py-3 text-center text-xs text-muted">
-        <span className="mr-2">Propulsé par</span>
-        <img
-          src={yutaOfficialLogo.src}
-          alt="YuTa"
-          className="mr-1 inline h-5 w-5 object-contain"
-        />
-        <span className="font-bold tracking-[0.12em] text-primary">YUTA</span>
-      </div>
+      <PoweredByYuta className="shrink-0 border-t border-border-default px-5 py-3" />
     </div>
   );
 }
@@ -257,19 +251,18 @@ function RestaurantBrand({
   return (
     <div className="my-6 text-center">
       <div className="inline-flex items-center justify-center gap-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={establishment.logoUrl ?? yutaOfficialLogo.src}
-          alt={usesYutaLogo ? 'YuTa' : `Logo ${establishment.name}`}
-          className={cn(
-            'object-contain',
-            usesYutaLogo ? 'h-10 w-10' : 'h-14 max-w-36',
-          )}
-        />
-        {usesYutaLogo && (
-          <span className="text-xl font-black tracking-[0.14em] text-primary">
-            YUTA
-          </span>
+        {usesYutaLogo ? (
+          <YutaBrandMark
+            iconClassName="h-10 w-10"
+            nameClassName="text-xl font-black tracking-[0.14em]"
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={establishment.logoUrl ?? yutaLogoAsset.src}
+            alt={`Logo ${establishment.name}`}
+            className="h-14 max-w-36 object-contain"
+          />
         )}
       </div>
     </div>
@@ -309,7 +302,7 @@ function PartyStep({
   onContinue: () => void;
 }) {
   return (
-    <div>
+    <div className="flex min-h-0 flex-1 flex-col">
       <p className="mb-1 text-sm text-secondary text-center">
         Bienvenue au {establishment.name}
       </p>
@@ -373,15 +366,11 @@ function PartyStep({
         )}
       </div>
 
-      <Button
-        type="button"
-        fullWidth
-        size="lg"
-        className="mt-7"
-        onClick={onContinue}
-      >
-        Continuer <ArrowRight className="h-4 w-4" aria-hidden />
-      </Button>
+      <div className="mt-auto pt-7">
+        <Button type="button" fullWidth size="lg" onClick={onContinue}>
+          Continuer <ArrowRight className="h-4 w-4" aria-hidden />
+        </Button>
+      </div>
     </div>
   );
 }

@@ -12,7 +12,7 @@ import {
   SimpleTableHeader,
   SimpleTableRow,
 } from '@yuta/ui';
-import { CalendarPlus, Settings } from 'lucide-react';
+import { CalendarPlus } from 'lucide-react';
 import Link from 'next/link';
 import { BackofficePage } from '../../../../components/backoffice-page';
 import { requireBookingTenant } from '../../../../server/auth/session';
@@ -48,13 +48,6 @@ export default async function Page({ searchParams }: PageProps) {
     <BackofficePage
       title="Réservations"
       description="Planning, demandes clients et opérations de service."
-      actions={
-        <Button asChild variant="outline">
-          <Link href="/operations/reservations/settings">
-            <Settings aria-hidden /> Paramètres
-          </Link>
-        </Button>
-      }
     >
       <div className="flex flex-wrap gap-2">
         <Button asChild variant={query.view !== 'week' ? 'primary' : 'outline'}>

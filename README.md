@@ -7,9 +7,10 @@ failure domains.
 
 ## Cloud/public-service applications
 
-- `apps/web` — public website and tenant-facing public flows (port 3000).
+- `apps/web` — public website and general tenant-facing public flows (port 3000).
 - `apps/backoffice` — authenticated restaurant back-office (port 3001).
 - `apps/booking-web` — independent public booking app (port 3005).
+- `apps/feedback-web` — independent public direct-feedback app (port 3006).
 - `apps/platform-admin` — reserved for future internal YUTA administration;
   not implemented.
 
@@ -58,6 +59,7 @@ Useful application commands:
 ```bash
 pnpm dev:backoffice
 pnpm dev:booking
+pnpm dev:feedback
 pnpm dev:pos
 pnpm dev:site-agent
 pnpm dev:display

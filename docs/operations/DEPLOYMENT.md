@@ -24,6 +24,7 @@ YuTa has separate cloud and restaurant-local runtime families.
 apps/web
 apps/backoffice
 apps/booking-web
+apps/feedback-web
 optional cloud worker
         |
 packages/db-cloud
@@ -39,17 +40,19 @@ Cloud must contain no POS operational tables.
 
 ### Vercel Git deployment policy
 
-The Vercel projects for `apps/backoffice`, `apps/web`, and `apps/booking-web` keep their GitHub
-repository connection, but automatic deployments from commits are disabled.
+The Vercel projects for `apps/backoffice`, `apps/web`, `apps/booking-web`, and
+`apps/feedback-web` keep their GitHub repository connection, but automatic
+deployments from commits are disabled.
 Each Vercel project must use its application folder as the Root Directory:
 
 ```text
 apps/backoffice
 apps/web
 apps/booking-web
+apps/feedback-web
 ```
 
-Both folders contain a `vercel.json` with
+These folders contain a `vercel.json` with
 `git.deploymentEnabled: false`. Deploy these applications manually when a
 release is ready. Do not remove this setting unless automatic preview and
 production deployments are intentionally re-enabled.
@@ -84,6 +87,24 @@ Set `PUBLIC_BOOKING_BASE_URL=https://reservation.yutapro.fr` and a unique
 `BOOKING_RATE_LIMIT_SECRET` of at least 32 random characters. The booking app
 receives `CLOUD_DATABASE_URL` but no authentication cookie secret and no local
 POS/display database URL. Its `vercel.json` also disables automatic Git
+deployments.
+
+The public feedback application uses a separate project:
+
+```text
+Project name:   yuta-feedback-web
+Root Directory: apps/feedback-web
+Service domain: feedback.yutapro.fr
+Tenant traffic: verified restaurant hostnames from tenant_domains
+```
+
+The service domain exposes the unscoped landing page and health endpoint. A
+production feedback submission is accepted only when its request hostname is
+an active verified tenant domain routed to this project and its path slug
+matches the restaurant's reputation settings. Set a unique
+`PUBLIC_FEEDBACK_IP_HASH_SALT` of at least 32 random characters. The feedback
+app receives `CLOUD_DATABASE_URL`, but no authentication cookie secret and no
+local POS/display database URL. Its `vercel.json` disables automatic Git
 deployments.
 
 ### Restaurant local
@@ -140,6 +161,7 @@ GOOGLE_CLIENT_SECRET=...
 GOOGLE_TOKEN_ENCRYPTION_KEY=...
 PUBLIC_BOOKING_BASE_URL=https://reservation.yutapro.fr
 BOOKING_RATE_LIMIT_SECRET=...
+PUBLIC_FEEDBACK_IP_HASH_SALT=...
 ```
 
 Only cloud server processes receive these values.

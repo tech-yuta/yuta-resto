@@ -13,7 +13,7 @@ runtime families share contracts, pure logic, and UI components, but they do
 not share operational databases.
 
 ```text
-Public visitors --> web / booking-web --> db-cloud (server only)
+Public visitors --> web / booking-web / feedback-web --> db-cloud (server only)
 Restaurant users --> backoffice -------> db-cloud (server only)
 POS terminals ----> yuta-pos ----------> site-agent --> db-pos
 Display browser --> yuta-display ------> app-owned display database

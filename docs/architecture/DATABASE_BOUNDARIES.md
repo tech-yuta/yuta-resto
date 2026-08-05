@@ -11,9 +11,10 @@ Last updated: 2026-08-05
 ## Cloud
 
 `packages/db-cloud` owns SaaS data used by server-side code in `apps/web`,
-`apps/backoffice`, and `apps/booking-web`. It uses `CLOUD_DATABASE_URL` and owns
-identity, organizations, establishments, memberships, domains, entitlements,
-reputation integrations, public booking, and other approved cloud domains.
+`apps/backoffice`, `apps/booking-web`, and `apps/feedback-web`. It uses
+`CLOUD_DATABASE_URL` and owns identity, organizations, establishments,
+memberships, domains, entitlements, reputation integrations, public booking,
+and other approved cloud domains.
 
 Tenant-owned cloud queries include `organizationId`; establishment-owned data
 also includes `establishmentId`. Repository APIs enforce those predicates.

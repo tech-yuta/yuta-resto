@@ -277,6 +277,12 @@ const boundaryRules = [
     forbiddenTokens: ['POS_DATABASE_URL', 'DISPLAY_DATABASE_URL'],
   },
   {
+    name: 'feedback-web-cloud-only',
+    roots: ['apps/feedback-web'],
+    forbiddenModules: ['@yuta/db-pos', '@yuta/local-runtime'],
+    forbiddenTokens: ['POS_DATABASE_URL', 'DISPLAY_DATABASE_URL'],
+  },
+  {
     name: 'cloud-database-package',
     roots: ['packages/db-cloud'],
     forbiddenModules: ['@yuta/db-pos'],
@@ -337,6 +343,7 @@ function checkClientModules() {
   const clientRoots = [
     'apps/backoffice/src',
     'apps/booking-web/src',
+    'apps/feedback-web/src',
     'apps/web/src',
     'apps/yuta-display/src',
     'apps/yuta-pos/src',

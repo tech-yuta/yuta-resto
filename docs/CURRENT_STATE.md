@@ -13,13 +13,21 @@ Last updated: 2026-08-05
 YUTA intentionally maintains deliberately separated cloud and local runtime
 families in one monorepo.
 
-- Cloud: public website, restaurant back-office, public booking, identity,
-  tenancy, reputation, and cloud-owned configuration.
+- Cloud: public website, restaurant back-office, independent public booking and
+  feedback applications, identity, tenancy, reputation, and cloud-owned
+  configuration.
 - Restaurant local: POS client, site-agent API/device boundary, and POS database.
 - Standalone local: digital signage display and its app-owned database.
 
 POS operational data must never be stored in or synchronized to the cloud
 database. Display data remains separate from both cloud and POS data.
+
+The restaurant back-office does not expose customer ordering, checkout,
+payment, invoicing, transaction-linked loyalty, promotion, or generic email
+workflows. Those local operational concerns remain outside the cloud service.
+Establishment identity and the room/table structure are grouped as core
+establishment data. The table map is limited to physical seating and
+reservation availability.
 
 ## Implemented
 
@@ -28,7 +36,7 @@ database. Display data remains separate from both cloud and POS data.
   been removed from tracked source.
 - Organization/establishment tenancy, memberships, entitlements, server-side
   sessions, tenant switching, and user/membership administration.
-- Public website and tenant-scoped reputation feedback foundations.
+- Public website and an independent tenant-scoped direct-feedback application.
 - Public booking Phase 0/1 foundations: independent booking app, booking domain,
   cloud persistence, availability/capacity rules, public creation and management,
   and back-office reservation workflows.

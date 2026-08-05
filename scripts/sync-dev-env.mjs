@@ -76,8 +76,10 @@ const authSecret =
     ? existingAuthSecret
     : randomBytes(32).toString('hex');
 
-const webEnv = readEnv('apps/web/.env.local');
-const existingFeedbackSalt = webEnv.values.get('PUBLIC_FEEDBACK_IP_HASH_SALT');
+const feedbackWebEnv = readEnv('apps/feedback-web/.env.local');
+const existingFeedbackSalt = feedbackWebEnv.values.get(
+  'PUBLIC_FEEDBACK_IP_HASH_SALT',
+);
 const feedbackSalt =
   existingFeedbackSalt && existingFeedbackSalt.length >= 32
     ? existingFeedbackSalt
@@ -113,13 +115,26 @@ syncEnvFile('apps/backoffice/.env.local', {
 });
 
 syncEnvFile('apps/web/.env.local', {
-  remove: ['DATABASE_URL', 'NEXT_PUBLIC_ADMIN_URL'],
+  remove: [
+    'DATABASE_URL',
+    'NEXT_PUBLIC_ADMIN_URL',
+    'PUBLIC_FEEDBACK_IP_HASH_SALT',
+  ],
+  values: {
+    CLOUD_DATABASE_URL:
+      'postgres://yuta_cloud:yuta_cloud@localhost:55431/yuta_cloud',
+    CLOUD_DATABASE_SSL: 'false',
+    NEXT_PUBLIC_BACKOFFICE_URL: 'http://localhost:3001',
+  },
+});
+
+syncEnvFile('apps/feedback-web/.env.local', {
+  remove: ['DATABASE_URL', 'POS_DATABASE_URL', 'DISPLAY_DATABASE_URL'],
   values: {
     CLOUD_DATABASE_URL:
       'postgres://yuta_cloud:yuta_cloud@localhost:55431/yuta_cloud',
     CLOUD_DATABASE_SSL: 'false',
     PUBLIC_FEEDBACK_IP_HASH_SALT: feedbackSalt,
-    NEXT_PUBLIC_BACKOFFICE_URL: 'http://localhost:3001',
   },
 });
 

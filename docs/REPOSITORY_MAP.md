@@ -10,12 +10,14 @@ Last updated: 2026-08-05
 
 ## Applications
 
-- `apps/web`: public marketing, legal, integration, SEO, and approved public
-  tenant flows; cloud persistence is server-only.
+- `apps/web`: public marketing, legal, integration, SEO, and approved general
+  public tenant flows; cloud persistence is server-only.
 - `apps/backoffice`: authenticated restaurant administration for organizations
   and establishments; not platform-wide YUTA administration.
 - `apps/booking-web`: independent public booking application; resolves an
   establishment on the server and uses cloud-owned booking data.
+- `apps/feedback-web`: independent public direct-feedback application; resolves
+  an establishment on the server and uses cloud-owned reputation data.
 - `apps/yuta-pos`: browser/PWA client for local restaurant operations; accesses
   operational data through `apps/site-agent`.
 - `apps/site-agent`: local POS API, persistence, printing, realtime, and device
@@ -41,8 +43,10 @@ Last updated: 2026-08-05
 ## Dependency direction
 
 ```text
-web / backoffice / booking-web -- server only --> db-cloud
-backoffice / booking-web ----------------------> auth / tenant / booking
+web / backoffice / booking-web / feedback-web -- server only --> db-cloud
+backoffice -----------------------------------------------> auth / tenant
+booking-web ----------------------------------------------> tenant / booking
+feedback-web ---------------------------------------------> tenant
 yuta-pos --------------------------------------> site-agent HTTP API
 site-agent ------------------------------------> db-pos
 yuta-display ----------------------------------> app-owned display database

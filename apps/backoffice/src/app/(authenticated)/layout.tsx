@@ -32,6 +32,12 @@ export default async function AuthenticatedLayout({
         tenant.actor.type === 'user' &&
         (tenant.actor.role === 'OWNER' || tenant.actor.role === 'MANAGER')
       }
+      canManageBookingSettings={
+        tenant.actor.type === 'user' &&
+        (tenant.actor.role === 'OWNER' || tenant.actor.role === 'MANAGER')
+      }
+      bookingEnabled={tenant.entitlements.has('booking.enabled')}
+      reputationEnabled={tenant.entitlements.has('reputation.enabled')}
     >
       {children}
     </BackofficeFrame>

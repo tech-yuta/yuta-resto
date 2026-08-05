@@ -18,14 +18,14 @@ Implement idempotent Google review import and a manual synchronization action.
 ## Completed foundation
 
 - Shared reputation enums, Zod contracts, database schema, indexes, repository
-  reads, permissions, and LUNA seed data.
+  reads, permissions, LUNA seed data, and the independent `feedback-web` app.
 - Unified inbox list and feedback detail reads.
 - Public direct-feedback page with validation, consent handling, external review
   links, tenant resolution, and abuse rate limiting.
 - Database-backed back-office authentication with HttpOnly sessions.
 - Tenant and establishment selector with server-side membership validation and
   session rotation.
-- `/settings/users` membership administration for owners and administrators.
+- `/team/users-access` membership administration for owners and administrators.
 - Multi-tenant and multi-location persistence model.
 - Authentication and membership audit events.
 

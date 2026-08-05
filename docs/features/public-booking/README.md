@@ -21,6 +21,8 @@ fallback stack. Serif typography is not used.
 
 Phase 1 includes:
 
+- a public root landing page that explains how guests access a restaurant's
+  direct booking link and provides a concise, secondary introduction to YUTA;
 - a mobile-first five-step interface for party size, date, time, guest details,
   and confirmation, with a downloadable calendar event; on phone-sized
   viewports the booking experience fills the complete dynamic viewport without

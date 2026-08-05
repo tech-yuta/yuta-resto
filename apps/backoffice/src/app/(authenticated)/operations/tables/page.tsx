@@ -1,5 +1,5 @@
-import { TablesPage } from './tables-page';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <TablesPage />;
+  redirect('/establishment/rooms-tables');
 }

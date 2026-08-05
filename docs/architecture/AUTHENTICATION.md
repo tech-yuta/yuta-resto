@@ -116,10 +116,11 @@ server permission check.
 
 ## User and membership administration
 
-`/settings/users` is the tenant-aware access management surface:
+`/team/users-access` is the tenant-aware access management surface. The legacy
+`/settings/users` route redirects there to preserve existing bookmarks:
 
-- The "Utilisateurs & accès" navigation item is shown only to owners and
-  managers.
+- The "Utilisateurs & accès" navigation item appears under the team section
+  only for owners and managers.
 - Owners can manage active establishments across their current organization.
 - Managers can manage staff only in the currently selected establishment.
 - Managers cannot assign or modify owner or manager roles.

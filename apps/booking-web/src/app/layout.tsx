@@ -13,8 +13,21 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.PUBLIC_BOOKING_BASE_URL ?? 'http://localhost:3005',
   ),
-  title: { default: 'Réservation | YuTa', template: '%s | YuTa' },
-  description: 'Réservez une table directement auprès de votre restaurant.',
+  title: { default: 'Réservation de table | YUTA', template: '%s | YUTA' },
+  description:
+    'Réservez une table simplement et directement auprès de votre restaurant avec YUTA.',
+  applicationName: 'YUTA Réservation',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      {
+        url: '/images/favicon-96x96.png',
+        type: 'image/png',
+        sizes: '96x96',
+      },
+    ],
+    apple: '/images/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({
