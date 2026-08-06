@@ -913,6 +913,21 @@ export async function getBookingAdministration(
   db: CloudDatabaseClient,
   context: BookingTenantContext,
 ) {
+  const establishmentRows = await db
+    .select({
+      name: establishments.name,
+      slug: establishments.slug,
+      locale: establishments.locale,
+      timezone: establishments.timezone,
+    })
+    .from(establishments)
+    .where(
+      and(
+        eq(establishments.organizationId, context.organizationId),
+        eq(establishments.id, context.establishmentId),
+      ),
+    )
+    .limit(1);
   const settingsRows = await db
     .select()
     .from(bookingSettings)
@@ -946,7 +961,12 @@ export async function getBookingAdministration(
       ),
     )
     .orderBy(desc(bookingExceptions.exceptionDate));
-  return { settings: settingsRows[0] ?? null, periods, exceptions };
+  return {
+    establishment: establishmentRows[0] ?? null,
+    settings: settingsRows[0] ?? null,
+    periods,
+    exceptions,
+  };
 }
 
 export async function saveBookingSettings(

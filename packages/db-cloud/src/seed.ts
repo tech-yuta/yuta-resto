@@ -304,9 +304,8 @@ async function upsertBookingConfiguration(
       publicEmail: 'contact@luna-restaurant.fr',
       publicPhone: '+33549000000',
       address: 'Poitiers, France',
-      welcomeMessage: 'RÃ©servez votre table chez LuNa.',
-      bookingPolicy:
-        "Votre demande sera confirmÃ©e par l'Ã©quipe du restaurant.",
+      welcomeMessage: 'Réservez votre table chez LuNa.',
+      bookingPolicy: "Votre demande sera confirmée par l'équipe du restaurant.",
     })
     .onConflictDoUpdate({
       target: [bookingSettings.organizationId, bookingSettings.establishmentId],
@@ -331,7 +330,7 @@ async function upsertBookingConfiguration(
         id: uuidv7(),
         ...scope,
         dayOfWeek,
-        name: 'DÃ©jeuner',
+        name: 'Déjeuner',
         startTime: '12:00',
         endTime: '14:00',
         capacity: 40,
@@ -341,7 +340,7 @@ async function upsertBookingConfiguration(
         id: uuidv7(),
         ...scope,
         dayOfWeek,
-        name: 'DÃ®ner',
+        name: 'Dîner',
         startTime: '19:00',
         endTime: '22:00',
         capacity: 50,
