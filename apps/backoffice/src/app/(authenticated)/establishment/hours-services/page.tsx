@@ -1,27 +1,11 @@
 import { getBookingAdministration } from '@yuta/db-cloud';
+import { Badge, Card, Separator } from '@yuta/ui';
 import {
-  Badge,
-  Button,
-  Card,
-  FormField,
-  IconButton,
-  Input,
-  Separator,
-  Textarea,
-} from '@yuta/ui';
-import {
-  CalendarClock,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
-  Clock3,
   Moon,
-  Plus,
-  Save,
-  Settings2,
   SunMedium,
-  Timer,
-  Trash2,
   Utensils,
 } from 'lucide-react';
 import { BackofficePage } from '../../../../components/backoffice-page';
@@ -29,16 +13,16 @@ import { requireBookingPermission } from '../../../../server/auth/permissions';
 import { requireBookingTenant } from '../../../../server/auth/session';
 import { cloudDatabase } from '../../../../server/cloud-database';
 import {
-  createExceptionAction,
-  createServicePeriodAction,
-  deleteExceptionAction,
-  deleteServicePeriodAction,
-  saveBookingSettingsAction,
-} from '../../operations/reservations/actions';
+  AddServiceForm,
+  BookingRules,
+  DeleteServicePeriodButton,
+  ExceptionsPanel,
+} from './hours-services-forms';
 import {
   exceptionKindLabels,
   formatMinutes,
   formatTimeRange,
+  getPublicScheduleRows,
   getDateInTimezone,
   getDayOfWeekInTimezone,
   getNextDatedItem,
@@ -74,12 +58,6 @@ export default async function Page() {
     <BackofficePage
       title="Horaires & services"
       description="Configurez les horaires d’ouverture, les services et les exceptions."
-      actions={
-        <Button type="submit" form="booking-settings-form" variant="success">
-          <Save className="h-4 w-4" aria-hidden />
-          Enregistrer
-        </Button>
-      }
     >
       <TodaySummary
         periods={todayPeriods}
@@ -89,17 +67,17 @@ export default async function Page() {
 
       <nav
         aria-label="Sections des horaires"
-        className="flex gap-6 border-b border-border-default"
+        className="flex flex-wrap gap-2 border-b border-border-default pb-3"
       >
         <a
           href="#horaires-reguliers"
-          className="border-b-2 border-action-primary px-1 pb-3 text-sm font-semibold text-action-primary"
+          className="rounded-lg bg-surface-selected px-3 py-2 text-sm font-semibold text-action-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Horaires réguliers
         </a>
         <a
           href="#jours-exceptionnels"
-          className="px-1 pb-3 text-sm font-semibold text-muted transition-colors hover:text-primary"
+          className="rounded-lg px-3 py-2 text-sm font-semibold text-muted transition-colors hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Jours exceptionnels
         </a>
@@ -271,7 +249,7 @@ function DaySchedule({
             Aucun service configuré pour cette journée.
           </p>
         )}
-        <AddServiceForm day={day} />
+        <AddServiceForm dayOfWeek={day.value} />
       </div>
     </details>
   );
@@ -314,19 +292,7 @@ function ServicePeriodRow({
         label="Durée d’une table"
         value={formatMinutes(averageDurationMinutes)}
       />
-      <form action={deleteServicePeriodAction} className="justify-self-end">
-        <input type="hidden" name="id" value={period.id} />
-        <IconButton
-          type="submit"
-          variant="ghost"
-          size="sm"
-          aria-label={`Supprimer le service ${period.name}`}
-          title="Supprimer le service"
-          className="text-status-danger"
-        >
-          <Trash2 className="h-4 w-4" aria-hidden />
-        </IconButton>
-      </form>
+      <DeleteServicePeriodButton id={period.id} name={period.name} />
     </article>
   );
 }
@@ -340,231 +306,8 @@ function PeriodMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function AddServiceForm({ day }: { day: (typeof orderedWeekDays)[number] }) {
-  return (
-    <details className="group rounded-xl border border-dashed border-border-default bg-surface">
-      <summary className="flex cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-action-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring [&::-webkit-details-marker]:hidden">
-        <Plus className="h-4 w-4" aria-hidden />
-        Ajouter un service
-      </summary>
-      <form
-        action={createServicePeriodAction}
-        className="grid gap-3 border-t border-border-default p-4 sm:grid-cols-2 lg:grid-cols-5"
-      >
-        <input type="hidden" name="dayOfWeek" value={day.value} />
-        <FormField label="Nom du service">
-          <Input name="name" placeholder="Déjeuner" required />
-        </FormField>
-        <FormField label="Début">
-          <Input name="startTime" type="time" required />
-        </FormField>
-        <FormField label="Fin">
-          <Input name="endTime" type="time" required />
-        </FormField>
-        <FormField label="Capacité">
-          <Input name="capacity" type="number" min={1} required />
-        </FormField>
-        <div className="flex items-end">
-          <Button type="submit" fullWidth>
-            Ajouter
-          </Button>
-        </div>
-      </form>
-    </details>
-  );
-}
-
-function BookingRules({
-  settings,
-}: {
-  settings: AdministrationData['settings'];
-}) {
-  return (
-    <Card padding="none" radius="lg" className="overflow-hidden">
-      <div className="flex items-center gap-2 px-5 py-4">
-        <Settings2 className="h-5 w-5" aria-hidden />
-        <h2 className="font-bold">Règles de réservation</h2>
-      </div>
-      <Separator />
-      <form
-        id="booking-settings-form"
-        action={saveBookingSettingsAction}
-        className="grid gap-4 p-5"
-      >
-        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-surface-muted px-3 py-2.5 text-sm font-semibold">
-          Réservation publique
-          <span className="relative inline-flex h-6 w-11 shrink-0 items-center">
-            <input
-              name="enabled"
-              type="checkbox"
-              defaultChecked={settings?.enabled}
-              className="peer sr-only"
-            />
-            <span className="absolute inset-0 rounded-full bg-neutral-300 transition peer-checked:bg-action-primary peer-focus-visible:ring-2 peer-focus-visible:ring-focus-ring peer-focus-visible:ring-offset-2" />
-            <span className="absolute left-0.5 h-5 w-5 rounded-full bg-surface shadow-sm transition-transform peer-checked:translate-x-5" />
-          </span>
-        </label>
-
-        <RuleNumberField
-          icon={Clock3}
-          label="Préavis minimum"
-          name="minimumNoticeMinutes"
-          defaultValue={settings?.minimumNoticeMinutes ?? 120}
-          suffix="min"
-          min={0}
-        />
-        <RuleNumberField
-          icon={CalendarDays}
-          label="Fenêtre de réservation"
-          name="bookingWindowDays"
-          defaultValue={settings?.bookingWindowDays ?? 60}
-          suffix="jours"
-          min={0}
-        />
-        <RuleNumberField
-          icon={Timer}
-          label="Intervalle des créneaux"
-          name="slotIntervalMinutes"
-          defaultValue={settings?.slotIntervalMinutes ?? 30}
-          suffix="min"
-          min={5}
-        />
-        <RuleNumberField
-          icon={Timer}
-          label="Durée moyenne"
-          name="averageDurationMinutes"
-          defaultValue={settings?.averageDurationMinutes ?? 90}
-          suffix="min"
-          min={15}
-        />
-
-        <Separator />
-        <div className="grid grid-cols-2 gap-3">
-          <FormField label="Taille min.">
-            <Input
-              name="minimumPartySize"
-              type="number"
-              min={1}
-              defaultValue={settings?.minimumPartySize ?? 1}
-            />
-          </FormField>
-          <FormField label="Taille max.">
-            <Input
-              name="maximumPartySize"
-              type="number"
-              min={1}
-              defaultValue={settings?.maximumPartySize ?? 12}
-            />
-          </FormField>
-        </div>
-        <FormField label="Confirmation">
-          <select
-            name="confirmationMode"
-            defaultValue={settings?.confirmationMode ?? 'MANUAL'}
-            className="h-10 rounded-lg border border-border-default bg-surface px-3 text-sm"
-          >
-            <option value="MANUAL">Manuelle</option>
-            <option value="AUTOMATIC">Automatique</option>
-          </select>
-        </FormField>
-        <RuleNumberField
-          icon={CalendarClock}
-          label="Délai d’annulation"
-          name="cancellationDeadlineMinutes"
-          defaultValue={settings?.cancellationDeadlineMinutes ?? 120}
-          suffix="min"
-          min={0}
-        />
-
-        <details className="group rounded-lg border border-border-default">
-          <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-            Informations publiques
-          </summary>
-          <div className="grid gap-3 border-t border-border-default p-3">
-            <FormField label="Téléphone public">
-              <Input
-                name="publicPhone"
-                defaultValue={settings?.publicPhone ?? ''}
-              />
-            </FormField>
-            <FormField label="E-mail public">
-              <Input
-                name="publicEmail"
-                type="email"
-                defaultValue={settings?.publicEmail ?? ''}
-              />
-            </FormField>
-            <FormField label="Adresse">
-              <Textarea name="address" defaultValue={settings?.address ?? ''} />
-            </FormField>
-            <FormField label="Message d’accueil">
-              <Textarea
-                name="welcomeMessage"
-                defaultValue={settings?.welcomeMessage ?? ''}
-              />
-            </FormField>
-            <FormField label="Politique de réservation">
-              <Textarea
-                name="bookingPolicy"
-                defaultValue={settings?.bookingPolicy ?? ''}
-              />
-            </FormField>
-          </div>
-        </details>
-
-        <Button type="submit" variant="success" fullWidth className="xl:hidden">
-          <Save className="h-4 w-4" aria-hidden />
-          Enregistrer
-        </Button>
-      </form>
-    </Card>
-  );
-}
-
-function RuleNumberField({
-  icon: Icon,
-  label,
-  name,
-  defaultValue,
-  suffix,
-  min,
-}: {
-  icon: typeof Clock3;
-  label: string;
-  name: string;
-  defaultValue: number;
-  suffix: string;
-  min: number;
-}) {
-  return (
-    <label className="grid grid-cols-[auto_1fr_5.5rem] items-center gap-2 text-sm">
-      <span className="grid h-8 w-8 place-items-center rounded-full bg-status-success-soft text-status-success">
-        <Icon className="h-4 w-4" aria-hidden />
-      </span>
-      <span className="font-medium">{label}</span>
-      <span className="relative">
-        <Input
-          name={name}
-          type="number"
-          min={min}
-          defaultValue={defaultValue}
-          size="sm"
-          className="pr-9 text-right"
-        />
-        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted">
-          {suffix}
-        </span>
-      </span>
-    </label>
-  );
-}
-
 function PublicPreview({ periods }: { periods: readonly ServicePeriod[] }) {
-  const summaries = [
-    { label: 'Lundi à vendredi', days: [1, 2, 3, 4, 5] },
-    { label: 'Samedi', days: [6] },
-    { label: 'Dimanche', days: [0] },
-  ];
+  const summaries = getPublicScheduleRows(periods);
 
   return (
     <Card padding="none" radius="lg" className="overflow-hidden">
@@ -575,165 +318,19 @@ function PublicPreview({ periods }: { periods: readonly ServicePeriod[] }) {
       <Separator />
       <div className="grid gap-3 p-5 text-sm">
         {summaries.map((summary) => {
-          const ranges = periods
-            .filter(
-              (period) =>
-                summary.days.includes(period.dayOfWeek) && period.enabled,
-            )
-            .map((period) => formatTimeRange(period.startTime, period.endTime))
-            .filter((value, index, values) => values.indexOf(value) === index);
           return (
             <div key={summary.label} className="flex justify-between gap-3">
               <span className="text-muted">{summary.label}</span>
               <span className="text-right font-medium">
-                {ranges.length > 0 ? ranges.join(' · ') : 'Fermé'}
+                {summary.ranges.length > 0
+                  ? summary.ranges.join(' · ')
+                  : 'Fermé'}
               </span>
             </div>
           );
         })}
       </div>
     </Card>
-  );
-}
-
-function ExceptionsPanel({
-  exceptions,
-  periods,
-  locale,
-}: {
-  exceptions: readonly BookingException[];
-  periods: readonly ServicePeriod[];
-  locale: string;
-}) {
-  return (
-    <Card
-      id="jours-exceptionnels"
-      padding="none"
-      radius="lg"
-      className="overflow-hidden"
-    >
-      <div className="flex items-center gap-2 px-5 py-4">
-        <CalendarClock className="h-5 w-5" aria-hidden />
-        <h2 className="font-bold">Exceptions à venir</h2>
-      </div>
-      <Separator />
-      <div className="grid gap-1 p-3">
-        {exceptions.slice(0, 5).map((exception) => (
-          <ExceptionRow
-            key={exception.id}
-            exception={exception}
-            locale={locale}
-          />
-        ))}
-        {exceptions.length === 0 && (
-          <p className="px-2 py-4 text-center text-sm text-muted">
-            Aucune exception planifiée.
-          </p>
-        )}
-      </div>
-      <Separator />
-      <details className="group">
-        <summary className="flex cursor-pointer list-none items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-action-primary [&::-webkit-details-marker]:hidden">
-          <Plus className="h-4 w-4" aria-hidden />
-          Ajouter une exception
-        </summary>
-        <form
-          action={createExceptionAction}
-          className="grid gap-3 border-t border-border-default p-4"
-        >
-          <FormField label="Date">
-            <Input name="date" type="date" required />
-          </FormField>
-          <FormField label="Type">
-            <select
-              name="kind"
-              className="h-10 rounded-lg border border-border-default bg-surface px-3 text-sm"
-            >
-              <option value="CLOSED_ALL_DAY">Fermeture exceptionnelle</option>
-              <option value="CLOSED_SERVICE">Service fermé</option>
-              <option value="MODIFIED_HOURS">Horaires modifiés</option>
-              <option value="BLOCKED_SLOT">Créneau bloqué</option>
-            </select>
-          </FormField>
-          <FormField label="Service concerné">
-            <select
-              name="servicePeriodId"
-              className="h-10 rounded-lg border border-border-default bg-surface px-3 text-sm"
-            >
-              <option value="">Tous les services</option>
-              {periods.map((period) => (
-                <option key={period.id} value={period.id}>
-                  {
-                    orderedWeekDays.find(
-                      (day) => day.value === period.dayOfWeek,
-                    )?.label
-                  }{' '}
-                  · {period.name}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label="Début">
-              <Input name="startTime" type="time" />
-            </FormField>
-            <FormField label="Fin">
-              <Input name="endTime" type="time" />
-            </FormField>
-          </div>
-          <FormField label="Capacité forcée">
-            <Input name="capacityOverride" type="number" min={0} />
-          </FormField>
-          <FormField label="Motif">
-            <Textarea name="reason" />
-          </FormField>
-          <Button type="submit" fullWidth>
-            Ajouter l’exception
-          </Button>
-        </form>
-      </details>
-    </Card>
-  );
-}
-
-function ExceptionRow({
-  exception,
-  locale,
-}: {
-  exception: BookingException;
-  locale: string;
-}) {
-  const tone =
-    exception.kind === 'CLOSED_ALL_DAY'
-      ? 'danger'
-      : exception.kind === 'MODIFIED_HOURS'
-        ? 'warning'
-        : 'info';
-
-  return (
-    <div className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg px-2 py-2 hover:bg-surface-muted">
-      <div className="min-w-0">
-        <p className="text-sm font-semibold">
-          {formatDate(exception.exceptionDate, locale)}
-        </p>
-        <Badge tone={tone} size="sm" className="mt-1 max-w-full truncate">
-          {exceptionKindLabels[exception.kind]}
-        </Badge>
-      </div>
-      <form action={deleteExceptionAction}>
-        <input type="hidden" name="id" value={exception.id} />
-        <IconButton
-          type="submit"
-          variant="ghost"
-          size="sm"
-          aria-label={`Supprimer l’exception du ${formatDate(exception.exceptionDate, locale)}`}
-          title="Supprimer l’exception"
-          className="text-status-danger"
-        >
-          <Trash2 className="h-4 w-4" aria-hidden />
-        </IconButton>
-      </form>
-    </div>
   );
 }
 

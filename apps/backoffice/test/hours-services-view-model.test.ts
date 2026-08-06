@@ -3,6 +3,7 @@ import {
   formatMinutes,
   formatTimeRange,
   getNextDatedItem,
+  getPublicScheduleRows,
   orderedWeekDays,
 } from '../src/app/(authenticated)/establishment/hours-services/hours-services-view-model';
 
@@ -30,5 +31,32 @@ describe('hours and services view model', () => {
         '2026-08-06',
       ),
     ).toEqual({ exceptionDate: '2026-08-15' });
+  });
+
+  it('keeps public schedule ranges scoped to their actual weekday', () => {
+    const rows = getPublicScheduleRows([
+      {
+        dayOfWeek: 1,
+        startTime: '12:00:00',
+        endTime: '14:00:00',
+        enabled: true,
+      },
+      {
+        dayOfWeek: 2,
+        startTime: '19:00:00',
+        endTime: '22:00:00',
+        enabled: true,
+      },
+      {
+        dayOfWeek: 3,
+        startTime: '12:00:00',
+        endTime: '14:00:00',
+        enabled: false,
+      },
+    ]);
+
+    expect(rows[0]).toEqual({ label: 'Lundi', ranges: ['12:00–14:00'] });
+    expect(rows[1]).toEqual({ label: 'Mardi', ranges: ['19:00–22:00'] });
+    expect(rows[2]).toEqual({ label: 'Mercredi', ranges: [] });
   });
 });

@@ -29,6 +29,37 @@ import { cloudDatabase } from '../../../../server/cloud-database';
 
 const uuidSchema = z.string().uuid();
 
+export type BookingAdministrationActionState = {
+  status: 'idle' | 'success' | 'error';
+  message: string | null;
+  fieldErrors: Record<string, string>;
+};
+
+function bookingAdministrationError(
+  error: unknown,
+  fallbackMessage: string,
+): BookingAdministrationActionState {
+  if (error instanceof z.ZodError) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of error.issues) {
+      const field = String(issue.path[0] ?? 'form');
+      fieldErrors[field] ??= 'Vérifiez cette valeur.';
+    }
+    return {
+      status: 'error',
+      message: 'Certains champs doivent être corrigés.',
+      fieldErrors,
+    };
+  }
+
+  console.error(fallbackMessage, error);
+  return {
+    status: 'error',
+    message: 'Une erreur est survenue. Réessayez.',
+    fieldErrors: {},
+  };
+}
+
 export async function updateReservationStatusAction(formData: FormData) {
   const { tenant } = await requireBookingTenant();
   requireBookingPermission(tenant, 'booking.operate');
@@ -106,66 +137,114 @@ export async function createManualReservationAction(
   redirect('/operations/reservations?created=1');
 }
 
-export async function saveBookingSettingsAction(formData: FormData) {
+export async function saveBookingSettingsAction(
+  _previousState: BookingAdministrationActionState,
+  formData: FormData,
+): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
     '/establishment/hours-services',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
   const nullable = (key: string) =>
     String(formData.get(key) ?? '').trim() || null;
-  const input = bookingSettingsInputSchema.parse({
-    enabled: formData.get('enabled') === 'on',
-    confirmationMode: formData.get('confirmationMode'),
-    minimumPartySize: Number(formData.get('minimumPartySize')),
-    maximumPartySize: Number(formData.get('maximumPartySize')),
-    slotIntervalMinutes: Number(formData.get('slotIntervalMinutes')),
-    averageDurationMinutes: Number(formData.get('averageDurationMinutes')),
-    minimumNoticeMinutes: Number(formData.get('minimumNoticeMinutes')),
-    bookingWindowDays: Number(formData.get('bookingWindowDays')),
-    cancellationDeadlineMinutes: Number(
-      formData.get('cancellationDeadlineMinutes'),
-    ),
-    publicPhone: nullable('publicPhone'),
-    publicEmail: nullable('publicEmail'),
-    address: nullable('address'),
-    welcomeMessage: nullable('welcomeMessage'),
-    bookingPolicy: nullable('bookingPolicy'),
-  });
-  await saveBookingSettings(cloudDatabase, tenant, input);
-  revalidatePath('/establishment/hours-services');
+  try {
+    const input = bookingSettingsInputSchema.parse({
+      enabled: formData.get('enabled') === 'on',
+      confirmationMode: formData.get('confirmationMode'),
+      minimumPartySize: Number(formData.get('minimumPartySize')),
+      maximumPartySize: Number(formData.get('maximumPartySize')),
+      slotIntervalMinutes: Number(formData.get('slotIntervalMinutes')),
+      averageDurationMinutes: Number(formData.get('averageDurationMinutes')),
+      minimumNoticeMinutes: Number(formData.get('minimumNoticeMinutes')),
+      bookingWindowDays: Number(formData.get('bookingWindowDays')),
+      cancellationDeadlineMinutes: Number(
+        formData.get('cancellationDeadlineMinutes'),
+      ),
+      publicPhone: nullable('publicPhone'),
+      publicEmail: nullable('publicEmail'),
+      address: nullable('address'),
+      welcomeMessage: nullable('welcomeMessage'),
+      bookingPolicy: nullable('bookingPolicy'),
+    });
+    await saveBookingSettings(cloudDatabase, tenant, input);
+    revalidatePath('/establishment/hours-services');
+    return {
+      status: 'success',
+      message: 'Règles de réservation enregistrées.',
+      fieldErrors: {},
+    };
+  } catch (error) {
+    return bookingAdministrationError(
+      error,
+      'Failed to save booking settings.',
+    );
+  }
 }
 
-export async function createServicePeriodAction(formData: FormData) {
+export async function createServicePeriodAction(
+  _previousState: BookingAdministrationActionState,
+  formData: FormData,
+): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
     '/establishment/hours-services',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
-  const input = bookingServicePeriodInputSchema.parse({
-    dayOfWeek: Number(formData.get('dayOfWeek')),
-    name: formData.get('name'),
-    startTime: formData.get('startTime'),
-    endTime: formData.get('endTime'),
-    capacity: Number(formData.get('capacity')),
-    enabled: true,
-  });
-  await createBookingServicePeriod(cloudDatabase, tenant, input);
-  revalidatePath('/establishment/hours-services');
+  try {
+    const input = bookingServicePeriodInputSchema.parse({
+      dayOfWeek: Number(formData.get('dayOfWeek')),
+      name: formData.get('name'),
+      startTime: formData.get('startTime'),
+      endTime: formData.get('endTime'),
+      capacity: Number(formData.get('capacity')),
+      enabled: true,
+    });
+    await createBookingServicePeriod(cloudDatabase, tenant, input);
+    revalidatePath('/establishment/hours-services');
+    return {
+      status: 'success',
+      message: 'Service ajouté.',
+      fieldErrors: {},
+    };
+  } catch (error) {
+    return bookingAdministrationError(
+      error,
+      'Failed to create service period.',
+    );
+  }
 }
 
-export async function deleteServicePeriodAction(formData: FormData) {
+export async function deleteServicePeriodAction(
+  _previousState: BookingAdministrationActionState,
+  formData: FormData,
+): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
     '/establishment/hours-services',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
-  await deleteBookingServicePeriod(
-    cloudDatabase,
-    tenant,
-    uuidSchema.parse(formData.get('id')),
-  );
-  revalidatePath('/establishment/hours-services');
+  try {
+    await deleteBookingServicePeriod(
+      cloudDatabase,
+      tenant,
+      uuidSchema.parse(formData.get('id')),
+    );
+    revalidatePath('/establishment/hours-services');
+    return {
+      status: 'success',
+      message: 'Service supprimé.',
+      fieldErrors: {},
+    };
+  } catch (error) {
+    return bookingAdministrationError(
+      error,
+      'Failed to delete service period.',
+    );
+  }
 }
 
-export async function createExceptionAction(formData: FormData) {
+export async function createExceptionAction(
+  _previousState: BookingAdministrationActionState,
+  formData: FormData,
+): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
     '/establishment/hours-services',
   );
@@ -173,28 +252,55 @@ export async function createExceptionAction(formData: FormData) {
   const nullable = (key: string) =>
     String(formData.get(key) ?? '').trim() || null;
   const capacity = nullable('capacityOverride');
-  const input = bookingExceptionInputSchema.parse({
-    date: formData.get('date'),
-    kind: formData.get('kind'),
-    servicePeriodId: nullable('servicePeriodId'),
-    startTime: nullable('startTime'),
-    endTime: nullable('endTime'),
-    capacityOverride: capacity ? Number(capacity) : null,
-    reason: nullable('reason'),
-  });
-  await createBookingException(cloudDatabase, tenant, input);
-  revalidatePath('/establishment/hours-services');
+  try {
+    const input = bookingExceptionInputSchema.parse({
+      date: formData.get('date'),
+      kind: formData.get('kind'),
+      servicePeriodId: nullable('servicePeriodId'),
+      startTime: nullable('startTime'),
+      endTime: nullable('endTime'),
+      capacityOverride: capacity ? Number(capacity) : null,
+      reason: nullable('reason'),
+    });
+    await createBookingException(cloudDatabase, tenant, input);
+    revalidatePath('/establishment/hours-services');
+    return {
+      status: 'success',
+      message: 'Exception ajoutée.',
+      fieldErrors: {},
+    };
+  } catch (error) {
+    return bookingAdministrationError(
+      error,
+      'Failed to create booking exception.',
+    );
+  }
 }
 
-export async function deleteExceptionAction(formData: FormData) {
+export async function deleteExceptionAction(
+  _previousState: BookingAdministrationActionState,
+  formData: FormData,
+): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
     '/establishment/hours-services',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
-  await deleteBookingException(
-    cloudDatabase,
-    tenant,
-    uuidSchema.parse(formData.get('id')),
-  );
-  revalidatePath('/establishment/hours-services');
+  try {
+    await deleteBookingException(
+      cloudDatabase,
+      tenant,
+      uuidSchema.parse(formData.get('id')),
+    );
+    revalidatePath('/establishment/hours-services');
+    return {
+      status: 'success',
+      message: 'Exception supprimée.',
+      fieldErrors: {},
+    };
+  } catch (error) {
+    return bookingAdministrationError(
+      error,
+      'Failed to delete booking exception.',
+    );
+  }
 }

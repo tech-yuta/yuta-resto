@@ -3,6 +3,11 @@
 `apps/backoffice` is the authenticated restaurant-facing cloud application. UI
 text is French; code and technical documentation are English.
 
+For design-to-code work, also read `docs/ui/README.md`,
+`docs/ui/YUTA_FRONTEND_RULES.md`, and any current page specification under
+`docs/ui/pages/`. Visual references are subordinate to current repository
+architecture, behavior, and authorization.
+
 - Authenticate and authorize on the server.
 - Derive organization, establishment, membership, role, permissions, and
   entitlements from trusted session state; never trust browser-provided scope.

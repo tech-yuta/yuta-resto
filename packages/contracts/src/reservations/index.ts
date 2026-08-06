@@ -176,7 +176,47 @@ export const bookingExceptionInputSchema = z
     capacityOverride: z.number().int().min(0).max(10000).nullable(),
     reason: z.string().trim().max(500).nullable(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    const addIssue = (path: string, message: string) =>
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [path],
+        message,
+      });
+
+    if (value.kind === 'CLOSED_SERVICE' && !value.servicePeriodId) {
+      addIssue(
+        'servicePeriodId',
+        'A service period is required for a service closure.',
+      );
+    }
+
+    if (
+      (value.kind === 'MODIFIED_HOURS' || value.kind === 'BLOCKED_SLOT') &&
+      (!value.startTime || !value.endTime)
+    ) {
+      if (!value.startTime) addIssue('startTime', 'A start time is required.');
+      if (!value.endTime) addIssue('endTime', 'An end time is required.');
+    }
+
+    if (value.startTime && value.endTime && value.endTime <= value.startTime) {
+      addIssue('endTime', 'The end time must be after the start time.');
+    }
+
+    if (
+      value.kind === 'CLOSED_ALL_DAY' &&
+      (value.servicePeriodId ||
+        value.startTime ||
+        value.endTime ||
+        value.capacityOverride !== null)
+    ) {
+      addIssue(
+        'kind',
+        'An all-day closure cannot target a service, time range, or capacity.',
+      );
+    }
+  });
 
 export const manualReservationInputSchema = createPublicReservationInputSchema
   .omit({ policyAccepted: true, idempotencyKey: true })

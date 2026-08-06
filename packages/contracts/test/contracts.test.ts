@@ -5,6 +5,7 @@ import {
   createLocalOrderInputSchema,
   createOrderInputSchema,
   createReservationInputSchema,
+  bookingExceptionInputSchema,
   cursorPaginationQuerySchema,
   kitchenOrderCreatedEventSchema,
   cloudUserSchema,
@@ -137,6 +138,53 @@ describe('@yuta/contracts', () => {
         customer: { firstName: 'Tam' },
       }).success,
     ).toBe(false);
+  });
+
+  it('validates booking exception fields for each exception kind', () => {
+    const baseException = {
+      date: '2026-08-15',
+      servicePeriodId: null,
+      startTime: null,
+      endTime: null,
+      capacityOverride: null,
+      reason: null,
+    };
+
+    expect(
+      bookingExceptionInputSchema.safeParse({
+        ...baseException,
+        kind: 'CLOSED_ALL_DAY',
+      }).success,
+    ).toBe(true);
+    expect(
+      bookingExceptionInputSchema.safeParse({
+        ...baseException,
+        kind: 'CLOSED_SERVICE',
+      }).success,
+    ).toBe(false);
+    expect(
+      bookingExceptionInputSchema.safeParse({
+        ...baseException,
+        kind: 'CLOSED_SERVICE',
+        servicePeriodId: id,
+      }).success,
+    ).toBe(true);
+    expect(
+      bookingExceptionInputSchema.safeParse({
+        ...baseException,
+        kind: 'BLOCKED_SLOT',
+        startTime: '19:00',
+        endTime: '18:00',
+      }).success,
+    ).toBe(false);
+    expect(
+      bookingExceptionInputSchema.safeParse({
+        ...baseException,
+        kind: 'MODIFIED_HOURS',
+        startTime: '18:00',
+        endTime: '22:00',
+      }).success,
+    ).toBe(true);
   });
 
   it('validates public feedback and requires contact consent', () => {

@@ -30,6 +30,22 @@ export function formatMinutes(value: number): string {
   return minutes === 0 ? `${hours} h` : `${hours} h ${minutes}`;
 }
 
+export function getPublicScheduleRows(
+  periods: readonly {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    enabled: boolean;
+  }[],
+): { label: string; ranges: string[] }[] {
+  return orderedWeekDays.map((day) => ({
+    label: day.label,
+    ranges: periods
+      .filter((period) => period.dayOfWeek === day.value && period.enabled)
+      .map((period) => formatTimeRange(period.startTime, period.endTime)),
+  }));
+}
+
 export function getDateInTimezone(timezone: string, date = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,

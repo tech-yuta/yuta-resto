@@ -39,6 +39,9 @@ const currentDocuments = [
   'docs/features/public-booking/STATUS.md',
   'docs/features/reputation/README.md',
   'docs/features/reputation/STATUS.md',
+  'docs/ui/README.md',
+  'docs/ui/YUTA_FRONTEND_RULES.md',
+  'docs/ui/pages/HORAIRES_SERVICES_UI_SPEC.md',
   'docs/products/pos/README.md',
   'docs/products/pos/USER_GUIDE.md',
   'docs/products/pos/OFFLINE_STRATEGY.md',
@@ -54,6 +57,21 @@ const requiredMetadata = [
   /^Owner:\s*\S+/m,
   /^Last updated:\s*\d{4}-\d{2}-\d{2}/m,
 ];
+
+const requiredUiReferences = [
+  'docs/ui/references/horaires-services-desktop.png',
+  'docs/ui/references/yuta-shell-brand-reference.png',
+];
+
+for (const file of requiredUiReferences) {
+  if (!existsSync(join(repositoryRoot, file))) {
+    addFailure(
+      'missing-ui-reference',
+      file,
+      'current UI documentation references this visual asset',
+    );
+  }
+}
 
 for (const file of currentDocuments) {
   const absolutePath = join(repositoryRoot, file);

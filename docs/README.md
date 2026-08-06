@@ -67,6 +67,12 @@ sensitive details never belong in the repository.
 The standalone display product is governed by `apps/yuta-display/AGENTS.md` and
 the shared operations documents until a dedicated product document is needed.
 
+### UI implementation
+
+- [`ui/README.md`](ui/README.md)
+- [`ui/YUTA_FRONTEND_RULES.md`](ui/YUTA_FRONTEND_RULES.md)
+- [`ui/pages/HORAIRES_SERVICES_UI_SPEC.md`](ui/pages/HORAIRES_SERVICES_UI_SPEC.md)
+
 ### Operations and process
 
 - [`operations/LOCAL_DEVELOPMENT.md`](operations/LOCAL_DEVELOPMENT.md)
