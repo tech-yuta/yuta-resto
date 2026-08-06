@@ -71,7 +71,8 @@ the shared operations documents until a dedicated product document is needed.
 
 - [`ui/README.md`](ui/README.md)
 - [`ui/YUTA_FRONTEND_RULES.md`](ui/YUTA_FRONTEND_RULES.md)
-- [`ui/pages/HORAIRES_SERVICES_UI_SPEC.md`](ui/pages/HORAIRES_SERVICES_UI_SPEC.md)
+- [`ui/PAGE_PACK_PROTOCOL.md`](ui/PAGE_PACK_PROTOCOL.md)
+- [`ui/pages/horaires-services/README.md`](ui/pages/horaires-services/README.md)
 
 ### Operations and process
 

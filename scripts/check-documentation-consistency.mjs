@@ -41,7 +41,8 @@ const currentDocuments = [
   'docs/features/reputation/STATUS.md',
   'docs/ui/README.md',
   'docs/ui/YUTA_FRONTEND_RULES.md',
-  'docs/ui/pages/HORAIRES_SERVICES_UI_SPEC.md',
+  'docs/ui/PAGE_PACK_PROTOCOL.md',
+  'docs/ui/pages/horaires-services/README.md',
   'docs/products/pos/README.md',
   'docs/products/pos/USER_GUIDE.md',
   'docs/products/pos/OFFLINE_STRATEGY.md',
@@ -59,7 +60,7 @@ const requiredMetadata = [
 ];
 
 const requiredUiReferences = [
-  'docs/ui/references/horaires-services-desktop.png',
+  'docs/ui/pages/horaires-services/references/desktop.png',
   'docs/ui/references/yuta-shell-brand-reference.png',
 ];
 

@@ -10,59 +10,112 @@ Last updated: 2026-08-06
 
 ## Purpose
 
-This guide turns an approved visual direction into maintainable YUTA UI without
-treating a screenshot as product, navigation, data, or authorization authority.
-It applies primarily to `apps/backoffice`; the same repository-first method may
-be reused by another application only after reading its nearest `AGENTS.md`.
+This directory governs design-to-code work for YUTA applications, primarily `apps/backoffice`.
 
-Use this guide together with:
+It turns an approved visual direction into maintainable UI without treating a screenshot as authority for product scope, navigation, data, authorization, or persistence.
 
-- [`YUTA_FRONTEND_RULES.md`](YUTA_FRONTEND_RULES.md) for durable implementation
-  rules;
-- a current page-specific specification under [`pages/`](pages/);
-- visual assets under `references/` as non-authoritative evidence.
+Read this directory together with:
+
+- the root `AGENTS.md`;
+- the nearest application `AGENTS.md`;
+- `docs/CURRENT_STATE.md`;
+- the relevant current feature or product documentation;
+- `YUTA_FRONTEND_RULES.md`;
+- the current page package under `pages/<page-slug>/`;
+- `packages/ui/src/index.ts` and `packages/ui/src/styles/global.css`.
 
 ## Authority order
 
 When sources conflict, use this order:
 
-1. root and nearest nested `AGENTS.md` instructions;
-2. current architecture and approved product documentation;
+1. root and nearest nested `AGENTS.md`;
+2. `docs/CURRENT_STATE.md`, current architecture, and approved feature/product documentation;
 3. implemented contracts, schemas, authorization, tests, and route conventions;
-4. the current page-specific UI specification;
+4. the current page-specific product, UI, and interaction specifications;
 5. `@yuta/ui` exports and semantic tokens;
 6. visual reference images;
 7. model judgment.
 
-Images may guide hierarchy, proportions, density, spacing, and visual tone. They
-must not be used to infer navigation, permissions, domain fields, API design, or
-unsupported product capabilities.
+Images may guide hierarchy, proportions, density, spacing, and visual tone. They must not be used to infer navigation, permissions, domain fields, API design, or unsupported product capabilities.
+
+## Directory structure
+
+```text
+docs/ui/
+├── README.md
+├── YUTA_FRONTEND_RULES.md
+├── PAGE_PACK_PROTOCOL.md
+├── references/
+│   ├── README.md
+│   └── yuta-shell-brand-reference.png
+├── templates/
+│   ├── README.md
+│   └── page/
+│       ├── README.md
+│       ├── PRODUCT_SCOPE.md
+│       ├── UI_SPEC.md
+│       ├── DATA_AND_INTERACTION_SPEC.md
+│       ├── IMPLEMENTATION_PLAN.md
+│       ├── ACCEPTANCE_CHECKLIST.md
+│       └── prompts/
+│           ├── 00_REPOSITORY_ANALYSIS.md
+│           ├── 01_VISUAL_BASELINE.md
+│           ├── 02_COMPONENT_REFACTOR.md
+│           ├── 03_INTERACTIONS.md
+│           ├── 04_DATA_INTEGRATION.md
+│           └── 05_VISUAL_QA.md
+└── pages/
+    ├── README.md
+    └── <page-slug>/
+        ├── README.md
+        ├── PRODUCT_SCOPE.md
+        ├── UI_SPEC.md
+        ├── DATA_AND_INTERACTION_SPEC.md
+        ├── IMPLEMENTATION_PLAN.md
+        ├── ACCEPTANCE_CHECKLIST.md
+        ├── references/
+        └── prompts/
+```
+
+## Page packages
+
+Each current UI initiative receives one stable directory:
+
+```text
+docs/ui/pages/<page-slug>/
+```
+
+Do not create parallel `v2`, `new`, `final`, or `latest` directories. Update the current package in place and rely on Git history.
+
+The required artifact shape and packaging rules are defined in `PAGE_PACK_PROTOCOL.md`.
 
 ## Repository-first workflow
 
 ### Phase 0 — Inspect
 
-Before editing, identify:
+Before editing:
 
-- the real route, application shell, and page container;
-- the nearest instructions and current feature documentation;
-- shared primitives exported from `packages/ui/src/index.ts`;
-- actual semantic tokens in `packages/ui/src/styles/global.css`;
-- server/client boundaries, authorization, tenant scope, and persistence;
-- relevant tests, builds, and browser verification tooling;
-- conflicts between the design and the implemented domain.
+- identify the real route, shell, page container, and nearby pages;
+- read root and application instructions;
+- inspect current authorization, tenant scope, persistence, forms, and tests;
+- inspect `@yuta/ui` exports and semantic tokens;
+- identify whether the route is new, static, interactive, or already integrated;
+- report conflicts between the design and the implemented domain.
 
-For an existing route, report the current implementation and propose a focused
-change. Do not restart it as a fixture-only page or discard working behavior.
+For an existing integrated route, improve it in place. Do not replace working behavior with fixture data merely because a generic design workflow begins with a static phase.
 
 ### Phase 1 — Establish the visual baseline
 
-For a new route, build a typed, responsive static composition before persistence
-unless the approved task explicitly combines phases. For an existing route,
-capture the current page and compare it with the written specification and visual
-reference before editing.
+For a new route, a typed responsive static composition may be appropriate before persistence.
 
-Evidence uses the relevant widths from:
+For an existing route:
+
+- capture the current page;
+- compare it with the current written specification and visual references;
+- preserve authorization, server boundaries, data loading, and mutations;
+- make the smallest visual change that establishes the approved hierarchy.
+
+Use the relevant widths from:
 
 ```text
 1440 px
@@ -73,21 +126,26 @@ Evidence uses the relevant widths from:
 
 ### Phase 2 — Improve component boundaries
 
-Keep page-specific components close to the route. Extract only meaningful units,
-reuse shared primitives, and avoid wrappers that merely rename an existing
-component. Move a component to `@yuta/ui` only after independent reuse is proven.
+Keep page-specific components near the route. Extract only meaningful units, reuse shared primitives, and avoid wrappers that merely rename an existing component.
+
+Move a component to `@yuta/ui` only after independent reuse is proven.
 
 ### Phase 3 — Implement approved interactions
 
-Add only interaction behavior defined by current product decisions. Do not guess
-merge/replace semantics, destructive behavior, validation, dirty-state behavior,
-or whether preview data is saved or unsaved.
+Add only behavior defined by current product decisions. Do not guess:
+
+- merge or replace semantics;
+- destructive behavior;
+- validation;
+- dirty-state behavior;
+- whether a preview uses saved or unsaved values;
+- whether a visual control has a persisted domain representation.
 
 ### Phase 4 — Integrate or extend data
 
-Map the current domain model to the UI model before editing persistence. A missing
-field is a product/schema proposal, not permission to add a column. Any schema or
-contract change follows the repository documentation and migration rules.
+Map the existing domain model to the UI model before editing persistence.
+
+A missing field is a product/schema proposal, not permission to add a column, contract field, enum value, route, or permission.
 
 ### Phase 5 — Visual and responsive QA
 
@@ -104,8 +162,16 @@ Separate visual corrections from backend refactors.
 
 ## Current visual foundation
 
-The repository's actual tokens are authoritative. Use role-based classes such
-as:
+The repository implementation is authoritative.
+
+Use:
+
+- shared components exported by `packages/ui/src/index.ts`;
+- semantic tokens defined in `packages/ui/src/styles/global.css`;
+- `lucide-react`;
+- Geist Sans with the repository fallback stack.
+
+Use role-based classes such as:
 
 ```text
 bg-canvas
@@ -124,9 +190,33 @@ ring-focus-ring
 status-*
 ```
 
-Do not introduce a second token vocabulary or copy color values from reference
-images. `packages/ui/src/index.ts` is the only public component catalog; this
-documentation intentionally does not duplicate it.
+Do not introduce a second token vocabulary, copy color values from references, or duplicate the public component catalog in documentation.
+
+## Verification
+
+Use commands that actually exist in the repository:
+
+```text
+pnpm docs:check
+pnpm format:check
+pnpm architecture:check
+pnpm --filter @yuta/backoffice typecheck
+pnpm --filter @yuta/backoffice test
+pnpm --filter @yuta/backoffice build
+```
+
+Run affected auth, tenant, contract, booking, and database tests when their behavior changes.
+
+The Backoffice currently has no lint script. Do not report lint as passed unless one is deliberately added and run.
+
+Browser QA verifies:
+
+- console and hydration errors;
+- keyboard operation;
+- visible focus;
+- responsive layout;
+- horizontal overflow;
+- truthful loading, empty, error, forbidden, conflict, success, and recovery states.
 
 ## Delivery evidence
 
