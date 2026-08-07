@@ -1,10 +1,11 @@
 'use client';
 
-import { formatEuros } from '@yuta/core';
+import { formatEuros, type ComboCalculationRule } from '@yuta/core';
 import { Button, Separator, cn } from '@yuta/ui';
 import { Minus, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
+import { calculateItemSplitDiscountCents } from './item-split-combos';
 
 type SplitItem = {
   id: string;
@@ -15,35 +16,11 @@ type SplitItem = {
   createdAt: string;
 };
 
-type ComboRule = {
-  id: string;
-  name: string;
-  pricingMode: 'fixed' | 'base_item_plus_delta';
-  comboPriceCents: number;
-  priceDeltaCents: number;
-  basePricingGroupName: string | null;
-  priority: number;
-  maxApplications: number | null;
-  isActive: boolean;
-  groups: Array<{
-    id: string;
-    name: string;
-    minQuantity: number;
-    maxQuantity: number;
-    sortOrder: number;
-    items: Array<{
-      id: string;
-      menuItemId: string;
-      extraPriceCents: number;
-    }>;
-  }>;
-};
-
 type ItemSplitDialogContentProps = {
   action: (formData: FormData) => void | Promise<void>;
   orderId: string;
   items: SplitItem[];
-  comboRules: ComboRule[];
+  comboRules: ComboCalculationRule[];
   initialClientCount?: number;
   initialQuantities?: Record<string, number>;
   disabled?: boolean;
@@ -88,9 +65,9 @@ export function ItemSplitDialogContent({
     (total, item) => total + item.selectedQuantity * item.unitPriceCents,
     0,
   );
-  const activeClientDiscounts = useMemo(
+  const activeClientDiscountCents = useMemo(
     () =>
-      calculateComboDiscountsForItems(
+      calculateItemSplitDiscountCents(
         activeClientItems.map((item) => ({
           id: item.id,
           menuItemId: item.menuItemId,
@@ -101,10 +78,6 @@ export function ItemSplitDialogContent({
         comboRules,
       ),
     [activeClientItems, comboRules],
-  );
-  const activeClientDiscountCents = activeClientDiscounts.reduce(
-    (total, discount) => total + discount.discountCents,
-    0,
   );
   const activeClientTotalCents = Math.max(
     0,
@@ -363,336 +336,6 @@ function AmountRow({
 
 function quantityKey(client: number, itemId: string): string {
   return `client${client}:${itemId}`;
-}
-
-type ComboCalculationItem = {
-  id: string;
-  menuItemId: string;
-  unitPriceCents: number;
-  quantity: number;
-  createdAt: string;
-};
-
-type CalculatedComboDiscount = {
-  discountCents: number;
-};
-
-type UnitItem = {
-  unitKey: string;
-  itemId: string;
-  menuItemId: string;
-  unitPriceCents: number;
-  createdAt: string;
-};
-
-type MatchedUnit = UnitItem & {
-  groupId: string;
-  groupName: string;
-  extraPriceCents: number;
-};
-
-function calculateComboDiscountsForItems(
-  items: ComboCalculationItem[],
-  rules: ComboRule[],
-): CalculatedComboDiscount[] {
-  const discounts: CalculatedComboDiscount[] = [];
-  const remainingUnits = expandQuantities(items);
-  const activeRules = rules
-    .filter((rule) => rule.isActive)
-    .toSorted(
-      (left, right) =>
-        left.priority - right.priority || left.name.localeCompare(right.name),
-    );
-
-  for (const rule of activeRules) {
-    let applications = 0;
-
-    while (
-      rule.maxApplications === null ||
-      applications < rule.maxApplications
-    ) {
-      const match = findBestMatch(rule, remainingUnits);
-
-      if (!match) {
-        break;
-      }
-
-      const originalTotal = match.reduce(
-        (total, item) => total + item.unitPriceCents,
-        0,
-      );
-      const extraTotal = match.reduce(
-        (total, item) => total + item.extraPriceCents,
-        0,
-      );
-      const comboTotal = calculateComboTotal(rule, match, extraTotal);
-
-      if (comboTotal === null) {
-        break;
-      }
-
-      const discountCents = originalTotal - comboTotal;
-
-      if (discountCents <= 0) {
-        break;
-      }
-
-      discounts.push({ discountCents });
-      removeMatchedUnits(remainingUnits, match);
-      applications++;
-    }
-  }
-
-  return discounts;
-}
-
-function expandQuantities(items: ComboCalculationItem[]): UnitItem[] {
-  return items.toSorted(compareCalculationItems).flatMap((item) =>
-    Array.from({ length: item.quantity }, (_, index) => ({
-      unitKey: `${item.id}:${index}`,
-      itemId: item.id,
-      menuItemId: item.menuItemId,
-      unitPriceCents: item.unitPriceCents,
-      createdAt: item.createdAt,
-    })),
-  );
-}
-
-function findBestMatch(
-  rule: ComboRule,
-  remainingUnits: UnitItem[],
-): MatchedUnit[] | null {
-  const groups = rule.groups.toSorted(
-    (left, right) => left.sortOrder - right.sortOrder,
-  );
-  let candidates: MatchedUnit[][] = [[]];
-
-  for (const group of groups) {
-    const groupMatches = findGroupMatches(group, remainingUnits);
-
-    if (groupMatches.length === 0) {
-      return null;
-    }
-
-    const nextCandidates: MatchedUnit[][] = [];
-
-    for (const candidate of candidates) {
-      for (const groupMatch of groupMatches) {
-        if (hasUnitOverlap(candidate, groupMatch)) {
-          continue;
-        }
-
-        nextCandidates.push([...candidate, ...groupMatch]);
-      }
-    }
-
-    candidates = nextCandidates;
-
-    if (candidates.length === 0) {
-      return null;
-    }
-  }
-
-  return (
-    candidates.toSorted((left, right) =>
-      compareMatchesForBestDiscount(rule, left, right),
-    )[0] ?? null
-  );
-}
-
-function findGroupMatches(
-  group: ComboRule['groups'][number],
-  remainingUnits: UnitItem[],
-): MatchedUnit[][] {
-  const eligibleUnits = remainingUnits
-    .map((unit) => {
-      const groupItem = group.items.find(
-        (item) => item.menuItemId === unit.menuItemId,
-      );
-
-      if (!groupItem) {
-        return null;
-      }
-
-      return {
-        ...unit,
-        groupId: group.id,
-        groupName: group.name,
-        extraPriceCents: groupItem.extraPriceCents,
-      };
-    })
-    .filter((unit): unit is MatchedUnit => unit !== null)
-    .toSorted(compareUnits);
-  const matches: MatchedUnit[][] = [];
-  const maxQuantity = Math.min(group.maxQuantity, eligibleUnits.length);
-
-  for (let size = group.minQuantity; size <= maxQuantity; size++) {
-    matches.push(...combinations(eligibleUnits, size));
-  }
-
-  return matches.toSorted(compareMatchesForBestDiscountWithoutRule);
-}
-
-function combinations<T>(items: T[], size: number): T[][] {
-  if (size <= 0) {
-    return [[]];
-  }
-
-  if (items.length < size) {
-    return [];
-  }
-
-  const result: T[][] = [];
-
-  function walk(startIndex: number, current: T[]): void {
-    if (current.length === size) {
-      result.push([...current]);
-      return;
-    }
-
-    for (let index = startIndex; index < items.length; index++) {
-      current.push(items[index]);
-      walk(index + 1, current);
-      current.pop();
-    }
-  }
-
-  walk(0, []);
-
-  return result;
-}
-
-function calculateComboTotal(
-  rule: ComboRule,
-  match: MatchedUnit[],
-  extraTotal: number,
-): number | null {
-  if (rule.pricingMode === 'fixed') {
-    return rule.comboPriceCents + extraTotal;
-  }
-
-  const baseGroupName = rule.basePricingGroupName;
-
-  if (!baseGroupName) {
-    return null;
-  }
-
-  const baseTotal = match
-    .filter((item) => item.groupName === baseGroupName)
-    .reduce((total, item) => total + item.unitPriceCents, 0);
-
-  if (baseTotal <= 0) {
-    return null;
-  }
-
-  return baseTotal + rule.priceDeltaCents + extraTotal;
-}
-
-function compareMatchesForBestDiscount(
-  rule: ComboRule,
-  left: MatchedUnit[],
-  right: MatchedUnit[],
-): number {
-  const leftDiscount = matchDiscountValue(rule, left);
-  const rightDiscount = matchDiscountValue(rule, right);
-
-  if (leftDiscount !== rightDiscount) {
-    return rightDiscount - leftDiscount;
-  }
-
-  return compareUnitArrays(left, right);
-}
-
-function matchDiscountValue(rule: ComboRule, match: MatchedUnit[]): number {
-  const originalTotal = match.reduce(
-    (total, item) => total + item.unitPriceCents,
-    0,
-  );
-  const extraTotal = match.reduce(
-    (total, item) => total + item.extraPriceCents,
-    0,
-  );
-  const comboTotal = calculateComboTotal(rule, match, extraTotal);
-
-  if (comboTotal === null) {
-    return Number.NEGATIVE_INFINITY;
-  }
-
-  return originalTotal - comboTotal;
-}
-
-function compareMatchesForBestDiscountWithoutRule(
-  left: MatchedUnit[],
-  right: MatchedUnit[],
-): number {
-  const leftNetValue = matchNetValue(left);
-  const rightNetValue = matchNetValue(right);
-
-  if (leftNetValue !== rightNetValue) {
-    return rightNetValue - leftNetValue;
-  }
-
-  return compareUnitArrays(left, right);
-}
-
-function matchNetValue(match: MatchedUnit[]): number {
-  return match.reduce(
-    (total, item) => total + item.unitPriceCents - item.extraPriceCents,
-    0,
-  );
-}
-
-function compareUnitArrays(left: UnitItem[], right: UnitItem[]): number {
-  const sortedLeft = left.toSorted(compareUnits);
-  const sortedRight = right.toSorted(compareUnits);
-  const length = Math.min(sortedLeft.length, sortedRight.length);
-
-  for (let index = 0; index < length; index++) {
-    const comparison = compareUnits(sortedLeft[index], sortedRight[index]);
-
-    if (comparison !== 0) {
-      return comparison;
-    }
-  }
-
-  return sortedLeft.length - sortedRight.length;
-}
-
-function compareCalculationItems(
-  left: ComboCalculationItem,
-  right: ComboCalculationItem,
-): number {
-  return (
-    left.createdAt.localeCompare(right.createdAt) ||
-    left.id.localeCompare(right.id)
-  );
-}
-
-function compareUnits(left: UnitItem, right: UnitItem): number {
-  return (
-    left.createdAt.localeCompare(right.createdAt) ||
-    left.itemId.localeCompare(right.itemId) ||
-    left.unitKey.localeCompare(right.unitKey)
-  );
-}
-
-function hasUnitOverlap(left: UnitItem[], right: UnitItem[]): boolean {
-  const usedUnitKeys = new Set(left.map((unit) => unit.unitKey));
-
-  return right.some((unit) => usedUnitKeys.has(unit.unitKey));
-}
-
-function removeMatchedUnits(
-  remainingUnits: UnitItem[],
-  match: MatchedUnit[],
-): void {
-  const matchedUnitKeys = new Set(match.map((item) => item.unitKey));
-
-  for (let index = remainingUnits.length - 1; index >= 0; index--) {
-    if (matchedUnitKeys.has(remainingUnits[index].unitKey)) {
-      remainingUnits.splice(index, 1);
-    }
-  }
 }
 
 function errorMessage(error: string): string {
