@@ -1,7 +1,7 @@
 import { createTenantUserRepository } from '@yuta/db-cloud';
-import { UsersPage } from '../../equipe/utilisateurs-acces/users-page';
 import { requireUserManagementTenant } from '../../../../server/auth/session';
 import { cloudDatabase } from '../../../../server/cloud-database';
+import { UsersPage } from './users-page';
 
 export const dynamic = 'force-dynamic';
 

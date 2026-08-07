@@ -9,7 +9,7 @@ import {
 import {
   AddServiceForm,
   DeleteServicePeriodButton,
-} from '../booking-administration-forms';
+} from '../booking-service-period-forms';
 import {
   formatMinutes,
   formatTimeRange,

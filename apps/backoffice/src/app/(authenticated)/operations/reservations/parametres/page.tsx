@@ -3,7 +3,7 @@ import { BackofficePage } from '../../../../../components/backoffice-page';
 import { requireBookingPermission } from '../../../../../server/auth/permissions';
 import { requireBookingTenant } from '../../../../../server/auth/session';
 import { cloudDatabase } from '../../../../../server/cloud-database';
-import { BookingRules } from '../../../etablissement/booking-administration-forms';
+import { BookingRules } from '../../../etablissement/booking-rules-form';
 
 export default async function Page() {
   const { tenant } = await requireBookingTenant(

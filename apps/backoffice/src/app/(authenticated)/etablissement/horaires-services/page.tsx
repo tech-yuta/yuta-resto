@@ -5,7 +5,7 @@ import { BackofficePage } from '../../../../components/backoffice-page';
 import { requireBookingPermission } from '../../../../server/auth/permissions';
 import { requireBookingTenant } from '../../../../server/auth/session';
 import { cloudDatabase } from '../../../../server/cloud-database';
-import { ExceptionsPanel } from '../booking-administration-forms';
+import { ExceptionsPanel } from '../booking-exceptions-panel';
 import {
   exceptionKindLabels,
   formatTimeRange,

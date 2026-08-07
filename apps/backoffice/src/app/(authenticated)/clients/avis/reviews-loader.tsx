@@ -7,12 +7,12 @@ import {
 } from '@yuta/db-cloud';
 import { requireReputationTenant } from '../../../../server/auth/session';
 import { cloudDatabase as db } from '../../../../server/cloud-database';
-import {
-  ReviewsPage,
-  type ReviewDetailRecord,
-  type ReviewsPageData,
-  type ReviewsPageMode,
-} from './reviews-page';
+import { ReviewsPage } from './reviews-page';
+import type {
+  ReviewDetailRecord,
+  ReviewsPageData,
+  ReviewsPageMode,
+} from './reviews-model';
 
 type ReviewSearchParams = Record<string, string | string[] | undefined>;
 

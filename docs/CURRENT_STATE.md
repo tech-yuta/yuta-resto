@@ -46,12 +46,57 @@ reservation availability.
 - Establishment-owned general profile data and Backoffice editor for identity,
   structured address, contacts, website, media URLs, languages, service modes,
   and public visibility. OWNER and MANAGER may edit; STAFF is read-only.
-- Backoffice navigation includes cloud-owned placeholder surfaces for menu
-  content, internal resources, technical sheets, employees, and personnel
-  formalities. These routes do not read from or synchronize with POS data.
+- Backoffice navigation includes cloud-owned integrated, prototype, and planned
+  surfaces. Their maturity is recorded below. None of these routes reads from
+  or synchronizes with POS data.
 - Local POS ordering, kitchen, payment, printing, administration, and reporting
   workflows described in the POS product documentation.
 - Standalone digital-signage administration and resilient display playback.
+
+## Back-office surface maturity
+
+Navigation visibility is not evidence that a capability is implemented. The
+current restaurant back-office surfaces fall into three groups:
+
+### Integrated and data-backed
+
+- Today dashboard;
+- reservation list and reservation settings;
+- establishment general information and booking hours/services;
+- direct satisfaction and reputation review management;
+- tenant user and membership administration.
+
+`/parametres/integrations` is also data-backed and owns the tenant-scoped Google
+Business Profile connector, although it is not currently a primary navigation
+item.
+
+### UI prototypes with fixture data only
+
+- room and table map;
+- stock inventory, stock movements, and suppliers;
+- compliance monitoring;
+- creative studio.
+
+These prototypes have local presentation state but no cloud repository or
+persisted mutation. Their export, create, edit, archive, verification,
+generation, and similar controls must not be described as implemented product
+capabilities. Each prototype displays a shared demonstration-data notice, and
+controls that would imply a persisted mutation, generated artifact, or export
+are disabled. Local filtering and selection remain available for interface
+evaluation. Integrating one requires an approved product scope, data owner,
+authorization model, contracts, persistence, and tests.
+
+### Planned empty surfaces
+
+- menu content and internal resources;
+- technical sheets;
+- employees, planning, time tracking, daily tasks, and personnel formalities;
+- marketing content creation;
+- modules and subscription.
+
+These routes deliberately use the shared planned-page state. Their presence in
+navigation does not approve a schema, contract, provider, mutation, or delivery
+roadmap.
 
 ## Active and partial work
 

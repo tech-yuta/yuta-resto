@@ -4,6 +4,7 @@ import { Badge, Button, Card, cn } from '@yuta/ui';
 import { Armchair, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BackofficePage } from '../../../../components/backoffice-page';
+import { PrototypeBackofficeNotice } from '../../../../components/prototype-backoffice-notice';
 
 type TableAvailability = 'Disponible' | 'Réservée' | 'Indisponible';
 
@@ -132,6 +133,7 @@ export function TablesPage() {
       title="Salle & tables"
       description="Visualisez les zones, la capacité et les tables disponibles pour les réservations."
     >
+      <PrototypeBackofficeNotice />
       <div className="flex flex-wrap gap-2" aria-label="Zones du restaurant">
         {rooms.map((item) => (
           <Button
