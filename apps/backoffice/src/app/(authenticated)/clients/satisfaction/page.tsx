@@ -1,4 +1,4 @@
-import { loadReviewsPage } from './reviews-loader';
+import { loadReviewsPage } from '../avis/reviews-loader';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,5 +9,5 @@ export default async function Page({
 }: {
   searchParams: Promise<ReviewSearchParams>;
 }) {
-  return loadReviewsPage(await searchParams, 'all');
+  return loadReviewsPage(await searchParams, 'direct');
 }

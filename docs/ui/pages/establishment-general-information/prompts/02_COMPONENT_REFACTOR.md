@@ -12,7 +12,6 @@ Refactor the approved visual baseline for `/etablissement/informations-generales
    - coordinates section;
    - public-information section;
    - languages/service-modes section;
-   - weekly-schedule section;
    - public preview.
 4. Keep feature-specific components inside the existing page/feature directory.
 5. Move nothing into shared UI unless there is demonstrated reuse by independent features and repository rules allow it.

@@ -142,7 +142,7 @@ export async function saveBookingSettingsAction(
   formData: FormData,
 ): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
-    '/etablissement/horaires-services',
+    '/operations/reservations/parametres',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
   const nullable = (key: string) =>
@@ -164,7 +164,7 @@ export async function saveBookingSettingsAction(
       bookingPolicy: nullable('bookingPolicy'),
     });
     await saveBookingSettings(cloudDatabase, tenant, input);
-    revalidatePath('/etablissement/horaires-services');
+    revalidatePath('/operations/reservations/parametres');
     return {
       status: 'success',
       message: 'Règles de réservation enregistrées.',
@@ -196,7 +196,6 @@ export async function createServicePeriodAction(
       enabled: true,
     });
     await createBookingServicePeriod(cloudDatabase, tenant, input);
-    revalidatePath('/etablissement/informations-generales');
     revalidatePath('/etablissement/horaires-services');
     return {
       status: 'success',
@@ -225,7 +224,6 @@ export async function deleteServicePeriodAction(
       tenant,
       uuidSchema.parse(formData.get('id')),
     );
-    revalidatePath('/etablissement/informations-generales');
     revalidatePath('/etablissement/horaires-services');
     return {
       status: 'success',

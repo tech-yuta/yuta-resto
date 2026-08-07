@@ -2,21 +2,26 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Archive,
   ArrowLeftRight,
+  BookOpen,
   CalendarCheck,
   CalendarClock,
   CalendarDays,
   Clock,
   ClipboardCheck,
+  ClipboardList,
   FileText,
+  FolderOpen,
   LayoutDashboard,
   LayoutGrid,
-  Megaphone,
   MessageSquare,
   PackageCheck,
   Palette,
   Scale,
+  Settings2,
+  Smile,
   Store,
   Truck,
+  UtensilsCrossed,
   UserCog,
   Users,
 } from 'lucide-react';
@@ -43,7 +48,7 @@ export type BackofficeNavigationSection = {
 export const backofficeNavigationSections: readonly BackofficeNavigationSection[] =
   [
     {
-      title: 'Aujourd’hui',
+      title: 'Accueil',
       items: [
         { label: 'Aujourd’hui', icon: LayoutDashboard, href: '/aujourdhui' },
       ],
@@ -57,6 +62,12 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
           href: '/operations/reservations',
           requires: ['bookingEnabled'],
         },
+        {
+          label: 'Paramètres de réservation',
+          icon: Settings2,
+          href: '/operations/reservations/parametres',
+          requires: ['bookingEnabled', 'canManageBookingSettings'],
+        },
       ],
     },
     {
@@ -68,16 +79,26 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
           href: '/etablissement/informations-generales',
         },
         {
+          label: 'Horaires & services',
+          icon: CalendarClock,
+          href: '/etablissement/horaires-services',
+          requires: ['bookingEnabled', 'canManageBookingSettings'],
+        },
+        {
           label: 'Salle & tables',
           icon: LayoutGrid,
           href: '/etablissement/salles-tables',
           requires: ['bookingEnabled'],
         },
         {
-          label: 'Horaires & services',
-          icon: CalendarClock,
-          href: '/etablissement/horaires-services',
-          requires: ['bookingEnabled', 'canManageBookingSettings'],
+          label: 'Carte & menus',
+          icon: UtensilsCrossed,
+          href: '/etablissement/carte-menus',
+        },
+        {
+          label: 'Ressources internes',
+          icon: FolderOpen,
+          href: '/etablissement/ressources-internes',
         },
       ],
     },
@@ -90,12 +111,18 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
           icon: ArrowLeftRight,
           href: '/stock/mouvements',
         },
+        {
+          label: 'Fiches techniques',
+          icon: ClipboardList,
+          href: '/stock/fiches-techniques',
+        },
         { label: 'Fournisseurs', icon: Truck, href: '/stock/fournisseurs' },
       ],
     },
     {
-      title: 'Équipe',
+      title: 'Gestion de l’équipe',
       items: [
+        { label: 'Salariés', icon: Users, href: '/equipe/salaries' },
         { label: 'Planning', icon: CalendarDays, href: '/equipe/planning' },
         { label: 'Pointage', icon: Clock, href: '/equipe/pointage' },
         {
@@ -104,10 +131,9 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
           href: '/equipe/taches-quotidiennes',
         },
         {
-          label: 'Utilisateurs & accès',
-          icon: UserCog,
-          href: '/equipe/utilisateurs-acces',
-          requires: ['canManageUsers'],
+          label: 'Formalités du personnel',
+          icon: BookOpen,
+          href: '/equipe/formalites-personnel',
         },
       ],
     },
@@ -122,9 +148,14 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
       ],
     },
     {
-      title: 'Clients & réputation',
+      title: 'Visibilité & réputation',
       items: [
-        { label: 'Clients', icon: Users, href: '/clients/repertoire' },
+        {
+          label: 'Satisfaction client',
+          icon: Smile,
+          href: '/clients/satisfaction',
+          requires: ['reputationEnabled'],
+        },
         {
           label: 'Avis & commentaires',
           icon: MessageSquare,
@@ -137,16 +168,15 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
       title: 'Marketing & contenu',
       items: [
         {
-          label: 'Création visuelle',
+          label: 'Créations visuelles',
           icon: Palette,
           href: '/marketing/studio-creatif',
         },
         {
-          label: 'Pages & contenus',
+          label: 'Création de contenus',
           icon: FileText,
           href: '/marketing/contenus',
         },
-        { label: 'Campagnes', icon: Megaphone, href: '/marketing/campagnes' },
       ],
     },
     {
@@ -156,6 +186,12 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
           label: 'Modules & abonnement',
           icon: PackageCheck,
           href: '/parametres/abonnement',
+        },
+        {
+          label: 'Utilisateurs & accès',
+          icon: UserCog,
+          href: '/parametres/utilisateurs-acces',
+          requires: ['canManageUsers'],
         },
       ],
     },

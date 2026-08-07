@@ -168,7 +168,7 @@ Stop before code until the proposal is approved.
 3. main and supporting column proportions;
 4. exception workflow density and supporting-summary balance;
 5. current service-field readability;
-6. current booking settings;
+6. persisted service summaries;
 7. current exceptions;
 8. typography and semantic color;
 9. responsive stacking;

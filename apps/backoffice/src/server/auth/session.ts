@@ -118,7 +118,7 @@ export async function requireUserManagementTenant(): Promise<{
   tenant: TenantContext;
 }> {
   const context = await requireAuthenticatedTenant(
-    '/equipe/utilisateurs-acces',
+    '/parametres/utilisateurs-acces',
   );
   requireRole(context.tenant, ['OWNER', 'MANAGER']);
   return context;

@@ -128,6 +128,8 @@ export type ReviewsPageData = {
   };
 };
 
+export type ReviewsPageMode = 'all' | 'direct';
+
 const initialActionState: ReputationActionState = {
   error: null,
   success: null,
@@ -180,7 +182,13 @@ const urgencyLabels: Record<FeedbackUrgency, string> = {
   CRITICAL: 'Critique',
 };
 
-export function ReviewsPage({ data }: { data: ReviewsPageData }) {
+export function ReviewsPage({
+  data,
+  mode = 'all',
+}: {
+  data: ReviewsPageData;
+  mode?: ReviewsPageMode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const currentSearchParams = useSearchParams();
@@ -188,6 +196,7 @@ export function ReviewsPage({ data }: { data: ReviewsPageData }) {
   const userNames = new Map(
     data.assignableUsers.map((user) => [user.id, user.name]),
   );
+  const directOnly = mode === 'direct';
 
   function updateQuery(
     updates: Record<string, string | number | null>,
@@ -214,20 +223,26 @@ export function ReviewsPage({ data }: { data: ReviewsPageData }) {
   return (
     <div className="flex w-full flex-col gap-5">
       <PageHeader
-        eyebrow="Clients"
-        title="Avis & commentaires"
-        description="Centralisez les avis Google et les retours directs de vos clients."
+        eyebrow="Visibilité & réputation"
+        title={directOnly ? 'Satisfaction client' : 'Avis & commentaires'}
+        description={
+          directOnly
+            ? 'Consultez les avis transmis directement par vos clients sur le web.'
+            : 'Centralisez les avis Google et les retours directs de vos clients.'
+        }
         actions={
-          <>
-            <Button variant="secondary" disabled>
-              <RefreshCw className="h-4 w-4" />
-              Synchroniser
-            </Button>
-            <Button variant="secondary" disabled>
-              <Settings className="h-4 w-4" />
-              Paramètres
-            </Button>
-          </>
+          directOnly ? undefined : (
+            <>
+              <Button variant="secondary" disabled>
+                <RefreshCw className="h-4 w-4" />
+                Synchroniser
+              </Button>
+              <Button variant="secondary" disabled>
+                <Settings className="h-4 w-4" />
+                Paramètres
+              </Button>
+            </>
+          )
         }
       />
 
@@ -246,7 +261,9 @@ export function ReviewsPage({ data }: { data: ReviewsPageData }) {
             <MetricCard
               label="Total"
               value={data.counters.total}
-              helper="Google et retours directs"
+              helper={
+                directOnly ? 'Retours directs' : 'Google et retours directs'
+              }
             />
             <MetricCard
               label="Nouveaux"
@@ -272,20 +289,29 @@ export function ReviewsPage({ data }: { data: ReviewsPageData }) {
 
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.85fr)]">
             <Card padding="none" className="overflow-hidden">
-              <div className="grid gap-2 border-b border-border-default p-4 sm:grid-cols-2 lg:grid-cols-[145px_145px_135px_165px_minmax(180px,1fr)]">
-                <Select
-                  value={data.query.source ?? 'ALL'}
-                  onValueChange={(value) => updateQuery({ source: value })}
-                >
-                  <SelectTrigger aria-label="Source">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">Toutes les sources</SelectItem>
-                    <SelectItem value="GOOGLE">Google</SelectItem>
-                    <SelectItem value="DIRECT">Retour direct</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div
+                className={cn(
+                  'grid gap-2 border-b border-border-default p-4 sm:grid-cols-2',
+                  directOnly
+                    ? 'lg:grid-cols-[145px_135px_165px_minmax(180px,1fr)]'
+                    : 'lg:grid-cols-[145px_145px_135px_165px_minmax(180px,1fr)]',
+                )}
+              >
+                {!directOnly && (
+                  <Select
+                    value={data.query.source ?? 'ALL'}
+                    onValueChange={(value) => updateQuery({ source: value })}
+                  >
+                    <SelectTrigger aria-label="Source">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Toutes les sources</SelectItem>
+                      <SelectItem value="GOOGLE">Google</SelectItem>
+                      <SelectItem value="DIRECT">Retour direct</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
                 <Select
                   value={data.query.status ?? 'ALL'}
                   onValueChange={(value) => updateQuery({ status: value })}
@@ -364,7 +390,11 @@ export function ReviewsPage({ data }: { data: ReviewsPageData }) {
               {data.items.length === 0 ? (
                 <EmptyState
                   icon={<Inbox className="mx-auto h-8 w-8" />}
-                  title="Aucun avis trouvé"
+                  title={
+                    directOnly
+                      ? 'Aucun retour direct trouvé'
+                      : 'Aucun avis trouvé'
+                  }
                   description="Modifiez les filtres pour afficher d'autres résultats."
                 />
               ) : (

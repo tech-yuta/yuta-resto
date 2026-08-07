@@ -66,7 +66,6 @@ export async function saveGeneralInformationAction(
       };
     }
     revalidatePath('/etablissement/informations-generales');
-    revalidatePath('/etablissement/horaires-services');
     return {
       status: 'success',
       message: 'Informations générales enregistrées.',

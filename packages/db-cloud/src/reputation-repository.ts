@@ -385,6 +385,7 @@ export async function listFeedback(
         eq(feedbackItems.organizationId, context.organizationId),
         eq(feedbackItems.establishmentId, establishmentId),
         feedbackVisibilityCondition(context),
+        query.source ? eq(feedbackItems.source, query.source) : undefined,
       ),
     );
 

@@ -136,7 +136,7 @@ async function getManagementScope(tenant: TenantContext): Promise<{
 }
 
 function revalidateUserManagement(): void {
-  revalidatePath('/equipe/utilisateurs-acces');
+  revalidatePath('/parametres/utilisateurs-acces');
   revalidatePath('/', 'layout');
 }
 

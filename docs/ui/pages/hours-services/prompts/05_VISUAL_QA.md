@@ -28,7 +28,7 @@ Check:
 - column proportions;
 - exception workflow density;
 - current field readability;
-- truthful booking settings;
+- truthful persisted service summaries;
 - truthful exception types;
 - semantic tokens;
 - responsive stacking;

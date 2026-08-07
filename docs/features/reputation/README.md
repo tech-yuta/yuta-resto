@@ -24,6 +24,8 @@ is completed, added, deferred, or reordered.
 ## Product surfaces
 
 - Back-office inbox: `/clients/avis` in `apps/backoffice`.
+- Direct customer feedback inbox: `/clients/satisfaction`, restricted to
+  feedback submitted through the public YUTA feedback website.
 - Review detail route: `/clients/avis/[reviewId]`.
 - Public YUTA Avis landing page: `/` in `apps/feedback-web`.
 - Public feedback form: `/{tenantSlug}` in `apps/feedback-web`.
@@ -92,6 +94,7 @@ After migrating and seeding, use:
 ```text
 http://localhost:3006/luna
 http://localhost:3001/clients/avis
+http://localhost:3001/clients/satisfaction
 ```
 
 The hostname-scoped public URL is also available through

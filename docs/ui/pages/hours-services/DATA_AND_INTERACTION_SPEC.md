@@ -41,18 +41,6 @@ booking.settings.manage
 | enabled       | active state        | Service-level only when currently persisted                                 |
 | sort order    | visual order        | Do not invent drag-and-drop persistence                                     |
 
-### Booking settings
-
-| Current setting   | UI presentation           |
-| ----------------- | ------------------------- |
-| confirmation mode | confirmation rule         |
-| slot interval     | intervalle entre créneaux |
-| average duration  | durée moyenne             |
-| minimum notice    | délai minimal             |
-| booking window    | fenêtre de réservation    |
-
-These values are global booking settings unless current contracts state otherwise.
-
 ### Exceptions
 
 | Current kind     | UI meaning             |
@@ -69,8 +57,9 @@ Do not map a mockup-only `Ouverture exceptionnelle` badge to a new persisted kin
 Preserve current established patterns for:
 
 - loading administration data;
-- updating booking settings;
 - reading service periods for current summaries and exception choices;
+- creating service periods;
+- deleting service periods;
 - creating exceptions;
 - deleting exceptions;
 - server authorization;
@@ -81,9 +70,7 @@ Inspect the current route before documenting additional current update actions.
 
 ## Destructive behavior
 
-Exception deletion requires confirmation. Service-period deletion is handled
-on `/etablissement/informations-generales` and retains the same confirmation
-requirement.
+Exception and service-period deletion require confirmation.
 
 Confirmation must:
 
@@ -92,24 +79,6 @@ Confirmation must:
 - prevent duplicate submission;
 - preserve recoverable context after failure;
 - return focus appropriately.
-
-## Booking-settings save behavior
-
-The settings form saves booking rules only.
-
-The UI must not label the action as saving the complete page. Booking settings
-and exceptions use separate mutations, while service-period mutations live on
-the general-information page.
-
-Required states:
-
-- pristine;
-- dirty where current form conventions support it;
-- pending;
-- field or form validation error;
-- persisted success;
-- save failure;
-- retry.
 
 ## Service-period behavior
 
@@ -167,7 +136,6 @@ At minimum, preserve current validation for:
 - valid day of week;
 - valid exception kind;
 - fields required by the selected exception kind;
-- current booking-setting ranges and enums;
 - trusted establishment access;
 - conflict behavior defined by current booking logic.
 

@@ -61,9 +61,9 @@ At large desktop widths:
 
 ## Form sections
 
-Use five stacked cards when booking is enabled, or the closest existing
-page-section primitive. Numbered green markers are page-level visual elements
-and must use semantic tokens.
+Use four stacked cards, or the closest existing page-section primitive.
+Numbered green markers are page-level visual elements and must use semantic
+tokens.
 
 ### 1. `Identité de l’établissement`
 
@@ -131,16 +131,6 @@ The implemented desktop layout uses a `2/5` language column and a constrained
 `3/5` service-mode column. Selected languages appear as chips; selected service
 modes use a compact icon, textual label, border, and check indicator so state
 never relies on color alone.
-
-### 5. `Horaires hebdomadaires`
-
-- render all seven weekdays from persisted booking service periods;
-- show each active service range, capacity, and the derived global table
-  duration;
-- keep create and delete controls in independent forms so the profile form is
-  never nested with booking mutations;
-- expose mutations only with `booking.settings.manage`;
-- omit the section when the booking entitlement is disabled.
 
 ## Public-preview panel
 

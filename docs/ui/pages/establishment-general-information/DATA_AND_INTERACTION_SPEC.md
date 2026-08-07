@@ -15,7 +15,6 @@ Prompt 00 must first map every concept to the current repository implementation.
 | Logo and cover                        | validated URL fields on `establishments` | establishment profile action | `SUPPORTED_WITH_DIFFERENT_COPY` |
 | Languages and service modes           | establishment arrays and approved enum   | establishment profile action | `SUPPORTED`                     |
 | Public visibility                     | establishment booleans                   | establishment profile action | `SUPPORTED`                     |
-| Weekly service periods                | booking administration repository        | service-period actions       | `SUPPORTED`                     |
 | Completion                            | local view-model calculation             | none                         | `UI_ONLY_DERIVED`               |
 | Local public preview                  | local form state                         | none                         | `UI_ONLY_DERIVED`               |
 | Media upload                          | no storage lifecycle                     | none                         | `PROPOSAL_REQUIRES_APPROVAL`    |
@@ -42,11 +41,6 @@ Requirements:
 - reads and writes remain scoped by both organization and establishment where required;
 - read-only users cannot mutate through direct requests;
 - existing role, permission, entitlement, and membership rules remain authoritative.
-
-Weekly service-period reads additionally require the booking entitlement and
-`booking.read`. Create and delete actions require `booking.settings.manage`,
-validate on the server, and revalidate both the general-information schedule
-and remaining booking-administration summaries.
 
 ## UI view model
 

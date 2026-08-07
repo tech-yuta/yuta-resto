@@ -95,11 +95,9 @@ const serviceModeOptions: readonly [EstablishmentServiceMode, string][] = [
 export function GeneralInformationForm({
   profile,
   canEdit,
-  weeklySchedule,
 }: {
   profile: GeneralInformationProfile;
   canEdit: boolean;
-  weeklySchedule?: React.ReactNode;
 }) {
   const [state, formAction] = useActionState(
     saveGeneralInformationAction,
@@ -475,8 +473,6 @@ export function GeneralInformationForm({
             </div>
           )}
         </form>
-
-        {weeklySchedule}
       </div>
 
       <aside className="grid gap-4 xl:sticky xl:top-5">

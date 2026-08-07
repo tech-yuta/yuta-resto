@@ -116,9 +116,9 @@ server permission check.
 
 ## User and membership administration
 
-`/equipe/utilisateurs-acces` is the tenant-aware access management surface:
+`/parametres/utilisateurs-acces` is the tenant-aware access management surface:
 
-- The "Utilisateurs & accès" navigation item appears under the team section
+- The "Utilisateurs & accès" navigation item appears under the settings section
   only for owners and managers.
 - Owners can manage active establishments across their current organization.
 - Managers can manage staff only in the currently selected establishment.

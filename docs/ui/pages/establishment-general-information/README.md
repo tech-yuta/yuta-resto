@@ -19,9 +19,9 @@ canonical profile fields on `establishments`. OWNER and MANAGER memberships may
 edit; STAFF memberships have read-only access. The page provides explicit save,
 field validation, loading and error states, visibility controls, supported
 language and service-mode selections, and a local unsaved-value preview.
-When booking is enabled, section 5 displays the persisted weekly service
-schedule. Owners and managers can create or delete service periods there;
-staff retain read-only visibility.
+
+Weekly service periods are managed independently under
+`/etablissement/horaires-services`.
 
 General profile ownership includes identity, structured address, primary and
 public contacts, website, description, logo and cover URLs, languages, service

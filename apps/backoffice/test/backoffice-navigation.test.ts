@@ -20,44 +20,52 @@ describe('back-office navigation', () => {
         items: section.items.map((item) => item.label),
       })),
     ).toEqual([
-      { title: 'Aujourd’hui', items: ['Aujourd’hui'] },
+      { title: 'Accueil', items: ['Aujourd’hui'] },
       {
         title: 'Réservations',
-        items: ['Réservations'],
+        items: ['Réservations', 'Paramètres de réservation'],
       },
       {
         title: 'Établissement',
         items: [
           'Informations générales',
-          'Salle & tables',
           'Horaires & services',
+          'Salle & tables',
+          'Carte & menus',
+          'Ressources internes',
         ],
       },
       {
         title: 'Stock',
-        items: ['Inventaire', 'Mouvements de stock', 'Fournisseurs'],
+        items: [
+          'Inventaire',
+          'Mouvements de stock',
+          'Fiches techniques',
+          'Fournisseurs',
+        ],
       },
       {
-        title: 'Équipe',
+        title: 'Gestion de l’équipe',
         items: [
+          'Salariés',
           'Planning',
           'Pointage',
           'Tâches du jour',
-          'Utilisateurs & accès',
+          'Formalités du personnel',
         ],
       },
       { title: 'Conformité', items: ['Veille & conformité'] },
       {
-        title: 'Clients & réputation',
-        items: ['Clients', 'Avis & commentaires'],
+        title: 'Visibilité & réputation',
+        items: ['Satisfaction client', 'Avis & commentaires'],
       },
       {
         title: 'Marketing & contenu',
-        items: ['Création visuelle', 'Pages & contenus', 'Campagnes'],
+        items: ['Créations visuelles', 'Création de contenus'],
       },
       {
         title: 'Paramètres',
-        items: ['Modules & abonnement'],
+        items: ['Modules & abonnement', 'Utilisateurs & accès'],
       },
     ]);
   });
@@ -74,7 +82,8 @@ describe('back-office navigation', () => {
     expect(labels).not.toContain('Rôles & accès');
     expect(labels).not.toContain('Restaurant');
     expect(labels).not.toContain('Salle & disponibilités');
-    expect(labels).not.toContain('Carte & menus');
+    expect(labels).not.toContain('Campagnes');
+    expect(labels).not.toContain('Clients');
   });
 
   it('filters server-derived permissions and module entitlements', () => {
@@ -89,9 +98,11 @@ describe('back-office navigation', () => {
     );
 
     expect(labels).not.toContain('Réservations');
+    expect(labels).not.toContain('Paramètres de réservation');
     expect(labels).not.toContain('Salle & tables');
     expect(labels).not.toContain('Horaires & services');
     expect(labels).not.toContain('Avis & commentaires');
+    expect(labels).not.toContain('Satisfaction client');
     expect(labels).not.toContain('Utilisateurs & accès');
     expect(labels).toContain('Informations générales');
     expect(sections.map((section) => section.title)).not.toContain(
@@ -111,6 +122,8 @@ describe('back-office navigation', () => {
     expect(establishment?.items.map((item) => item.label)).toEqual([
       'Informations générales',
       'Salle & tables',
+      'Carte & menus',
+      'Ressources internes',
     ]);
   });
 
@@ -122,12 +135,12 @@ describe('back-office navigation', () => {
     const settings = sections.find((section) => section.title === 'Paramètres');
 
     expect(marketing?.items.map((item) => item.label)).toEqual([
-      'Création visuelle',
-      'Pages & contenus',
-      'Campagnes',
+      'Créations visuelles',
+      'Création de contenus',
     ]);
     expect(settings?.items.map((item) => item.label)).toEqual([
       'Modules & abonnement',
+      'Utilisateurs & accès',
     ]);
   });
 
@@ -149,9 +162,16 @@ describe('back-office navigation', () => {
 
     expect(Object.fromEntries(items)).toMatchObject({
       'Informations générales': '/etablissement/informations-generales',
-      'Salle & tables': '/etablissement/salles-tables',
       'Horaires & services': '/etablissement/horaires-services',
-      'Utilisateurs & accès': '/equipe/utilisateurs-acces',
+      'Salle & tables': '/etablissement/salles-tables',
+      'Carte & menus': '/etablissement/carte-menus',
+      'Ressources internes': '/etablissement/ressources-internes',
+      'Paramètres de réservation': '/operations/reservations/parametres',
+      'Fiches techniques': '/stock/fiches-techniques',
+      Salariés: '/equipe/salaries',
+      'Formalités du personnel': '/equipe/formalites-personnel',
+      'Satisfaction client': '/clients/satisfaction',
+      'Utilisateurs & accès': '/parametres/utilisateurs-acces',
     });
   });
 });

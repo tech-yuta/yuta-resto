@@ -23,12 +23,16 @@ It:
 - requires `booking.settings.manage`;
 - loads establishment-scoped booking administration data from `@yuta/db-cloud`;
 - uses establishment locale and timezone;
+- displays and edits weekly service periods;
 - reads weekly service periods for today and public-preview summaries;
-- displays booking settings and upcoming exceptions;
-- updates booking settings and supports current exception mutations;
-- delegates weekly service-period create/delete UI to section 5 of
-  `/etablissement/informations-generales`;
+- displays persisted service summaries and upcoming exceptions;
+- supports current exception mutations;
+- creates and deletes weekly service periods through the current booking
+  administration actions;
 - uses `@yuta/ui`, semantic tokens, and `lucide-react`.
+
+Global booking rules are managed on the separate integrated route
+`/operations/reservations/parametres`.
 
 This package guides visual and interaction improvements. It must not replace the route with fixture data or discard current authorization and persistence.
 

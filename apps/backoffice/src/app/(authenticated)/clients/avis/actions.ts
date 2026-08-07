@@ -115,6 +115,7 @@ export async function createInternalNoteAction(
 
 function revalidateReviews(): void {
   revalidatePath('/clients/avis');
+  revalidatePath('/clients/satisfaction');
 }
 
 function invalidAction(): ReputationActionState {

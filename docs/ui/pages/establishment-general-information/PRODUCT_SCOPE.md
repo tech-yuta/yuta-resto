@@ -14,8 +14,7 @@ Approved information categories:
 6. spoken languages;
 7. supported service modes: dine-in, takeaway, reservation, delivery,
    click-and-collect, private events, and catering;
-8. visibility controls for optional public profile fields;
-9. persisted weekly booking service periods when booking is enabled.
+8. visibility controls for optional public profile fields.
 
 All data is establishment-scoped and must remain inside the validated active `organization + establishment` context.
 
@@ -24,7 +23,7 @@ All data is establishment-scoped and must remain inside the validated active `or
 The reference proposes:
 
 - a page header with title, subtitle, completion summary, preview action, and save action;
-- five compact numbered sections when booking is enabled;
+- four compact numbered sections;
 - a right-side public-preview panel on desktop;
 - numbered section markers;
 - selected/unselected service-mode cards;

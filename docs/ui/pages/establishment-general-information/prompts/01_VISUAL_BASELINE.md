@@ -33,7 +33,7 @@ Implement or align the visual baseline for `/etablissement/informations-generale
 
 1. Reuse the current application shell and navigation.
 2. Align page header hierarchy and actions.
-3. Build or align the five numbered sections when booking is enabled.
+3. Build or align the four numbered profile sections.
 4. Build/align the public-preview column using supported fields only.
 5. Match proportions, spacing, density, radius, borders, and selected-state tone using semantic tokens.
 6. Implement responsive composition at 1440, 1024, 768, and 390 px.

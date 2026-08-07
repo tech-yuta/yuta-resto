@@ -1,5 +1,11 @@
 import { Badge, Card, Separator } from '@yuta/ui';
-import { ChevronDown, Moon, SunMedium, Utensils } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronDown,
+  Moon,
+  SunMedium,
+  Utensils,
+} from 'lucide-react';
 import {
   AddServiceForm,
   DeleteServicePeriodButton,
@@ -42,8 +48,8 @@ export function WeeklyScheduleSection({
     >
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-action-primary text-sm font-black text-inverse">
-            5
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-action-primary text-inverse">
+            <CalendarDays className="h-4 w-4" aria-hidden />
           </span>
           <div className="min-w-0">
             <h2 className="font-bold">Horaires hebdomadaires</h2>

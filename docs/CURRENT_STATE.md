@@ -46,6 +46,9 @@ reservation availability.
 - Establishment-owned general profile data and Backoffice editor for identity,
   structured address, contacts, website, media URLs, languages, service modes,
   and public visibility. OWNER and MANAGER may edit; STAFF is read-only.
+- Backoffice navigation includes cloud-owned placeholder surfaces for menu
+  content, internal resources, technical sheets, employees, and personnel
+  formalities. These routes do not read from or synchronize with POS data.
 - Local POS ordering, kitchen, payment, printing, administration, and reporting
   workflows described in the POS product documentation.
 - Standalone digital-signage administration and resilient display playback.

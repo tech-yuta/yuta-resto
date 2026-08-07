@@ -11,7 +11,7 @@ Preserve:
 - `booking.settings.manage`;
 - server boundaries;
 - current data loading;
-- current service-period summaries and settings/exception mutations;
+- current service-period editor, summaries, and exception mutations;
 - current validation;
 - current exception kinds;
 - current tests.
@@ -20,7 +20,7 @@ Improve only the approved visual baseline:
 
 - page hierarchy;
 - today summary based on persisted data;
-- upcoming exceptions as dominant content;
+- weekly service schedule and upcoming exceptions as primary content;
 - supporting summaries as a narrower secondary region;
 - current service-field readability;
 - responsive stacking;

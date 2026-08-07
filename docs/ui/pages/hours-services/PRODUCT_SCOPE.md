@@ -8,9 +8,8 @@ Owner: YUTA product and engineering
 
 ## User goal
 
-An authorized restaurant manager configures global booking rules and booking
-exceptions. Regular weekly service periods are managed in section 5 of
-`/etablissement/informations-generales`.
+An authorized restaurant manager configures weekly service schedules and
+manages booking exceptions on this route.
 
 ## Current approved capabilities
 
@@ -31,16 +30,6 @@ Current service periods contain:
 - capacity;
 - enabled state;
 - sort order.
-
-### Global booking settings
-
-Current settings include values such as:
-
-- confirmation mode;
-- slot interval;
-- global average duration;
-- minimum notice;
-- booking window.
 
 ### Exceptions
 
@@ -65,11 +54,13 @@ BLOCKED_SLOT
 The page may improve presentation of:
 
 - today's operational summary;
-- global booking-rule summaries and forms;
 - persisted customer-facing hours preview;
 - upcoming current exception kinds;
-- booking-settings update;
 - exception create and delete actions.
+
+Global booking rules, including confirmation, slot, duration, notice, and
+booking-window settings, are managed on
+`/operations/reservations/parametres`.
 
 ## Out of scope without separate approval
 

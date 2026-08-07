@@ -25,8 +25,8 @@ When classified `EXISTING_PAGE`:
 ## Product scope
 
 - [ ] The page manages only approved establishment general-information concepts.
-- [ ] Weekly service periods use current booking persistence; menus, table
-      configuration, booking rules, and unrelated modules were not added.
+- [ ] Weekly service periods, menus, table configuration, booking rules, and
+      unrelated modules were not added.
 - [ ] No customer-order, payment, invoicing, checkout, or cash-management capability was introduced.
 - [ ] Unsupported mockup capabilities are recorded as proposals rather than silently implemented.
 - [ ] No new field, enum, permission, contract, API route, server action, or database schema was inferred from the image.
@@ -50,9 +50,6 @@ When classified `EXISTING_PAGE`:
 - [ ] Address verification appears only when an approved capability exists.
 - [ ] Public-visibility controls map to current approved fields.
 - [ ] Language and service-mode controls use existing identifiers and labels.
-- [ ] Section 5 displays all seven weekdays when booking is enabled.
-- [ ] Service-period mutations require `booking.settings.manage` and use
-      independent, non-nested forms.
 
 ## Public preview
 

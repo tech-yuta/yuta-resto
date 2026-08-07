@@ -5,7 +5,7 @@ import { BackofficePage } from '../../../../components/backoffice-page';
 import { requireBookingPermission } from '../../../../server/auth/permissions';
 import { requireBookingTenant } from '../../../../server/auth/session';
 import { cloudDatabase } from '../../../../server/cloud-database';
-import { BookingRules, ExceptionsPanel } from '../booking-administration-forms';
+import { ExceptionsPanel } from '../booking-administration-forms';
 import {
   exceptionKindLabels,
   formatTimeRange,
@@ -14,6 +14,7 @@ import {
   getDayOfWeekInTimezone,
   getNextDatedItem,
 } from '../booking-schedule-view-model';
+import { WeeklyScheduleSection } from './weekly-schedule-section';
 
 type AdministrationData = Awaited<ReturnType<typeof getBookingAdministration>>;
 type ServicePeriod = AdministrationData['periods'][number];
@@ -25,7 +26,6 @@ export default async function Page() {
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
   const data = await getBookingAdministration(cloudDatabase, tenant);
-  const settings = data.settings;
   const timezone = data.establishment?.timezone ?? 'Europe/Paris';
   const locale = data.establishment?.locale ?? 'fr-FR';
   const today = getDateInTimezone(timezone);
@@ -43,12 +43,19 @@ export default async function Page() {
   return (
     <BackofficePage
       title="Horaires & services"
-      description="Configurez les règles de réservation et les jours exceptionnels."
+      description="Consultez les services et gérez les jours exceptionnels."
     >
       <TodaySummary
         periods={todayPeriods}
         nextException={nextException}
         locale={locale}
+      />
+
+      <WeeklyScheduleSection
+        periods={data.periods}
+        averageDurationMinutes={data.settings?.averageDurationMinutes ?? 90}
+        todayDayOfWeek={todayDayOfWeek}
+        canEdit
       />
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
@@ -58,8 +65,7 @@ export default async function Page() {
           locale={locale}
         />
 
-        <aside className="grid gap-5">
-          <BookingRules settings={settings} />
+        <aside>
           <PublicPreview periods={data.periods} />
         </aside>
       </div>

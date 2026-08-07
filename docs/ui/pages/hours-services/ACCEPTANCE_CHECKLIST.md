@@ -23,7 +23,8 @@
 ## Product scope
 
 - [ ] Current service-period fields remain authoritative.
-- [ ] Current booking settings remain global where currently defined.
+- [ ] Global booking settings remain on
+      `/operations/reservations/parametres` and are not duplicated here.
 - [ ] Current exception kinds remain authoritative.
 - [ ] No distinct opening-exception kind is invented.
 - [ ] No per-service reservation window is persisted.
@@ -46,13 +47,13 @@
 ## Visual structure
 
 - [ ] Current Backoffice shell remains unchanged.
-- [ ] Upcoming exceptions are the dominant surface; weekly schedules are not
-      duplicated on this route.
+- [ ] The editable seven-day weekly schedule appears only on this route.
+- [ ] Service-period create/delete mutations require
+      `booking.settings.manage`.
 - [ ] Supporting summaries are secondary.
 - [ ] All seven weekdays remain readable.
 - [ ] Open and closed state includes text.
 - [ ] Current service fields remain readable.
-- [ ] Current booking-rule values are represented truthfully.
 - [ ] Public preview uses persisted schedules.
 - [ ] Current exception kinds are represented truthfully.
 - [ ] Primary actions describe their actual mutation scope.
@@ -60,7 +61,6 @@
 
 ## Interactions and states
 
-- [ ] Current settings save behavior works.
 - [ ] Current create and delete actions work.
 - [ ] Deletion requires confirmation.
 - [ ] Pending state prevents duplicate submission.

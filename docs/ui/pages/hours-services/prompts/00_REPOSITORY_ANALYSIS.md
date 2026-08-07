@@ -22,7 +22,7 @@ Inspect:
 - `booking.settings.manage`;
 - current queries and mutations;
 - current Zod validation;
-- current service-period read model and settings/exception mutations;
+- current service-period read/create/delete model and exception mutations;
 - `@yuta/ui` exports and semantic tokens;
 - current browser layout at 1440, 1024, 768, and 390 px.
 

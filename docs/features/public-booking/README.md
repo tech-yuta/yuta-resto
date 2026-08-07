@@ -43,9 +43,10 @@ Phase 1 includes:
 - day/week back-office lists, manual creation, lifecycle actions, internal
   notes, service periods, exceptions, and booking settings.
 
-In the Backoffice, weekly service periods are edited in section 5 of
-`/etablissement/informations-generales`. Booking rules and dated exceptions
-remain under `/etablissement/horaires-services`.
+In the Backoffice, weekly service periods, service summaries, and dated
+exceptions are managed under `/etablissement/horaires-services`. Global
+booking rules are managed independently under
+`/operations/reservations/parametres`.
 
 Waitlists, table assignment, floor plans, deposits, SMS, widgets, custom
 domains, and channel synchronization are intentionally outside Phase 1.

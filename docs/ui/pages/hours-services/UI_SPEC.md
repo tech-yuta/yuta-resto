@@ -33,9 +33,9 @@ The route already:
 - requires trusted booking tenant context and `booking.settings.manage`;
 - loads establishment-scoped booking administration data from `@yuta/db-cloud`;
 - uses establishment timezone and locale;
+- displays and edits weekly service periods;
 - reads weekly service periods for summaries and exception choices;
-- displays booking settings and upcoming exceptions;
-- updates booking settings;
+- displays persisted service summaries and upcoming exceptions;
 - supports current exception create/delete actions through established server
   patterns;
 - uses `@yuta/ui`, semantic tokens, and `lucide-react`.
@@ -55,7 +55,7 @@ Horaires & services
 Description:
 
 ```text
-Configurez les règles de réservation et les jours exceptionnels.
+Consultez les services et gérez les jours exceptionnels.
 ```
 
 The primary action must reflect a real current mutation.
@@ -102,24 +102,11 @@ Supporting cards stack below when space is insufficient.
 
 ## Weekly schedule ownership
 
-The editable seven-day schedule belongs to section 5 of
-`/etablissement/informations-generales`. This route may read persisted service
-periods for today's summary, exception choices, and public preview, but must not
-duplicate the weekly editor.
+This route is the only Backoffice editor for the persisted seven-day service
+schedule. It supports the current create and delete mutations and uses the
+schedule for today's summary, exception choices, and public preview.
 
 ## Supporting summaries
-
-### Booking rules
-
-Summarize current global settings only, such as:
-
-- confirmation mode;
-- slot interval;
-- global average duration;
-- notice;
-- booking window.
-
-Editable controls must correspond to the current settings action and its validation.
 
 ### Persisted public preview
 
@@ -144,13 +131,11 @@ Do not display `Ouverture exceptionnelle` as a distinct persisted type unless th
 
 ## Mutation presentation
 
-- Label the booking-settings action as saving booking rules, not saving the entire page.
 - Exception deletion requires confirmation.
 - Forms expose pending, validation-error, persisted-success, save-error, and retry states.
 - Exception fields follow the selected current kind.
 - Irrelevant fields are not submitted.
-- The current booking-settings update and exception create/delete capabilities
-  must remain truthful.
+- The current exception create/delete capabilities must remain truthful.
 
 ## Responsive behavior
 
@@ -188,7 +173,7 @@ Requirements:
 
 - The page clearly belongs to the current Backoffice shell.
 - Existing navigation, establishment selection, and permissions remain unchanged.
-- Upcoming exceptions remain the dominant task surface.
+- The weekly schedule and upcoming exceptions remain the primary task surfaces.
 - Supporting summaries do not compete with the primary workflow.
 - Existing semantic tokens and shared primitives are reused.
 - No reference-image colors or navigation are copied directly.
