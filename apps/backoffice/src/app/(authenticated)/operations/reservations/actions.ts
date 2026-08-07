@@ -142,7 +142,7 @@ export async function saveBookingSettingsAction(
   formData: FormData,
 ): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
-    '/establishment/hours-services',
+    '/etablissement/horaires-services',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
   const nullable = (key: string) =>
@@ -160,14 +160,11 @@ export async function saveBookingSettingsAction(
       cancellationDeadlineMinutes: Number(
         formData.get('cancellationDeadlineMinutes'),
       ),
-      publicPhone: nullable('publicPhone'),
-      publicEmail: nullable('publicEmail'),
-      address: nullable('address'),
       welcomeMessage: nullable('welcomeMessage'),
       bookingPolicy: nullable('bookingPolicy'),
     });
     await saveBookingSettings(cloudDatabase, tenant, input);
-    revalidatePath('/establishment/hours-services');
+    revalidatePath('/etablissement/horaires-services');
     return {
       status: 'success',
       message: 'Règles de réservation enregistrées.',
@@ -186,7 +183,7 @@ export async function createServicePeriodAction(
   formData: FormData,
 ): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
-    '/establishment/hours-services',
+    '/etablissement/informations-generales',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
   try {
@@ -199,7 +196,8 @@ export async function createServicePeriodAction(
       enabled: true,
     });
     await createBookingServicePeriod(cloudDatabase, tenant, input);
-    revalidatePath('/establishment/hours-services');
+    revalidatePath('/etablissement/informations-generales');
+    revalidatePath('/etablissement/horaires-services');
     return {
       status: 'success',
       message: 'Service ajouté.',
@@ -218,7 +216,7 @@ export async function deleteServicePeriodAction(
   formData: FormData,
 ): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
-    '/establishment/hours-services',
+    '/etablissement/informations-generales',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
   try {
@@ -227,7 +225,8 @@ export async function deleteServicePeriodAction(
       tenant,
       uuidSchema.parse(formData.get('id')),
     );
-    revalidatePath('/establishment/hours-services');
+    revalidatePath('/etablissement/informations-generales');
+    revalidatePath('/etablissement/horaires-services');
     return {
       status: 'success',
       message: 'Service supprimé.',
@@ -246,7 +245,7 @@ export async function createExceptionAction(
   formData: FormData,
 ): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
-    '/establishment/hours-services',
+    '/etablissement/horaires-services',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
   const nullable = (key: string) =>
@@ -263,7 +262,7 @@ export async function createExceptionAction(
       reason: nullable('reason'),
     });
     await createBookingException(cloudDatabase, tenant, input);
-    revalidatePath('/establishment/hours-services');
+    revalidatePath('/etablissement/horaires-services');
     return {
       status: 'success',
       message: 'Exception ajoutée.',
@@ -282,7 +281,7 @@ export async function deleteExceptionAction(
   formData: FormData,
 ): Promise<BookingAdministrationActionState> {
   const { tenant } = await requireBookingTenant(
-    '/establishment/hours-services',
+    '/etablissement/horaires-services',
   );
   requireBookingPermission(tenant, 'booking.settings.manage');
   try {
@@ -291,7 +290,7 @@ export async function deleteExceptionAction(
       tenant,
       uuidSchema.parse(formData.get('id')),
     );
-    revalidatePath('/establishment/hours-services');
+    revalidatePath('/etablissement/horaires-services');
     return {
       status: 'success',
       message: 'Exception supprimée.',

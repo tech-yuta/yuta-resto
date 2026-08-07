@@ -202,8 +202,21 @@ slug varchar(100)                 globally unique on lower(slug)
 status organization_status       active | disabled
 locale varchar(35)                default fr-FR
 timezone varchar(100)             default Europe/Paris
+description text                  nullable
+address_line_1, address_line_2    nullable
+postal_code, city, country_code   nullable
+phone, email, website             nullable primary contact
+public_phone, public_email        nullable public contact
+logo_url, cover_image_url         nullable HTTP(S) media references
+languages varchar[]               public language identifiers
+service_modes establishment_service_mode[]
+public_* boolean                  optional-field visibility controls
 created_at, updated_at timestamptz
 ```
+
+General restaurant identity and public profile data is owned by
+`establishments`, independently of feature entitlements. `booking_settings`
+does not own address, contact, logo, cover, language, or service-mode data.
 
 ### `tenant_memberships`
 
@@ -327,6 +340,10 @@ scope. Current tables are:
 The public booking application resolves an establishment server-side. Public
 management tokens are stored as hashes, capacity-sensitive creation is
 transactional, and browser-provided scope is never authoritative.
+
+`booking_settings` owns reservation availability and policy only. Public
+booking branding and visible contact/address values are read from the canonical
+establishment profile and filtered by its visibility flags.
 
 ## 6. Local POS schema
 

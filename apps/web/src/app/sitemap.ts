@@ -11,8 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/pour-les-restaurateurs',
     '/a-propos',
     '/contact',
-    '/privacy',
-    '/terms',
+    '/confidentialite',
+    '/conditions-utilisation',
     '/mentions-legales',
     '/gestion-des-donnees',
   ];

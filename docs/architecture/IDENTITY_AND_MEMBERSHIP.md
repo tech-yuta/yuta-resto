@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-06
 
 Authority: `docs/architecture/TENANCY.md` and
 `docs/architecture/AUTHENTICATION.md`
@@ -63,9 +63,9 @@ The session's organization and establishment columns remain non-null.
 The restaurant back-office uses these selection routes:
 
 ```text
-/access/no-establishment
-/select-establishment
-/resolve-establishment
+/acces/aucun-etablissement
+/selection-etablissement
+/resolution-etablissement
 ```
 
 The recovery route revokes an invalid existing scope and reruns the zero/one/many

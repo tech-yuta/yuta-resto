@@ -2,6 +2,7 @@ export * from './auth-repository';
 export * from './booking-repository';
 export * from './client';
 export * from './env';
+export * from './establishment-profile-repository';
 export * from './reputation-repository';
 export * from './schema';
 export * from './tenant-adapters';

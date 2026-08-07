@@ -14,7 +14,7 @@ export default async function AuthenticatedLayout({
   children: ReactNode;
 }) {
   const { session, tenant } = await requireAuthenticatedTenant();
-  if (tenant.actor.type !== 'user') redirect('/login');
+  if (tenant.actor.type !== 'user') redirect('/connexion');
   const availableTenants = await authRepository.listAvailableTenants(
     session.userId,
   );

@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const { session, tenant } = await requireReputationTenant(
-    '/settings/integrations',
+    '/parametres/integrations',
   );
   requireReputationPermission(tenant, 'reputation.connector.manage');
   if (!tenant.establishmentId) {
@@ -53,6 +53,6 @@ export async function GET(request: Request) {
 
 function redirectToSettings(request: Request, result: string): NextResponse {
   return NextResponse.redirect(
-    new URL(`/settings/integrations?google=${result}`, request.url),
+    new URL(`/parametres/integrations?google=${result}`, request.url),
   );
 }

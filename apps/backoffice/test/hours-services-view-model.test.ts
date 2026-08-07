@@ -5,7 +5,7 @@ import {
   getNextDatedItem,
   getPublicScheduleRows,
   orderedWeekDays,
-} from '../src/app/(authenticated)/establishment/hours-services/hours-services-view-model';
+} from '../src/app/(authenticated)/etablissement/booking-schedule-view-model';
 
 describe('hours and services view model', () => {
   it('orders the week from Monday through Sunday', () => {

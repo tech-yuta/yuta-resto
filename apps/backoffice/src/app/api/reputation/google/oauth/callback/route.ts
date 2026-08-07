@@ -22,7 +22,7 @@ const authorizationCodeSchema = z.string().trim().min(1).max(4_096);
 export async function GET(request: NextRequest) {
   const redirect = (result: string) => {
     const response = NextResponse.redirect(
-      new URL(`/settings/integrations?google=${result}`, request.url),
+      new URL(`/parametres/integrations?google=${result}`, request.url),
     );
     response.cookies.set('yuta_google_oauth_state', '', {
       httpOnly: true,
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   };
 
   const { session, tenant } = await requireReputationTenant(
-    '/settings/integrations',
+    '/parametres/integrations',
   );
   requireReputationPermission(tenant, 'reputation.connector.manage');
   const state = verifyGoogleOAuthState(

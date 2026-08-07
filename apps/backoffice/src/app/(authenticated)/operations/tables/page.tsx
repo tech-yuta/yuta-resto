@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function Page() {
-  redirect('/establishment/rooms-tables');
+  redirect('/etablissement/salles-tables');
 }

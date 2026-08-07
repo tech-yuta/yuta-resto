@@ -210,6 +210,26 @@ async function upsertEstablishment(
     status: 'active' as const,
     locale: 'fr-FR',
     timezone: 'Europe/Paris',
+    description:
+      'Cuisine vietnamienne authentique préparée avec des produits frais.',
+    addressLine1:
+      identity.slug === 'luna-poitiers'
+        ? '12 Avenue des Temps Modernes'
+        : '8 Rue du Marché',
+    postalCode: '86000',
+    city: 'Poitiers',
+    countryCode: 'FR',
+    phone: '+33549000000',
+    email: 'contact@luna-restaurant.fr',
+    website: 'https://www.luna-restaurant.fr',
+    publicPhone: '+33549000000',
+    publicEmail: 'contact@luna-restaurant.fr',
+    languages: ['fr', 'en', 'vi'],
+    serviceModes: [
+      'DINE_IN',
+      'TAKEAWAY',
+      'RESERVATION',
+    ] satisfies (typeof establishments.$inferInsert)['serviceModes'],
   };
 
   if (existing) {
@@ -301,9 +321,6 @@ async function upsertBookingConfiguration(
       ...scope,
       enabled: true,
       confirmationMode: 'MANUAL',
-      publicEmail: 'contact@luna-restaurant.fr',
-      publicPhone: '+33549000000',
-      address: 'Poitiers, France',
       welcomeMessage: 'Réservez votre table chez LuNa.',
       bookingPolicy: "Votre demande sera confirmée par l'équipe du restaurant.",
     })

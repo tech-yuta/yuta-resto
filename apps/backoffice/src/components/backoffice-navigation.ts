@@ -44,7 +44,9 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
   [
     {
       title: 'Aujourd’hui',
-      items: [{ label: 'Aujourd’hui', icon: LayoutDashboard, href: '/today' }],
+      items: [
+        { label: 'Aujourd’hui', icon: LayoutDashboard, href: '/aujourdhui' },
+      ],
     },
     {
       title: 'Réservations',
@@ -63,18 +65,18 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
         {
           label: 'Informations générales',
           icon: Store,
-          href: '/establishment/general-information',
+          href: '/etablissement/informations-generales',
         },
         {
           label: 'Salle & tables',
           icon: LayoutGrid,
-          href: '/establishment/rooms-tables',
+          href: '/etablissement/salles-tables',
           requires: ['bookingEnabled'],
         },
         {
           label: 'Horaires & services',
           icon: CalendarClock,
-          href: '/establishment/hours-services',
+          href: '/etablissement/horaires-services',
           requires: ['bookingEnabled', 'canManageBookingSettings'],
         },
       ],
@@ -82,29 +84,29 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
     {
       title: 'Stock',
       items: [
-        { label: 'Inventaire', icon: Archive, href: '/stock/inventory' },
+        { label: 'Inventaire', icon: Archive, href: '/stock/inventaire' },
         {
           label: 'Mouvements de stock',
           icon: ArrowLeftRight,
-          href: '/stock/movements',
+          href: '/stock/mouvements',
         },
-        { label: 'Fournisseurs', icon: Truck, href: '/stock/suppliers' },
+        { label: 'Fournisseurs', icon: Truck, href: '/stock/fournisseurs' },
       ],
     },
     {
       title: 'Équipe',
       items: [
-        { label: 'Planning', icon: CalendarDays, href: '/team/planning' },
-        { label: 'Pointage', icon: Clock, href: '/team/time-tracking' },
+        { label: 'Planning', icon: CalendarDays, href: '/equipe/planning' },
+        { label: 'Pointage', icon: Clock, href: '/equipe/pointage' },
         {
           label: 'Tâches du jour',
           icon: ClipboardCheck,
-          href: '/team/daily-tasks',
+          href: '/equipe/taches-quotidiennes',
         },
         {
           label: 'Utilisateurs & accès',
           icon: UserCog,
-          href: '/team/users-access',
+          href: '/equipe/utilisateurs-acces',
           requires: ['canManageUsers'],
         },
       ],
@@ -115,18 +117,18 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
         {
           label: 'Veille & conformité',
           icon: Scale,
-          href: '/compliance/monitoring',
+          href: '/conformite/veille',
         },
       ],
     },
     {
       title: 'Clients & réputation',
       items: [
-        { label: 'Clients', icon: Users, href: '/customers/directory' },
+        { label: 'Clients', icon: Users, href: '/clients/repertoire' },
         {
           label: 'Avis & commentaires',
           icon: MessageSquare,
-          href: '/customers/reviews',
+          href: '/clients/avis',
           requires: ['reputationEnabled'],
         },
       ],
@@ -137,14 +139,14 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
         {
           label: 'Création visuelle',
           icon: Palette,
-          href: '/marketing/creative-studio',
+          href: '/marketing/studio-creatif',
         },
         {
           label: 'Pages & contenus',
           icon: FileText,
-          href: '/marketing/content',
+          href: '/marketing/contenus',
         },
-        { label: 'Campagnes', icon: Megaphone, href: '/marketing/campaigns' },
+        { label: 'Campagnes', icon: Megaphone, href: '/marketing/campagnes' },
       ],
     },
     {
@@ -153,7 +155,7 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
         {
           label: 'Modules & abonnement',
           icon: PackageCheck,
-          href: '/settings/billing',
+          href: '/parametres/abonnement',
         },
       ],
     },

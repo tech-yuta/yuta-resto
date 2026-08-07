@@ -244,10 +244,10 @@ export default function Page() {
           </FooterColumn>
 
           <FooterColumn title="Ressources">
-            <FooterLink href="https://yutapro.fr/privacy">
+            <FooterLink href="https://yutapro.fr/confidentialite">
               Confidentialité
             </FooterLink>
-            <FooterLink href="https://yutapro.fr/terms">
+            <FooterLink href="https://yutapro.fr/conditions-utilisation">
               Conditions d’utilisation
             </FooterLink>
             <FooterLink href="mailto:contact@yutapro.fr">Contact</FooterLink>

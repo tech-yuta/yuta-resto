@@ -7,8 +7,15 @@ import {
   type CloudDatabaseClient,
 } from '../src/client';
 import {
+  getEstablishmentProfile,
+  updateEstablishmentProfile,
+} from '../src/establishment-profile-repository';
+import { findPublicBookingConfiguration } from '../src/booking-repository';
+import {
+  bookingSettings,
   establishments,
   organizations,
+  tenantEntitlements,
   tenantMemberships,
   users,
 } from '../src/schema';
@@ -55,6 +62,12 @@ integrationTest('cloud schema integration', () => {
       return;
     }
     await db
+      .delete(bookingSettings)
+      .where(eq(bookingSettings.establishmentId, establishmentId));
+    await db
+      .delete(tenantEntitlements)
+      .where(eq(tenantEntitlements.establishmentId, establishmentId));
+    await db
       .delete(tenantMemberships)
       .where(eq(tenantMemberships.id, membershipId));
     await db.delete(users).where(eq(users.id, userId));
@@ -80,5 +93,120 @@ integrationTest('cloud schema integration', () => {
     expect(uuidVersion(membership.id)).toBe(7);
     expect(membership.organizationId).toBe(organizationId);
     expect(membership.establishmentId).toBe(establishmentId);
+  });
+
+  it('updates an establishment profile only inside trusted scope', async () => {
+    const context = {
+      organizationId,
+      establishmentId,
+      actor: {
+        type: 'user' as const,
+        userId,
+        membershipId,
+        role: 'OWNER' as const,
+      },
+      locale: 'fr-FR',
+      timezone: 'Europe/Paris',
+      entitlements: new Set<string>(),
+    };
+    const current = await getEstablishmentProfile(db, context);
+    expect(current?.name).toBe('Cloud schema integration establishment');
+    const updated = await updateEstablishmentProfile(db, context, {
+      name: 'Updated establishment',
+      description: 'Current establishment profile.',
+      addressLine1: '12 rue du Test',
+      addressLine2: null,
+      postalCode: '86000',
+      city: 'Poitiers',
+      countryCode: 'FR',
+      phone: null,
+      email: null,
+      website: null,
+      publicPhone: null,
+      publicEmail: null,
+      logoUrl: null,
+      coverImageUrl: null,
+      languages: ['fr'],
+      serviceModes: ['DINE_IN'],
+      publicDescription: true,
+      publicAddress: true,
+      publicPhoneVisible: true,
+      publicEmailVisible: true,
+      publicWebsite: true,
+      publicLanguages: true,
+      publicServiceModes: true,
+    });
+    expect(updated?.name).toBe('Updated establishment');
+    await expect(
+      getEstablishmentProfile(db, {
+        ...context,
+        organizationId: uuidv7(),
+      }),
+    ).resolves.toBeNull();
+  });
+
+  it('provides public booking branding from the establishment profile', async () => {
+    const context = {
+      organizationId,
+      establishmentId,
+      actor: {
+        type: 'user' as const,
+        userId,
+        membershipId,
+        role: 'OWNER' as const,
+      },
+      locale: 'fr-FR',
+      timezone: 'Europe/Paris',
+      entitlements: new Set<string>(),
+    };
+    const current = await getEstablishmentProfile(db, context);
+    if (!current) throw new Error('Expected establishment profile fixture.');
+    await updateEstablishmentProfile(db, context, {
+      name: current.name,
+      description: current.description,
+      addressLine1: '12 rue du Booking',
+      addressLine2: null,
+      postalCode: '86000',
+      city: 'Poitiers',
+      countryCode: 'FR',
+      phone: current.phone,
+      email: current.email,
+      website: current.website,
+      publicPhone: '+33549000000',
+      publicEmail: 'booking@example.test',
+      logoUrl: 'https://example.test/logo.png',
+      coverImageUrl: null,
+      languages: current.languages,
+      serviceModes: current.serviceModes,
+      publicDescription: true,
+      publicAddress: true,
+      publicPhoneVisible: true,
+      publicEmailVisible: true,
+      publicWebsite: true,
+      publicLanguages: true,
+      publicServiceModes: true,
+    });
+    await db.insert(bookingSettings).values({
+      id: uuidv7(),
+      organizationId,
+      establishmentId,
+      enabled: true,
+    });
+    await db.insert(tenantEntitlements).values({
+      organizationId,
+      establishmentId,
+      key: 'booking.enabled',
+      enabled: true,
+    });
+    const configuration = await findPublicBookingConfiguration(
+      db,
+      'schema-integration',
+    );
+    expect(configuration).toMatchObject({
+      publicPhone: '+33549000000',
+      publicEmail: 'booking@example.test',
+      address: '12 rue du Booking, 86000 Poitiers, FR',
+      logoUrl: 'https://example.test/logo.png',
+    });
   });
 });

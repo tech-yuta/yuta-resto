@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-07
 
 ## Implemented scope
 
@@ -29,8 +29,9 @@ Phase 1 includes:
   a surrounding card or page gutter;
 - a compact party-size screen with step progress, accessible 48 px quantity
   controls, large-group contact guidance, and a CTA kept in the content flow;
-- establishment branding uses the configured `logoUrl`; until a restaurant
-  uploads its own logo, the public flow displays the YuTa logo as the default;
+- establishment branding and visible contact/address data come from the
+  canonical establishment profile; until a restaurant configures `logoUrl`,
+  the public flow displays the YuTa logo as the default;
 - server-authoritative availability in the establishment timezone;
 - weekly service periods and dated exceptions;
 - manual or automatic confirmation;
@@ -41,6 +42,10 @@ Phase 1 includes:
   notification outbox;
 - day/week back-office lists, manual creation, lifecycle actions, internal
   notes, service periods, exceptions, and booking settings.
+
+In the Backoffice, weekly service periods are edited in section 5 of
+`/etablissement/informations-generales`. Booking rules and dated exceptions
+remain under `/etablissement/horaires-services`.
 
 Waitlists, table assignment, floor plans, deposits, SMS, widgets, custom
 domains, and channel synchronization are intentionally outside Phase 1.

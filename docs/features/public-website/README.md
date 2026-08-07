@@ -6,7 +6,7 @@ Visibility: Public product
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-06
 
 `apps/web` serves the public YUTA product website as well as tenant-facing
 public feedback routes.
@@ -22,17 +22,15 @@ public feedback routes.
   presenting it as the whole YUTA product.
 - `/integrations/google-business-profile` explains Google Business Profile
   authorization, data use, reply validation, and revocation.
-- `/integrations/google` permanently redirects to the canonical Google
-  Business Profile integration route.
 - `/pour-les-restaurateurs` describes the modular product approach for
   independent restaurant operators.
 - `/a-propos` explains YUTA's field-led product approach.
-- `/privacy` describes YUTA's current privacy commitments.
-- `/terms` describes the current product usage rules.
+- `/confidentialite` describes YUTA's current privacy commitments.
+- `/conditions-utilisation` describes the current product usage rules.
 - `/mentions-legales` contains the available publisher and hosting
-  information. `/legal` permanently redirects to it.
+  information.
 - `/gestion-des-donnees` explains Google disconnection and data-deletion
-  requests. `/data-management` permanently redirects to it.
+  requests.
 - `/contact` provides the public support and demo contact.
 
 Marketing content must distinguish released features from features still in

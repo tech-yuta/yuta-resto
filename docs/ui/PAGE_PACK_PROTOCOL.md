@@ -66,10 +66,10 @@ A page slug:
 Examples:
 
 ```text
-/today                              -> today
-/establishment/hours-services      -> horaires-services
-/establishment/information         -> establishment-information
-/team/daily-tasks                   -> daily-tasks
+/aujourdhui                         -> today
+/etablissement/horaires-services   -> hours-services
+/etablissement/informations        -> establishment-information
+/equipe/taches-quotidiennes        -> daily-tasks
 ```
 
 Do not create `v2`, `new`, `final`, or `latest` page directories.

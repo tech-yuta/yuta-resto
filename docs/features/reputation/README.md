@@ -23,8 +23,8 @@ is completed, added, deferred, or reordered.
 
 ## Product surfaces
 
-- Back-office inbox: `/customers/reviews` in `apps/backoffice`.
-- Review detail route: `/customers/reviews/[reviewId]`.
+- Back-office inbox: `/clients/avis` in `apps/backoffice`.
+- Review detail route: `/clients/avis/[reviewId]`.
 - Public YUTA Avis landing page: `/` in `apps/feedback-web`.
 - Public feedback form: `/{tenantSlug}` in `apps/feedback-web`.
 - Public submission endpoint:
@@ -91,7 +91,7 @@ After migrating and seeding, use:
 
 ```text
 http://localhost:3006/luna
-http://localhost:3001/customers/reviews
+http://localhost:3001/clients/avis
 ```
 
 The hostname-scoped public URL is also available through
@@ -124,7 +124,7 @@ accepted from the browser. See `docs/architecture/AUTHENTICATION.md`.
 ## Google Business Profile connector
 
 Owners and administrators configure Google Business Profile from
-`/settings/integrations`. The OAuth start and callback routes bind a signed,
+`/parametres/integrations`. The OAuth start and callback routes bind a signed,
 short-lived state value to the current user, organization, and establishment.
 The callback rejects mismatched or expired state before storing credentials.
 

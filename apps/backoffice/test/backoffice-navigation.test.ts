@@ -135,8 +135,8 @@ describe('back-office navigation', () => {
     const sections = getVisibleNavigationSections(allCapabilities);
 
     expect(
-      getActiveNavigationHref('/establishment/hours-services', sections),
-    ).toBe('/establishment/hours-services');
+      getActiveNavigationHref('/etablissement/horaires-services', sections),
+    ).toBe('/etablissement/horaires-services');
     expect(
       getActiveNavigationHref('/operations/reservations/booking-1', sections),
     ).toBe('/operations/reservations');
@@ -148,10 +148,10 @@ describe('back-office navigation', () => {
     );
 
     expect(Object.fromEntries(items)).toMatchObject({
-      'Informations générales': '/establishment/general-information',
-      'Salle & tables': '/establishment/rooms-tables',
-      'Horaires & services': '/establishment/hours-services',
-      'Utilisateurs & accès': '/team/users-access',
+      'Informations générales': '/etablissement/informations-generales',
+      'Salle & tables': '/etablissement/salles-tables',
+      'Horaires & services': '/etablissement/horaires-services',
+      'Utilisateurs & accès': '/equipe/utilisateurs-acces',
     });
   });
 });

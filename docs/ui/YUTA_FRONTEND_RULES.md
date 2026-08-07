@@ -14,6 +14,12 @@ These rules apply to UI work in `apps/backoffice`.
 
 The Backoffice is the authenticated restaurant-facing cloud application. UI text is French; code and technical documentation are English.
 
+User-facing page routes use lowercase French slugs without accents. API routes,
+code identifiers, comments, logs, and technical documentation remain English.
+Because the applications are not yet released, keep only canonical routes and
+do not add compatibility aliases for superseded route names. Do not translate
+`/api/...` paths.
+
 The application is multi-tenant and uses trusted active organization and establishment context. Presentation work must not bypass, duplicate, or accept tenant scope from browser input.
 
 ## Required reading

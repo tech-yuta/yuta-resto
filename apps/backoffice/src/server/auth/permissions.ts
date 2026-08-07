@@ -19,6 +19,10 @@ export type BookingPermission =
   | 'booking.operate'
   | 'booking.settings.manage';
 
+export type EstablishmentPermission =
+  | 'establishment.profile.read'
+  | 'establishment.profile.manage';
+
 const permissionRoles: Record<ReputationPermission, readonly TenantRole[]> = {
   'reputation.read': ['OWNER', 'MANAGER', 'STAFF'],
   'reputation.feedback.manage': ['OWNER', 'MANAGER'],
@@ -38,6 +42,14 @@ const bookingPermissionRoles: Record<BookingPermission, readonly TenantRole[]> =
     'booking.operate': ['OWNER', 'MANAGER', 'STAFF'],
     'booking.settings.manage': ['OWNER', 'MANAGER'],
   };
+
+const establishmentPermissionRoles: Record<
+  EstablishmentPermission,
+  readonly TenantRole[]
+> = {
+  'establishment.profile.read': ['OWNER', 'MANAGER', 'STAFF'],
+  'establishment.profile.manage': ['OWNER', 'MANAGER'],
+};
 
 export function requireReputationPermission(
   context: TenantContext,
@@ -59,10 +71,40 @@ export function requireBookingPermission(
   context: TenantContext,
   permission: BookingPermission,
 ): void {
-  if (
-    context.actor.type !== 'user' ||
-    !bookingPermissionRoles[permission].includes(context.actor.role)
-  ) {
+  if (!hasBookingPermission(context, permission)) {
+    throw new TenantError(
+      'Permission denied.',
+      'CROSS_TENANT_ACCESS_DENIED',
+      403,
+    );
+  }
+}
+
+export function hasBookingPermission(
+  context: TenantContext,
+  permission: BookingPermission,
+): boolean {
+  return (
+    context.actor.type === 'user' &&
+    bookingPermissionRoles[permission].includes(context.actor.role)
+  );
+}
+
+export function hasEstablishmentPermission(
+  context: TenantContext,
+  permission: EstablishmentPermission,
+): boolean {
+  return (
+    context.actor.type === 'user' &&
+    establishmentPermissionRoles[permission].includes(context.actor.role)
+  );
+}
+
+export function requireEstablishmentPermission(
+  context: TenantContext,
+  permission: EstablishmentPermission,
+): void {
+  if (!hasEstablishmentPermission(context, permission)) {
     throw new TenantError(
       'Permission denied.',
       'CROSS_TENANT_ACCESS_DENIED',

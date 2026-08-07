@@ -240,8 +240,8 @@ const footerGroups = [
   {
     title: 'Informations légales',
     links: [
-      { label: 'Politique de confidentialité', href: '/privacy' },
-      { label: 'Conditions d’utilisation', href: '/terms' },
+      { label: 'Politique de confidentialité', href: '/confidentialite' },
+      { label: 'Conditions d’utilisation', href: '/conditions-utilisation' },
       { label: 'Mentions légales', href: '/mentions-legales' },
       { label: 'Gestion des données', href: '/gestion-des-donnees' },
     ],

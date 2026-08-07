@@ -25,13 +25,13 @@ Implement idempotent Google review import and a manual synchronization action.
 - Database-backed back-office authentication with HttpOnly sessions.
 - Tenant and establishment selector with server-side membership validation and
   session rotation.
-- `/team/users-access` membership administration for owners and administrators.
+- `/equipe/utilisateurs-acces` membership administration for owners and administrators.
 - Multi-tenant and multi-location persistence model.
 - Authentication and membership audit events.
 
 ## Completed operational inbox
 
-`/customers/reviews` is now a persistent, tenant-scoped operational inbox:
+`/clients/avis` is now a persistent, tenant-scoped operational inbox:
 
 - [x] Add repository mutations for feedback status.
 - [x] Add repository mutations for assignment to a tenant user.

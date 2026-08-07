@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   apiErrorSchema,
   createInternalNoteSchema,
+  establishmentProfileInputSchema,
   createLocalOrderInputSchema,
   createOrderInputSchema,
   createReservationInputSchema,
@@ -185,6 +186,44 @@ describe('@yuta/contracts', () => {
         endTime: '22:00',
       }).success,
     ).toBe(true);
+  });
+
+  it('validates establishment profile fields and service modes', () => {
+    const profile = {
+      name: 'LUNA',
+      description: null,
+      addressLine1: '12 rue du Marché',
+      addressLine2: null,
+      postalCode: '86000',
+      city: 'Poitiers',
+      countryCode: 'fr',
+      phone: null,
+      email: 'contact@example.test',
+      website: 'https://example.test',
+      publicPhone: '+33549000000',
+      publicEmail: 'public@example.test',
+      logoUrl: null,
+      coverImageUrl: null,
+      languages: ['fr', 'en', 'fr'],
+      serviceModes: ['DINE_IN', 'RESERVATION'],
+      publicDescription: true,
+      publicAddress: true,
+      publicPhoneVisible: true,
+      publicEmailVisible: true,
+      publicWebsite: true,
+      publicLanguages: true,
+      publicServiceModes: true,
+    };
+    expect(establishmentProfileInputSchema.parse(profile)).toMatchObject({
+      countryCode: 'FR',
+      languages: ['fr', 'en'],
+    });
+    expect(
+      establishmentProfileInputSchema.safeParse({
+        ...profile,
+        serviceModes: ['UNSUPPORTED'],
+      }).success,
+    ).toBe(false);
   });
 
   it('validates public feedback and requires contact consent', () => {

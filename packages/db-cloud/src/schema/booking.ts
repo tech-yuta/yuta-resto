@@ -94,13 +94,8 @@ export const bookingSettings = pgTable(
     cancellationDeadlineMinutes: integer('cancellation_deadline_minutes')
       .default(120)
       .notNull(),
-    publicPhone: varchar('public_phone', { length: 30 }),
-    publicEmail: varchar('public_email', { length: 254 }),
-    address: text('address'),
     welcomeMessage: text('welcome_message'),
     bookingPolicy: text('booking_policy'),
-    logoUrl: text('logo_url'),
-    coverImageUrl: text('cover_image_url'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

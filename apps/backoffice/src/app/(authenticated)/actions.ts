@@ -70,5 +70,5 @@ export async function logoutAction(): Promise<void> {
   const token = cookieStore.get(BACKOFFICE_SESSION_COOKIE)?.value;
   if (token) await authRepository.revokeSession(token);
   cookieStore.delete(BACKOFFICE_SESSION_COOKIE);
-  redirect('/login');
+  redirect('/connexion');
 }

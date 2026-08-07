@@ -56,16 +56,20 @@ export const getCurrentSession = cache(
 );
 
 export async function requireBackofficeSession(
-  returnTo = '/today',
+  returnTo = '/aujourdhui',
 ): Promise<AuthenticatedSession> {
   const session = await getCurrentSession();
   if (!session) {
-    redirect(`/login?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`);
+    redirect(
+      `/connexion?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`,
+    );
   }
   return session;
 }
 
-export async function requireAuthenticatedTenant(returnTo = '/today'): Promise<{
+export async function requireAuthenticatedTenant(
+  returnTo = '/aujourdhui',
+): Promise<{
   session: AuthenticatedSession;
   tenant: TenantContext;
 }> {
@@ -93,12 +97,12 @@ export async function requireAuthenticatedTenant(returnTo = '/today'): Promise<{
 
 function redirectToScopeRecovery(returnTo: string): never {
   redirect(
-    `/resolve-establishment?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`,
+    `/resolution-etablissement?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`,
   );
 }
 
 export async function requireReputationTenant(
-  returnTo = '/customers/reviews',
+  returnTo = '/clients/avis',
 ): Promise<{
   session: AuthenticatedSession;
   tenant: TenantContext;
@@ -113,7 +117,9 @@ export async function requireUserManagementTenant(): Promise<{
   session: AuthenticatedSession;
   tenant: TenantContext;
 }> {
-  const context = await requireAuthenticatedTenant('/team/users-access');
+  const context = await requireAuthenticatedTenant(
+    '/equipe/utilisateurs-acces',
+  );
   requireRole(context.tenant, ['OWNER', 'MANAGER']);
   return context;
 }
@@ -137,7 +143,7 @@ export function safeReturnTo(value: string | null | undefined): string {
     value.startsWith('//') ||
     value.includes('\\')
   ) {
-    return '/today';
+    return '/aujourdhui';
   }
   return value;
 }

@@ -8,7 +8,10 @@ Each active page-specific design package has one stable lowercase slug directory
 
 Current packages:
 
-- `horaires-services/` — existing integrated Backoffice route `/establishment/hours-services`.
+- `hours-services/` — integrated Backoffice route `/etablissement/horaires-services`.
+- `establishment-general-information/` — integrated establishment profile editor
+  at `/etablissement/informations-generales`.
+- `today/` — integrated authenticated Backoffice dashboard at `/aujourdhui`.
 
 Every package follows `../PAGE_PACK_PROTOCOL.md`.
 

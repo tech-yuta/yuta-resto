@@ -139,9 +139,6 @@ export const bookingSettingsInputSchema = z
     minimumNoticeMinutes: z.number().int().min(0).max(525600),
     bookingWindowDays: z.number().int().min(0).max(730),
     cancellationDeadlineMinutes: z.number().int().min(0).max(525600),
-    publicPhone: z.string().trim().max(30).nullable(),
-    publicEmail: z.string().trim().email().max(254).nullable(),
-    address: z.string().trim().max(500).nullable(),
     welcomeMessage: z.string().trim().max(1000).nullable(),
     bookingPolicy: z.string().trim().max(4000).nullable(),
   })

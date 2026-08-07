@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-06
 
 The YUTA restaurant back-office uses server-side, database-backed sessions. Authentication is
 implemented by `@yuta/auth`, the cloud database boundary, and the server
@@ -22,7 +22,7 @@ roles, PIN sessions, and audit records through `site-agent`/`db-pos`.
 
 ## Sign-in flow
 
-1. `/login` validates the submitted email and password on the server.
+1. `/connexion` validates the submitted email and password on the server.
 2. Passwords are verified with Node.js scrypt. Plaintext passwords are never
    stored.
 3. Active establishment memberships are resolved using zero/one/many rules.
@@ -38,8 +38,8 @@ roles, PIN sessions, and audit records through `site-agent`/`db-pos`.
    repositories and permission checks.
 
 Users without an active restaurant membership are redirected to
-`/access/no-establishment`. Users with several memberships select one at
-`/select-establishment` before a scoped session is created. The selection
+`/acces/aucun-etablissement`. Users with several memberships select one at
+`/selection-etablissement` before a scoped session is created. The selection
 ticket has no tenant scope and cannot authorize protected back-office routes.
 
 Browser input, query parameters, and cookies are never trusted as sources for a
@@ -116,8 +116,7 @@ server permission check.
 
 ## User and membership administration
 
-`/team/users-access` is the tenant-aware access management surface. The legacy
-`/settings/users` route redirects there to preserve existing bookmarks:
+`/equipe/utilisateurs-acces` is the tenant-aware access management surface:
 
 - The "Utilisateurs & accès" navigation item appears under the team section
   only for owners and managers.

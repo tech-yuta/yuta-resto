@@ -104,13 +104,20 @@ export async function findPublicBookingConfiguration(
       minimumNoticeMinutes: bookingSettings.minimumNoticeMinutes,
       bookingWindowDays: bookingSettings.bookingWindowDays,
       cancellationDeadlineMinutes: bookingSettings.cancellationDeadlineMinutes,
-      publicPhone: bookingSettings.publicPhone,
-      publicEmail: bookingSettings.publicEmail,
-      address: bookingSettings.address,
+      publicPhone: establishments.publicPhone,
+      publicEmail: establishments.publicEmail,
+      addressLine1: establishments.addressLine1,
+      addressLine2: establishments.addressLine2,
+      postalCode: establishments.postalCode,
+      city: establishments.city,
+      countryCode: establishments.countryCode,
+      publicAddress: establishments.publicAddress,
+      publicPhoneVisible: establishments.publicPhoneVisible,
+      publicEmailVisible: establishments.publicEmailVisible,
       welcomeMessage: bookingSettings.welcomeMessage,
       bookingPolicy: bookingSettings.bookingPolicy,
-      logoUrl: bookingSettings.logoUrl,
-      coverImageUrl: bookingSettings.coverImageUrl,
+      logoUrl: establishments.logoUrl,
+      coverImageUrl: establishments.coverImageUrl,
     })
     .from(bookingSettings)
     .innerJoin(
@@ -142,7 +149,41 @@ export async function findPublicBookingConfiguration(
       ),
     )
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  const address = row.publicAddress
+    ? [
+        row.addressLine1,
+        row.addressLine2,
+        [row.postalCode, row.city].filter(Boolean).join(' '),
+        row.countryCode,
+      ]
+        .filter(Boolean)
+        .join(', ') || null
+    : null;
+  return {
+    organizationId: row.organizationId,
+    establishmentId: row.establishmentId,
+    establishmentName: row.establishmentName,
+    slug: row.slug,
+    locale: row.locale,
+    timezone: row.timezone,
+    enabled: row.enabled,
+    confirmationMode: row.confirmationMode,
+    minimumPartySize: row.minimumPartySize,
+    maximumPartySize: row.maximumPartySize,
+    slotIntervalMinutes: row.slotIntervalMinutes,
+    averageDurationMinutes: row.averageDurationMinutes,
+    minimumNoticeMinutes: row.minimumNoticeMinutes,
+    bookingWindowDays: row.bookingWindowDays,
+    cancellationDeadlineMinutes: row.cancellationDeadlineMinutes,
+    publicPhone: row.publicPhoneVisible ? row.publicPhone : null,
+    publicEmail: row.publicEmailVisible ? row.publicEmail : null,
+    address,
+    welcomeMessage: row.welcomeMessage,
+    bookingPolicy: row.bookingPolicy,
+    logoUrl: row.logoUrl,
+    coverImageUrl: row.coverImageUrl,
+  };
 }
 
 async function availabilityRows(

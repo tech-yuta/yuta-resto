@@ -35,8 +35,11 @@ const benefits = [
 ] as const;
 
 const footerLinks = [
-  { label: 'Confidentialité', href: 'https://yutapro.fr/privacy' },
-  { label: "Conditions d'utilisation", href: 'https://yutapro.fr/terms' },
+  { label: 'Confidentialité', href: 'https://yutapro.fr/confidentialite' },
+  {
+    label: "Conditions d'utilisation",
+    href: 'https://yutapro.fr/conditions-utilisation',
+  },
   { label: 'Mentions légales', href: 'https://yutapro.fr/mentions-legales' },
   { label: 'Contact', href: 'https://yutapro.fr/contact' },
 ] as const;

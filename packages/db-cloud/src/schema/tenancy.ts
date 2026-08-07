@@ -4,6 +4,7 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
+  text,
   timestamp,
   uniqueIndex,
   uuid,
@@ -30,6 +31,18 @@ export const cloudRoleEnum = pgEnum('cloud_role', [
   'MANAGER',
   'STAFF',
 ]);
+export const establishmentServiceModeEnum = pgEnum(
+  'establishment_service_mode',
+  [
+    'DINE_IN',
+    'TAKEAWAY',
+    'RESERVATION',
+    'DELIVERY',
+    'CLICK_AND_COLLECT',
+    'PRIVATE_EVENTS',
+    'CATERING',
+  ],
+);
 
 const createdAt = () =>
   timestamp('created_at', { withTimezone: true }).defaultNow().notNull();
@@ -74,6 +87,34 @@ export const establishments = pgTable(
     timezone: varchar('timezone', { length: 100 })
       .default('Europe/Paris')
       .notNull(),
+    description: text('description'),
+    addressLine1: varchar('address_line_1', { length: 255 }),
+    addressLine2: varchar('address_line_2', { length: 255 }),
+    postalCode: varchar('postal_code', { length: 32 }),
+    city: varchar('city', { length: 120 }),
+    countryCode: varchar('country_code', { length: 2 }),
+    phone: varchar('phone', { length: 30 }),
+    email: varchar('email', { length: 254 }),
+    website: text('website'),
+    publicPhone: varchar('public_phone', { length: 30 }),
+    publicEmail: varchar('public_email', { length: 254 }),
+    logoUrl: text('logo_url'),
+    coverImageUrl: text('cover_image_url'),
+    languages: varchar('languages', { length: 35 })
+      .array()
+      .default(sql`ARRAY[]::varchar[]`)
+      .notNull(),
+    serviceModes: establishmentServiceModeEnum('service_modes')
+      .array()
+      .default(sql`ARRAY[]::establishment_service_mode[]`)
+      .notNull(),
+    publicDescription: boolean('public_description').default(true).notNull(),
+    publicAddress: boolean('public_address').default(true).notNull(),
+    publicPhoneVisible: boolean('public_phone_visible').default(true).notNull(),
+    publicEmailVisible: boolean('public_email_visible').default(true).notNull(),
+    publicWebsite: boolean('public_website').default(true).notNull(),
+    publicLanguages: boolean('public_languages').default(true).notNull(),
+    publicServiceModes: boolean('public_service_modes').default(true).notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

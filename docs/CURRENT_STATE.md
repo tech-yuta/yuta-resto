@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-06
 
 ## Product scope
 
@@ -40,6 +40,12 @@ reservation availability.
 - Public booking Phase 0/1 foundations: independent booking app, booking domain,
   cloud persistence, availability/capacity rules, public creation and management,
   and back-office reservation workflows.
+- Establishment-scoped Backoffice Today dashboard using current reservations,
+  booking service periods and dated exceptions, and entitled reputation
+  feedback, with independent truthful section states.
+- Establishment-owned general profile data and Backoffice editor for identity,
+  structured address, contacts, website, media URLs, languages, service modes,
+  and public visibility. OWNER and MANAGER may edit; STAFF is read-only.
 - Local POS ordering, kitchen, payment, printing, administration, and reporting
   workflows described in the POS product documentation.
 - Standalone digital-signage administration and resilient display playback.

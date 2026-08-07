@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-06
 
 ## Authority order
 
@@ -72,7 +72,9 @@ the shared operations documents until a dedicated product document is needed.
 - [`ui/README.md`](ui/README.md)
 - [`ui/YUTA_FRONTEND_RULES.md`](ui/YUTA_FRONTEND_RULES.md)
 - [`ui/PAGE_PACK_PROTOCOL.md`](ui/PAGE_PACK_PROTOCOL.md)
-- [`ui/pages/horaires-services/README.md`](ui/pages/horaires-services/README.md)
+- [`ui/pages/hours-services/README.md`](ui/pages/hours-services/README.md)
+- [`ui/pages/establishment-general-information/README.md`](ui/pages/establishment-general-information/README.md)
+- [`ui/pages/today/README.md`](ui/pages/today/README.md)
 
 ### Operations and process
 
