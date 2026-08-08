@@ -29,6 +29,8 @@ Read:
 - relevant feature/product documentation;
 - `docs/ui/README.md`;
 - `docs/ui/YUTA_FRONTEND_RULES.md`;
+- the target application's frontend rules (for Backoffice,
+  `docs/ui/BACKOFFICE_FRONTEND_RULES.md`);
 - this package.
 
 ## Documents

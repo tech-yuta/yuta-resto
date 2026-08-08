@@ -322,18 +322,9 @@ export function createFinancialService(db: PosDatabaseExecutor) {
           .set({ status: 'paid', paidAt: new Date() })
           .where(eq(orders.id, orderId));
       }
-      const printJob = fullyPaid
-        ? await createReceiptJob(
-            tx,
-            orderId,
-            checkId,
-            payment.id,
-            input.idempotencyKey,
-          )
-        : null;
       return localPaymentCaptureResponseSchema.parse({
         payment: toPayment(payment),
-        printJob: printJob ? toPrintJob(printJob) : null,
+        printJob: null,
         replayed: false,
       });
     });
@@ -473,95 +464,6 @@ export function createFinancialService(db: PosDatabaseExecutor) {
     payCheck,
     getPaymentSummary,
   };
-}
-
-async function createReceiptJob(
-  db: PosDatabaseExecutor,
-  orderId: string,
-  checkId: string | null,
-  paymentId: string,
-  idempotencyKey: string,
-) {
-  const [order, itemRows, paymentRows] = await Promise.all([
-    getRequiredOrder(db, orderId),
-    checkId
-      ? db
-          .select({
-            name: orderItems.itemNameSnapshot,
-            quantity: checkItems.quantity,
-            unitPriceCents: orderItems.unitPriceCentsSnapshot,
-            amountCents: checkItems.amountCentsSnapshot,
-          })
-          .from(checkItems)
-          .innerJoin(orderItems, eq(checkItems.orderItemId, orderItems.id))
-          .where(eq(checkItems.checkId, checkId))
-      : db
-          .select({
-            name: orderItems.itemNameSnapshot,
-            quantity: orderItems.quantity,
-            unitPriceCents: orderItems.unitPriceCentsSnapshot,
-            amountCents: sql<number>`${orderItems.unitPriceCentsSnapshot} * ${orderItems.quantity}`,
-          })
-          .from(orderItems)
-          .where(
-            and(
-              eq(orderItems.orderId, orderId),
-              ne(orderItems.status, 'cancelled'),
-            ),
-          ),
-    db
-      .select()
-      .from(payments)
-      .where(
-        checkId
-          ? and(eq(payments.checkId, checkId), eq(payments.status, 'paid'))
-          : and(
-              eq(payments.orderId, orderId),
-              isNull(payments.checkId),
-              eq(payments.status, 'paid'),
-            ),
-      ),
-  ]);
-  const check = checkId ? await getRequiredCheck(db, checkId) : null;
-  const [job] = await db
-    .insert(printJobs)
-    .values({
-      id: uuidv7(),
-      orderId,
-      checkId,
-      paymentId,
-      source: 'pos',
-      printerName: 'mock-receipt',
-      jobType: 'customer_receipt',
-      payload: {
-        orderId,
-        orderNumber: order.orderNumber,
-        tableLabel: order.tableLabel,
-        orderType: order.orderType,
-        checkId,
-        checkLabel: check?.checkLabel,
-        createdAt: new Date().toISOString(),
-        subtotalCents: check?.subtotalCents ?? order.subtotalCents,
-        discountCents: check?.discountCents ?? order.discountCents,
-        totalCents: check?.totalCents ?? order.totalCents,
-        paidCents: paymentRows.reduce(
-          (sum, payment) => sum + payment.amountCents,
-          0,
-        ),
-        items: itemRows.map((item) => ({
-          ...item,
-          amountCents: Number(item.amountCents),
-        })),
-        payments: paymentRows.map((payment) => ({
-          method: payment.method,
-          amountCents: payment.amountCents,
-          paidAt: payment.paidAt?.toISOString() ?? null,
-        })),
-      },
-      idempotencyKey,
-    })
-    .returning();
-  return job;
 }
 
 async function lockOrder(

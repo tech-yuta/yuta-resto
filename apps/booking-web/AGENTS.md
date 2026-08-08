@@ -3,6 +3,8 @@
 `apps/booking-web` is the independent, mobile-first public reservation app. Its
 UI is French and it does not share a browser session with the back-office.
 
+For UI work, also follow `docs/ui/YUTA_FRONTEND_RULES.md`.
+
 - Resolve the establishment on the server from the documented public slug or
   token. Never accept organization or establishment IDs as trusted client scope.
 - Keep `@yuta/db-cloud`, environment variables, notification providers, and
@@ -17,5 +19,6 @@ UI is French and it does not share a browser session with the back-office.
 - Reuse `@yuta/ui`; implement loading, unavailable, validation, conflict,
   success, and recovery states.
 
-Validate with the booking-web typecheck/build plus booking, contracts,
-db-cloud, tenant, and architecture checks.
+Validate with the booking-web test/typecheck/build plus booking, contracts,
+db-cloud, tenant, and architecture checks. Database-backed API integration
+tests remain guarded by `YUTA_ALLOW_DATABASE_INTEGRATION_TESTS=true`.

@@ -8,6 +8,7 @@ import {
   FormField,
   IconButton,
   Input,
+  Label,
   PoweredByYuta,
   Progress,
   YutaBrandMark,
@@ -577,21 +578,50 @@ function GuestStep({
         description="Nous en avons besoin pour confirmer votre réservation."
       />
       <div className="my-7 grid gap-4">
-        <FormField label="Prénom">
-          <Input name="firstName" autoComplete="given-name" required />
+        <FormField label={<Label htmlFor="first-name">Prénom</Label>}>
+          <Input
+            id="first-name"
+            name="firstName"
+            autoComplete="given-name"
+            required
+          />
         </FormField>
-        <FormField label="Nom">
-          <Input name="lastName" autoComplete="family-name" required />
+        <FormField label={<Label htmlFor="last-name">Nom</Label>}>
+          <Input
+            id="last-name"
+            name="lastName"
+            autoComplete="family-name"
+            required
+          />
         </FormField>
-        <FormField label="E-mail">
-          <Input name="email" type="email" autoComplete="email" required />
+        <FormField label={<Label htmlFor="email">E-mail</Label>}>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+          />
         </FormField>
-        <FormField label="Téléphone">
-          <Input name="phone" type="tel" autoComplete="tel" required />
+        <FormField label={<Label htmlFor="phone">Téléphone</Label>}>
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            required
+          />
         </FormField>
         <div>
-          <FormField label="Demandes particulières (facultatif)">
+          <FormField
+            label={
+              <Label htmlFor="special-requirements">
+                Demandes particulières (facultatif)
+              </Label>
+            }
+          >
             <Input
+              id="special-requirements"
               name="specialRequirements"
               placeholder="Allergies, anniversaire, accessibilité…"
               maxLength={1000}

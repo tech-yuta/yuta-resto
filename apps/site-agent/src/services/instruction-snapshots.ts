@@ -99,7 +99,7 @@ export function buildVariantSnapshots(
   selections: Array<{ code: string; quantity: number }>,
 ): ItemVariantSnapshot[] {
   const selected = selections.filter(({ quantity }) => quantity > 0);
-  if (itemName !== 'Mochi glace (2 pcs)') {
+  if (itemName !== 'Mochi glacé (2 pcs)') {
     if (selected.length > 0) {
       throw new HttpError(
         422,

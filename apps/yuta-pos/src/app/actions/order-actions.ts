@@ -8,6 +8,7 @@ import {
   getSelectedStaffUser,
 } from '../_pos-helpers';
 import { posApi } from '../../lib/pos-api';
+import { SiteAgentClientError } from '../../lib/site-agent-client';
 
 const createOrderFormSchema = z.object({
   tableLabel: z.string().trim().min(1).max(255),
@@ -107,18 +108,39 @@ export async function sendOrderToKitchenAction(
     idempotencyKey: formData.get('idempotencyKey'),
   });
 
-  const staffUser = await getSelectedStaffUser();
-
-  await posApi.executeOrderCommand(values.orderId, {
-    action: 'send_to_kitchen',
-    idempotencyKey: values.idempotencyKey,
-    allergyAcknowledged: formData.get('allergyAcknowledged') === 'true',
-    staffUserId: staffUser.id,
-  });
+  try {
+    const staffUser = await getSelectedStaffUser();
+    await posApi.executeOrderCommand(values.orderId, {
+      action: 'send_to_kitchen',
+      idempotencyKey: values.idempotencyKey,
+      allergyAcknowledged: formData.get('allergyAcknowledged') === 'true',
+      staffUserId: staffUser.id,
+    });
+  } catch (error) {
+    if (error instanceof SiteAgentClientError) {
+      redirect(
+        `/orders/${values.orderId}/items?sendError=${encodeURIComponent(
+          kitchenSendErrorCode(error.code),
+        )}`,
+      );
+    }
+    throw error;
+  }
 
   revalidatePath(`/orders/${values.orderId}`);
   revalidatePath('/kitchen');
   revalidatePath('/pos/prints');
+}
+
+function kitchenSendErrorCode(code: string): string {
+  const supportedCodes = new Set([
+    'INVALID_VARIANT_QUANTITY',
+    'ALLERGY_ACKNOWLEDGEMENT_REQUIRED',
+    'EMPTY_KITCHEN_SEND',
+    'INVALID_ORDER_STATUS',
+    'IDEMPOTENCY_CONFLICT',
+  ]);
+  return supportedCodes.has(code) ? code : 'KITCHEN_SEND_FAILED';
 }
 
 export async function updateOrderItemInstructionsAction(

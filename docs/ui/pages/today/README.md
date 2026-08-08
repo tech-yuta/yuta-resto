@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA product and engineering
 
-Last updated: 2026-08-06
+Last updated: 2026-08-08
 
 Route: `/aujourdhui`
 
@@ -42,7 +42,8 @@ Read in this order:
 1. root and `apps/backoffice/AGENTS.md`;
 2. `docs/CURRENT_STATE.md` and current feature documentation;
 3. current contracts, persistence, permissions, route code, and tests;
-4. `docs/ui/README.md`, `docs/ui/YUTA_FRONTEND_RULES.md`, and
+4. `docs/ui/README.md`, `docs/ui/YUTA_FRONTEND_RULES.md`,
+   `docs/ui/BACKOFFICE_FRONTEND_RULES.md`, and
    `docs/ui/PAGE_PACK_PROTOCOL.md`;
 5. this page package;
 6. visual references.

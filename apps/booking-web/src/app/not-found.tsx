@@ -6,6 +6,7 @@ export default function NotFound() {
     <main className="mx-auto flex min-h-screen max-w-xl items-center px-4">
       <EmptyState
         icon={<CalendarX aria-hidden />}
+        titleAs="h1"
         title="Réservation indisponible"
         description="Ce restaurant n'accepte pas de réservation en ligne pour le moment."
       />

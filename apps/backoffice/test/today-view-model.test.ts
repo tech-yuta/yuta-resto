@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BOOKING_SCHEDULE_HREF,
   formatTimeRange,
   getLocalDateTimeParts,
   getServiceState,
@@ -9,6 +10,12 @@ import {
 } from '../src/app/(authenticated)/aujourdhui/today-view-model';
 
 describe('today view model', () => {
+  it('links booking schedule management to its canonical owner', () => {
+    expect(BOOKING_SCHEDULE_HREF).toBe(
+      '/etablissement/horaires-services#horaires-hebdomadaires',
+    );
+  });
+
   it('derives the establishment date and time across a UTC day boundary', () => {
     expect(
       getLocalDateTimeParts(

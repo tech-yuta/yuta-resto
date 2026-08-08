@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
+import { bookingWebEnvironment } from '../server/environment';
 import './globals.css';
 
 const geistSans = Geist({
@@ -10,9 +11,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.PUBLIC_BOOKING_BASE_URL ?? 'http://localhost:3005',
-  ),
+  metadataBase: new URL(bookingWebEnvironment.PUBLIC_BOOKING_BASE_URL),
   title: { default: 'Réservation de table | YUTA', template: '%s | YUTA' },
   description:
     'Réservez une table simplement et directement auprès de votre restaurant avec YUTA.',

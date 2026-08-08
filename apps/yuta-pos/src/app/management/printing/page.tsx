@@ -34,7 +34,7 @@ export default async function LocalPrintingManagementPage() {
         <PageHeader
           eyebrow="Gestion locale"
           title="File d’impression"
-          description="Suivez les tickets cuisine et reçus client stockés dans la base POS locale."
+          description="Suivez les tickets internes cuisine, boissons et desserts stockés dans la base POS locale."
           media={
             <IconTile tone="neutral">
               <Printer className="h-5 w-5" />

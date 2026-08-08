@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering and restaurant operations
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 `apps/yuta-pos` is the internal restaurant POS application for YuTa.
 
@@ -35,9 +35,9 @@ Combo discounts at payment time
 Full and partial payment
 Split by items
 Split equally
-Mock print jobs
+Durable internal print jobs
 Kitchen ticket print job for each sent item batch
-Customer receipt print job when an order or check is fully paid
+One physical TM-m30 Bluetooth printer for kitchen, bar, and dessert tickets
 Order cancellation before payment
 ```
 
@@ -372,19 +372,22 @@ docs/products/pos/OFFLINE_STRATEGY.md
 The MVP print flow is site-agent-owned:
 
 ```txt
-POS send to kitchen or payment
+POS send to kitchen
 Create print_jobs row with status pending
 Local printer adapter claims the pending job
-Adapter sends the snapshot to the configured device
+Adapter renders separate Cuisine and Caisse sections and sends ESC/POS to the configured device
 Adapter marks the job printed or failed
 ```
 
 Kitchen ticket jobs are batch-based. If an order is sent to kitchen, then more items are added and sent later, the second ticket contains only the newly sent items.
 
-`site-agent` owns print-job creation and queue maintenance. The legacy
-continuous `@yuta/core` print worker has been removed from the POS Compose
-topology. Physical printer transport remains pending a hardware and connection
-decision.
+`site-agent` owns print-job creation, queue maintenance, ESC/POS rendering, and
+the physical device write. The selected local transport is one Linux-hosted
+EPSON TM-m30 Bluetooth RFCOMM character device, configured with
+`POS_PRINTER_DEVICE` (currently `/dev/rfcomm1` at Luna). Kitchen items and
+bar/dessert items print as separate sections on the same internal ticket. Items
+with station `none` do not print. Payment capture does not create a customer
+receipt job.
 
 `@yuta/core` is now database-independent. Its legacy repositories,
 transactions, print worker, environment loading, and filesystem code have been
@@ -401,8 +404,10 @@ licensing, backup metadata, and operator display. Local staff authentication
 uses local users, roles, and PIN sessions managed by `site-agent`; it does not
 reuse cloud memberships or cloud authentication sessions.
 
-The current `@yuta/db-pos` development seed creates local admin, staff, and
-kitchen identities plus catalog/combo fixtures. Migration `0001_local_auth`
+The current `@yuta/db-pos` seed creates local admin, staff, and kitchen
+identities plus the approved Luna catalog and formulas. It creates 52 available
+products and an unavailable zero-price `Plat spécial du samedi` row that a
+manager configures before each Saturday service. Migration `0001_local_auth`
 adds hashed PIN credentials, authentication attempts, and revocable local
 sessions. `site-agent` validates PINs, limits repeated failures, stores only a
 session-token hash, and authorizes the local management shell independently of

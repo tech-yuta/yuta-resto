@@ -24,13 +24,13 @@ describe('local order instruction snapshots', () => {
 
   it('requires exactly two Mochi flavours per item quantity', () => {
     expect(
-      buildVariantSnapshots('Mochi glace (2 pcs)', 2, [
+      buildVariantSnapshots('Mochi glacé (2 pcs)', 2, [
         { code: 'MANGUE', quantity: 2 },
         { code: 'MATCHA', quantity: 2 },
       ]),
     ).toHaveLength(2);
     expect(() =>
-      buildVariantSnapshots('Mochi glace (2 pcs)', 2, [
+      buildVariantSnapshots('Mochi glacé (2 pcs)', 2, [
         { code: 'MANGUE', quantity: 3 },
       ]),
     ).toThrowError(HttpError);

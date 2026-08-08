@@ -3,7 +3,7 @@
 ## Pack and repository compliance
 
 - [ ] Root and applicable nested `AGENTS.md` were read.
-- [ ] `docs/CURRENT_STATE.md`, `docs/ui/README.md`, `docs/ui/YUTA_FRONTEND_RULES.md`, and `docs/ui/PAGE_PACK_PROTOCOL.md` were read.
+- [ ] `docs/CURRENT_STATE.md`, `docs/ui/README.md`, `docs/ui/YUTA_FRONTEND_RULES.md`, `docs/ui/BACKOFFICE_FRONTEND_RULES.md`, and `docs/ui/PAGE_PACK_PROTOCOL.md` were read.
 - [ ] Prompt 00 classified the page as `NEW_PAGE` or `EXISTING_PAGE` before code changes.
 - [ ] Exact repository paths and available commands were reported before implementation.
 - [ ] The existing application shell and centralized navigation source remain unchanged unless separately approved.

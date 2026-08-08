@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 ## Status
 
@@ -109,6 +109,11 @@ SITE_AGENT_HOST=127.0.0.1
 SITE_AGENT_PORT=3004
 SITE_AGENT_ALLOWED_ORIGIN=http://localhost:3003
 
+# Optional; enables the physical internal-ticket worker when the Linux host
+# exposes the paired TM-m30 RFCOMM character device.
+POS_PRINTER_DEVICE=/dev/rfcomm1
+POS_PRINT_POLL_INTERVAL_MS=1000
+
 # Server-side URL used by apps/yuta-pos; never expose it as NEXT_PUBLIC_*
 SITE_AGENT_URL=http://127.0.0.1:3004
 ```
@@ -117,6 +122,9 @@ Run `pnpm dev:site-agent` after the POS database schema is available. The
 service validates `POS_DATABASE_URL` at startup and exposes `/health`; it does
 not receive `CLOUD_DATABASE_URL`. The POS health endpoint now checks this local
 API instead of opening a database connection for its connectivity probe.
+When `POS_PRINTER_DEVICE` is unset, kitchen ticket jobs remain in the local
+queue for manual inspection. When set, the path must already be a character
+device (`test -c /dev/rfcomm1`) accessible to the `site-agent` process.
 
 ## Schema workflow
 
@@ -234,8 +242,9 @@ their own value.
 The POS seed requires `POS_DATABASE_URL`. It creates or updates:
 
 - local admin, staff, and kitchen identities with development PIN hashes;
-- categories and products;
-- combo rules and their item groups.
+- the 12-category Luna operating menu with 52 immediately available products;
+- an unavailable zero-price Saturday special for weekly manager configuration;
+- Gua Bao Happy, Menu Express, Menu Gourmand, and Combo Ete rules and groups.
 
 The POS seed does not create cloud users, tenant memberships, reputation data,
 sample orders, payment history, print jobs, or device credentials.
@@ -285,6 +294,7 @@ confirmation:
 $env:YUTA_ALLOW_DATABASE_INTEGRATION_TESTS = 'true'
 $env:CLOUD_DATABASE_URL = 'postgres://.../yuta_cloud_test'
 pnpm test:db-cloud
+pnpm test:booking-web
 
 $env:POS_DATABASE_URL = 'postgres://.../yuta_pos_test'
 pnpm test:db-pos

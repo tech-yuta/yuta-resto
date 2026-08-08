@@ -14,15 +14,28 @@ export function CancelReservationButton({
   async function cancel() {
     if (!window.confirm('Annuler cette réservation ?')) return;
     setLoading(true);
-    const response = await fetch(
-      `/api/public/booking/establishments/${encodeURIComponent(slug)}/reservations/${encodeURIComponent(publicToken)}/cancel`,
-      { method: 'POST' },
-    );
-    const body = (await response.json()) as { error?: { message: string } };
-    setLoading(false);
-    if (!response.ok)
-      setMessage(body.error?.message ?? "L'annulation a échoué.");
-    else window.location.reload();
+    setMessage('');
+
+    try {
+      const response = await fetch(
+        `/api/public/booking/establishments/${encodeURIComponent(slug)}/reservations/${encodeURIComponent(publicToken)}/cancel`,
+        { method: 'POST' },
+      );
+      const body = (await response.json()) as { error?: { message: string } };
+
+      if (!response.ok) {
+        setMessage(body.error?.message ?? "L'annulation a échoué.");
+        return;
+      }
+
+      window.location.reload();
+    } catch {
+      setMessage(
+        'La connexion a été interrompue. Vérifiez votre réseau puis réessayez.',
+      );
+    } finally {
+      setLoading(false);
+    }
   }
   return (
     <div>
@@ -35,7 +48,11 @@ export function CancelReservationButton({
       >
         Annuler la réservation
       </Button>
-      {message && <p className="mt-2 text-sm text-status-danger">{message}</p>}
+      {message && (
+        <p role="alert" className="mt-2 text-sm text-status-danger">
+          {message}
+        </p>
+      )}
     </div>
   );
 }

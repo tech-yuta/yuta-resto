@@ -21,7 +21,7 @@
   --color-neutral-200: #dde3e0;
   --color-neutral-300: #c6cfca;
   --color-neutral-400: #97a49e;
-  --color-neutral-500: #6e7b75;
+  --color-neutral-500: #68756f;
   --color-neutral-600: #505d57;
   --color-neutral-700: #37443e;
   --color-neutral-800: #25312c;
@@ -40,15 +40,15 @@
   --color-border-default: var(--color-neutral-200);
   --color-border-strong: var(--color-neutral-300);
 
-  --color-action-primary: var(--color-brand-500);
-  --color-action-primary-hover: var(--color-brand-600);
-  --color-action-primary-active: var(--color-brand-700);
+  --color-action-primary: var(--color-brand-600);
+  --color-action-primary-hover: var(--color-brand-700);
+  --color-action-primary-active: var(--color-brand-800);
   --color-action-danger: #c43d3d;
 
-  --color-status-success: #218a5b;
+  --color-status-success: #197a4e;
   --color-status-success-soft: #eaf8f0;
   --color-status-success-border: #a8dfc1;
-  --color-status-warning: #b36b00;
+  --color-status-warning: #a35f00;
   --color-status-warning-soft: #fff6e5;
   --color-status-warning-border: #f4cf8c;
   --color-status-rating: #f59e0b;
@@ -59,7 +59,7 @@
   --color-status-info-soft: #eef6ff;
   --color-status-info-border: #b8d8f5;
 
-  --color-focus-ring: var(--color-brand-300);
+  --color-focus-ring: var(--color-brand-600);
 
   --shadow-xs: 0 1px 2px rgb(23 34 30 / 5%);
   --shadow-sm: 0 2px 8px rgb(23 34 30 / 8%);

@@ -3,6 +3,9 @@
 `apps/yuta-display` is a standalone restaurant-local digital-signage product.
 Its UI is French and its server code owns the display database under `src/db`.
 
+For UI work, also follow `docs/ui/YUTA_FRONTEND_RULES.md` while preserving the
+standalone Display runtime and product rules below.
+
 - Use `DISPLAY_DATABASE_URL`; never access cloud or POS databases.
 - Do not create `packages/db-display` without a second legitimate server-side
   consumer.

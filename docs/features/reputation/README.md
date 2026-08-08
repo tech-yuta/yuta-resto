@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 This document tracks the Phase 1 reputation module implemented across
 `apps/backoffice`, `apps/feedback-web`, `packages/contracts`, and the cloud
@@ -26,7 +26,8 @@ is completed, added, deferred, or reordered.
 - Back-office inbox: `/visibilite-reputation/avis` in `apps/backoffice`.
 - Direct customer feedback inbox: `/visibilite-reputation/satisfaction`, restricted to
   feedback submitted through the public YUTA feedback website.
-- Review detail route: `/visibilite-reputation/avis/[reviewId]`.
+- Review detail route: `/visibilite-reputation/avis/[reviewId]`, which redirects
+  to the inbox with that review selected.
 - Public YUTA Avis landing page: `/` in `apps/feedback-web`.
 - Public feedback form: `/{tenantSlug}` in `apps/feedback-web`.
 - Public submission endpoint:
@@ -34,6 +35,9 @@ is completed, added, deferred, or reordered.
 
 All customer-facing UI is French. Code, schemas, contracts, logs, and technical
 documentation are English.
+
+The `/visibilite-reputation` route group is canonical. Permanent redirects
+preserve former `/clients/*` Backoffice URLs.
 
 ## Implemented foundation
 

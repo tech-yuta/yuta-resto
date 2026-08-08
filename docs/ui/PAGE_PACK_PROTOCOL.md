@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA product and engineering
 
-Last updated: 2026-08-06
+Last updated: 2026-08-08
 
 ## Purpose
 
@@ -109,7 +109,11 @@ packages/ui/src/index.ts
 packages/ui/src/styles/global.css
 ```
 
-Page documents link to these sources rather than reproducing the component export catalog or design-token implementation.
+Each package also links to the target application's specific rules. Backoffice
+packages link to `docs/ui/BACKOFFICE_FRONTEND_RULES.md`.
+
+Page documents link to these sources rather than reproducing the component
+export catalog, application rules, or design-token implementation.
 
 ## Required file responsibilities
 

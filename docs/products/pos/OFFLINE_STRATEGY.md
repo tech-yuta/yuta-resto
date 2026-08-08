@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering and operations
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 ## Decision status
 
@@ -75,8 +75,10 @@ The current POS is an installable level-one PWA, not a browser-offline POS.
 - The service worker caches the manifest, icons, and immutable Next.js assets.
 - Page navigation and operational actions require the local Next.js server.
 - POS UI code accesses operational data only through `site-agent`.
-- Print-job persistence and state transitions are owned by `site-agent`;
-  physical printer transport remains pending.
+- Print-job persistence, state transitions, ESC/POS rendering, and physical
+  device writes are owned by `site-agent`. The current local transport is one
+  EPSON TM-m30 exposed by the Linux host as a trusted Bluetooth RFCOMM character
+  device.
 - Backup, guarded restore, and health checks exist.
 - `apps/site-agent` and `packages/db-pos` own the local database boundary.
 
@@ -93,7 +95,9 @@ Send to kitchen
 Capture payment
   append the payment
   + update check/order state
-  + create the final local receipt job when applicable
+
+Payment capture does not create a customer receipt job. Printing is limited to
+internal production tickets for kitchen, bar, and dessert.
 ```
 
 Requirements:

@@ -6,7 +6,7 @@ Visibility: Local operator
 
 Owner: YUTA engineering and QA
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 Use this checklist to stabilize the POS MVP before adding larger features.
 
@@ -77,22 +77,23 @@ N/A       not applicable for this run
 
 ## Order Item Entry
 
-| Case                             | Expected Result                                                | Result | Notes |
-| -------------------------------- | -------------------------------------------------------------- | -----: | ----- |
-| Select menu category             | Item grid changes to selected category                         |        |       |
-| Add item                         | Item appears in `Commande en cours`                            |        |       |
-| Add same item twice              | Two rows or expected quantity behavior is visible              |        |       |
-| Item total displays correctly    | Row amount equals snapshot unit price times quantity           |        |       |
-| Order total displays correctly   | Total equals sum of active non-cancelled items minus discounts |        |       |
-| Add or edit pending item note    | Note appears below the item and persists                       |        |       |
-| Nems quick options               | Nems shows specific choices and never `Sans legumes`           |        |       |
-| Open `Autres`                    | Additional choices appear without replacing current choices    |        |       |
-| Select conflicting options       | New option automatically removes the incompatible option       |        |       |
-| Structured option persistence    | Code and label snapshot persist on the order item              |        |       |
-| Select Mochi flavours            | Flavor quantities equal two per ordered portion                |        |       |
-| Edit sent item note              | Note action is unavailable after kitchen send                  |        |       |
-| Item allergy without details     | Form validation blocks saving the instructions                 |        |       |
-| Add allergies to different items | Each warning stays attached to its own item                    |        |       |
+| Case                                | Expected Result                                                | Result | Notes |
+| ----------------------------------- | -------------------------------------------------------------- | -----: | ----- |
+| Select menu category                | Item grid changes to selected category                         |        |       |
+| Add item                            | Item appears in `Commande en cours`                            |        |       |
+| Add same item twice                 | Two rows or expected quantity behavior is visible              |        |       |
+| Item total displays correctly       | Row amount equals snapshot unit price times quantity           |        |       |
+| Order total displays correctly      | Total equals sum of active non-cancelled items minus discounts |        |       |
+| Add or edit pending item note       | Note appears below the item and persists                       |        |       |
+| Nems quick options                  | Nems shows specific choices and never `Sans legumes`           |        |       |
+| Open `Autres`                       | Additional choices appear without replacing current choices    |        |       |
+| Select conflicting options          | New option automatically removes the incompatible option       |        |       |
+| Structured option persistence       | Code and label snapshot persist on the order item              |        |       |
+| Select Mochi flavours               | Flavor quantities equal two per ordered portion                |        |       |
+| Send with incomplete Mochi flavours | French recovery alert appears and kitchen send stays disabled  |        |       |
+| Edit sent item note                 | Note action is unavailable after kitchen send                  |        |       |
+| Item allergy without details        | Form validation blocks saving the instructions                 |        |       |
+| Add allergies to different items    | Each warning stays attached to its own item                    |        |       |
 
 ## Quantity, Cancel, Restore
 
@@ -134,34 +135,34 @@ N/A       not applicable for this run
 
 ## Full Payment
 
-| Case                                                              | Expected Result                                                     | Result | Notes |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------- | -----: | ----- |
-| Open payment page                                                 | Payment page shows total, paid, remaining                           |        |       |
-| Submit payment with empty amount                                  | Payment page shows a validation message, no server error overlay    |        |       |
-| Submit payment with empty tendered amount                         | Payment uses the amount being collected as the tendered amount      |        |       |
-| Select `Especes` and enter tendered amount above collected amount | Payment UI shows change to return                                   |        |       |
-| Enter collected amount above remaining amount                     | Submit is blocked and payment UI shows a validation message         |        |       |
-| Pay partial amount                                                | Payment saves; order remains open                                   |        |       |
-| Partial payment receipt                                           | No `customer_receipt` job is created before the order is fully paid |        |       |
-| Pay remaining amount                                              | Order becomes `Payee`                                               |        |       |
-| Overpay attempt                                                   | Payment is rejected                                                 |        |       |
-| Tendered amount below amount                                      | Payment is rejected                                                 |        |       |
-| Full payment creates receipt job                                  | `customer_receipt` print job is created                             |        |       |
-| Full payment records staff                                        | Payment `paidBy` equals selected POS employee                       |        |       |
+| Case                                                              | Expected Result                                                  | Result | Notes |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------- | -----: | ----- |
+| Open payment page                                                 | Payment page shows total, paid, remaining                        |        |       |
+| Submit payment with empty amount                                  | Payment page shows a validation message, no server error overlay |        |       |
+| Submit payment with empty tendered amount                         | Payment uses the amount being collected as the tendered amount   |        |       |
+| Select `Especes` and enter tendered amount above collected amount | Payment UI shows change to return                                |        |       |
+| Enter collected amount above remaining amount                     | Submit is blocked and payment UI shows a validation message      |        |       |
+| Pay partial amount                                                | Payment saves; order remains open                                |        |       |
+| Partial payment receipt                                           | No `customer_receipt` job is created                             |        |       |
+| Pay remaining amount                                              | Order becomes `Payee`                                            |        |       |
+| Overpay attempt                                                   | Payment is rejected                                              |        |       |
+| Tendered amount below amount                                      | Payment is rejected                                              |        |       |
+| Full payment receipt                                              | No `customer_receipt` print job is created                       |        |       |
+| Full payment records staff                                        | Payment `paidBy` equals selected POS employee                    |        |       |
 
 ## Split Equally
 
-| Case                                | Expected Result                                                     | Result | Notes |
-| ----------------------------------- | ------------------------------------------------------------------- | -----: | ----- |
-| Create equal split with 2 parts     | Two checks are created                                              |        |       |
-| Create equal split with 3 parts     | Three checks are created and cents are distributed                  |        |       |
-| Pay one check                       | Check becomes paid; order remains open if other checks unpaid       |        |       |
-| Pay partial check amount            | Payment saves; check remains open                                   |        |       |
-| Pay all checks                      | Order becomes paid                                                  |        |       |
-| Each paid check creates receipt job | One `customer_receipt` job per paid check                           |        |       |
-| Partial check receipt               | No `customer_receipt` job is created before the check is fully paid |        |       |
-| Cancel unpaid equal split           | Split checks become `void` and `Payer tout` is available again      |        |       |
-| Cancel split after paid check       | Action is disabled or rejected                                      |        |       |
+| Case                            | Expected Result                                                | Result | Notes |
+| ------------------------------- | -------------------------------------------------------------- | -----: | ----- |
+| Create equal split with 2 parts | Two checks are created                                         |        |       |
+| Create equal split with 3 parts | Three checks are created and cents are distributed             |        |       |
+| Pay one check                   | Check becomes paid; order remains open if other checks unpaid  |        |       |
+| Pay partial check amount        | Payment saves; check remains open                              |        |       |
+| Pay all checks                  | Order becomes paid                                             |        |       |
+| Paid check receipt              | No `customer_receipt` job is created                           |        |       |
+| Partial check receipt           | No `customer_receipt` job is created                           |        |       |
+| Cancel unpaid equal split       | Split checks become `void` and `Payer tout` is available again |        |       |
+| Cancel split after paid check   | Action is disabled or rejected                                 |        |       |
 
 ## Split By Items
 
@@ -174,7 +175,7 @@ N/A       not applicable for this run
 | Assign no item                                                     | Action is rejected                                                                                                  |        |       |
 | Assign more than available quantity                                | Action is rejected                                                                                                  |        |       |
 | Assign total item quantity above available quantity across clients | User is returned to item split screen with an error message                                                         |        |       |
-| Pay split-by-items check                                           | Check becomes paid and receipt job is created                                                                       |        |       |
+| Pay split-by-items check                                           | Check becomes paid and no receipt job is created                                                                    |        |       |
 | Combo discounts apply per check                                    | Eligible check gets combo discount                                                                                  |        |       |
 | Replace unpaid split mode                                          | Old unpaid checks become `void` in the database and new checks are created                                          |        |       |
 | Replace split after payment                                        | Action is rejected after any split check has been paid                                                              |        |       |
@@ -182,21 +183,23 @@ N/A       not applicable for this run
 
 ## Print Jobs
 
-| Case                                      | Expected Result                                                                  | Result | Notes |
-| ----------------------------------------- | -------------------------------------------------------------------------------- | -----: | ----- |
-| Kitchen send creates print job            | Local print queue shows `kitchen_ticket`                                         |        |       |
-| Second kitchen send prints only new items | Later kitchen ticket excludes items printed by the earlier send                  |        |       |
-| Payment creates print job                 | Local print queue shows `customer_receipt`                                       |        |       |
-| Printer adapter processes pending jobs    | Job status changes to `printed`                                                  |        |       |
-| Mark job failed manually                  | Job status changes to `failed`                                                   |        |       |
-| Retry failed job                          | Job status changes back to `pending`                                             |        |       |
-| Kitchen send is atomic                    | Forced print insert failure leaves the item pending and creates no job           |        |       |
-| Final payment is atomic                   | Forced receipt insert failure leaves no payment and does not mark the order paid |        |       |
-| Kitchen retry is idempotent               | Replaying one command UUID creates one kitchen ticket job                        |        |       |
-| Payment retry is idempotent               | Replaying one command UUID creates one payment and one receipt job               |        |       |
-| Concurrent full payments are serialized   | Only one competing full payment succeeds for an order                            |        |       |
-| Cancellation versus payment is serialized | The order ends cancelled without payment or paid with one payment                |        |       |
-| Site-agent heartbeat is healthy           | Site-agent health reports the local database available                           |        |       |
+| Case                                      | Expected Result                                                        | Result | Notes |
+| ----------------------------------------- | ---------------------------------------------------------------------- | -----: | ----- |
+| Kitchen send creates print job            | Local print queue shows `kitchen_ticket`                               |        |       |
+| Second kitchen send prints only new items | Later kitchen ticket excludes items printed by the earlier send        |        |       |
+| Payment creates print job                 | Payment succeeds and creates no print job                              |        |       |
+| Printer adapter processes pending jobs    | Job status changes to `printed`                                        |        |       |
+| One-printer station routing               | Ticket has `CUISINE` for kitchen and `CAISSE` for bar/dessert          |        |       |
+| Station `none` item                       | Item is not present on the physical ticket                             |        |       |
+| Mark job failed manually                  | Job status changes to `failed`                                         |        |       |
+| Retry failed job                          | Job status changes back to `pending`                                   |        |       |
+| Kitchen send is atomic                    | Forced print insert failure leaves the item pending and creates no job |        |       |
+| Final payment is atomic                   | Payment and paid order/check state commit without a receipt job        |        |       |
+| Kitchen retry is idempotent               | Replaying one command UUID creates one kitchen ticket job              |        |       |
+| Payment retry is idempotent               | Replaying one command UUID creates one payment and no receipt job      |        |       |
+| Concurrent full payments are serialized   | Only one competing full payment succeeds for an order                  |        |       |
+| Cancellation versus payment is serialized | The order ends cancelled without payment or paid with one payment      |        |       |
+| Site-agent heartbeat is healthy           | Site-agent health reports the local database available                 |        |       |
 
 ## Edge Offline Acceptance
 
@@ -206,7 +209,7 @@ N/A       not applicable for this run
 | Open a new POS page over the LAN            | Page loads from the restaurant edge server                    |             |       |
 | Create and edit an order                    | Writes succeed against local PostgreSQL                       |             |       |
 | Send a new batch to kitchen                 | Kitchen screen receives it and one print job is created       |             |       |
-| Record an allowed local payment             | Payment persists and final receipt job is created once        |             |       |
+| Record an allowed local payment             | Payment persists and no customer receipt job is created       |             |       |
 | Restart POS and site-agent services         | Existing order remains available and pending jobs resume      |             |       |
 | Disconnect PostgreSQL                       | Health endpoint and service strip report database unavailable |             |       |
 | Stop the POS container                      | Browser reports the local server unavailable                  |             |       |

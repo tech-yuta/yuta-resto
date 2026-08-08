@@ -13,7 +13,7 @@ export function ReservationOverview({
       <Badge tone={getReservationStatusTone(reservation.status)}>
         {reservation.status}
       </Badge>
-      <dl className="mt-5 grid grid-cols-2 gap-4">
+      <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ReservationFact
           label="Date"
           value={`${reservation.localDate} à ${reservation.localTime.slice(0, 5)}`}
@@ -50,9 +50,9 @@ function ReservationFact({
   wide?: boolean;
 }) {
   return (
-    <div className={wide ? 'col-span-2' : undefined}>
+    <div className={wide ? 'sm:col-span-2' : 'min-w-0'}>
       <dt className="text-sm text-muted">{label}</dt>
-      <dd>{value}</dd>
+      <dd className="break-words">{value}</dd>
     </div>
   );
 }

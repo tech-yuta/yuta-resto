@@ -4,6 +4,8 @@
 application. Its customer-facing UI is French and it does not share a browser
 session with the back-office.
 
+For UI work, also follow `docs/ui/YUTA_FRONTEND_RULES.md`.
+
 - Resolve the establishment on the server from a verified hostname and the
   configured public feedback slug. Never trust organization or establishment
   IDs supplied by the browser.

@@ -69,7 +69,7 @@ export function PrintingManagement({ jobs }: { jobs: LocalPrintJob[] }) {
           <EmptyState
             icon={<Printer className="h-8 w-8" />}
             title="Aucun ticket d’impression"
-            description="Les tickets cuisine apparaissent après l’envoi d’une commande. Les reçus apparaissent après paiement."
+            description="Les tickets internes apparaissent après l’envoi d’une commande en production."
           />
         ) : (
           <div>
@@ -291,8 +291,8 @@ function statusTone(
 }
 
 function typeLabel(type: LocalPrintJob['type']): string {
-  if (type === 'kitchen_ticket') return 'Ticket cuisine';
-  if (type === 'customer_receipt') return 'Reçu client';
+  if (type === 'kitchen_ticket') return 'Ticket interne';
+  if (type === 'customer_receipt') return 'Reçu client (historique)';
   return 'Test';
 }
 

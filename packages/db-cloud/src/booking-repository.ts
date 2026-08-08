@@ -529,7 +529,14 @@ export async function cancelPublicReservation(
     const [updated] = await tx
       .update(reservations)
       .set({ status: 'CANCELLED', cancelledAt: now })
-      .where(eq(reservations.id, row.id))
+      .where(
+        and(
+          eq(reservations.organizationId, config.organizationId),
+          eq(reservations.establishmentId, config.establishmentId),
+          eq(reservations.id, row.id),
+          eq(reservations.publicTokenHash, hash(publicToken)),
+        ),
+      )
       .returning();
     await tx.insert(reservationStatusHistory).values({
       id: uuidv7(),
@@ -1068,6 +1075,26 @@ export async function createBookingException(
   context: BookingTenantContext,
   input: BookingExceptionInput,
 ) {
+  if (input.servicePeriodId) {
+    const [servicePeriod] = await db
+      .select({ id: bookingServicePeriods.id })
+      .from(bookingServicePeriods)
+      .where(
+        and(
+          eq(bookingServicePeriods.organizationId, context.organizationId),
+          eq(bookingServicePeriods.establishmentId, context.establishmentId),
+          eq(bookingServicePeriods.id, input.servicePeriodId),
+        ),
+      )
+      .limit(1);
+    if (!servicePeriod) {
+      throw new BookingRepositoryError(
+        'Service period not found.',
+        'BOOKING_NOT_FOUND',
+      );
+    }
+  }
+
   const [row] = await db
     .insert(bookingExceptions)
     .values({

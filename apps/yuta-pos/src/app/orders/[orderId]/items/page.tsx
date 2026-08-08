@@ -3,7 +3,14 @@ import {
   formatEuros,
   getItemInstructionConfig,
 } from '@yuta/core';
-import { Button, IconButton, cn } from '@yuta/ui';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  IconButton,
+  cn,
+} from '@yuta/ui';
 import { CreditCard, Minus, Plus, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { v7 as uuidv7 } from 'uuid';
@@ -17,6 +24,10 @@ import { SendToKitchenButton } from '../../../components/SendToKitchenButton';
 import { MenuItemBrowser } from './MenuItemBrowser';
 import { MobileOrderDialog } from './MobileOrderDialog';
 import { OrderItemNoteDialog } from './OrderItemNoteDialog';
+import {
+  hasIncompleteMochiSelection,
+  kitchenSendFeedback,
+} from './kitchen-send-validation';
 import { posApi } from '../../../../lib/pos-api';
 
 type OrderItemsPageProps = {
@@ -25,6 +36,7 @@ type OrderItemsPageProps = {
   }>;
   searchParams: Promise<{
     category?: string;
+    sendError?: string;
   }>;
 };
 
@@ -38,7 +50,7 @@ export default async function OrderItemsPage({
   searchParams,
 }: OrderItemsPageProps) {
   const { orderId } = await params;
-  const { category } = await searchParams;
+  const { category, sendError } = await searchParams;
   const paymentView = await posApi.getPaymentViewData(orderId);
   const { catalog } = paymentView;
   const order = paymentView.order;
@@ -79,6 +91,11 @@ export default async function OrderItemsPage({
   const pendingItemCount = order.items.filter(
     (item) => item.status === 'pending',
   ).length;
+  const incompleteMochiSelection = hasIncompleteMochiSelection(order.items);
+  const sendFeedback =
+    pendingItemCount > 0
+      ? kitchenSendFeedback(sendError, incompleteMochiSelection)
+      : null;
   const canEditItems =
     order.status !== 'paid' &&
     order.status !== 'cancelled' &&
@@ -87,7 +104,8 @@ export default async function OrderItemsPage({
   const canSendToKitchen =
     order.status !== 'paid' &&
     order.status !== 'cancelled' &&
-    pendingItemCount > 0;
+    pendingItemCount > 0 &&
+    !incompleteMochiSelection;
   const activeOrderItems = order.items.filter(
     (item) => item.status !== 'cancelled',
   );
@@ -139,6 +157,13 @@ export default async function OrderItemsPage({
       maxWidthClassName="max-w-7xl"
     >
       <div className="flex min-h-full min-w-0 flex-col lg:h-full lg:min-h-0">
+        {sendFeedback && (
+          <Alert tone="danger" className="m-4 mb-0 shrink-0" role="alert">
+            <TriangleAlert className="h-4 w-4" />
+            <AlertTitle>{sendFeedback.title}</AlertTitle>
+            <AlertDescription>{sendFeedback.description}</AlertDescription>
+          </Alert>
+        )}
         {order.hasAllergy && (
           <AllergyAlert
             allergyNote={order.allergyNote}

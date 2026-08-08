@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { TodayDashboardData } from './today-data';
+import { BOOKING_SCHEDULE_HREF } from './today-view-model';
 
 type TodaySummary = {
   label: string;
@@ -76,7 +77,7 @@ function buildSummaries(data: TodayDashboardData): TodaySummary[] {
           ? 'Service(s) configuré(s)'
           : stateHelper(data.services.state, 'Aucun service configuré'),
       href: data.canManageBookingSettings
-        ? '/etablissement/informations-generales#horaires-hebdomadaires'
+        ? BOOKING_SCHEDULE_HREF
         : `/reservations?date=${data.localDate}`,
       linkLabel: data.canManageBookingSettings
         ? 'Gérer les horaires'

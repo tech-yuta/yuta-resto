@@ -152,3 +152,5 @@ export function formatRelativeTime(
   if (hours < 24) return formatter.format(-hours, 'hour');
   return formatter.format(-Math.round(hours / 24), 'day');
 }
+export const BOOKING_SCHEDULE_HREF =
+  '/etablissement/horaires-services#horaires-hebdomadaires';

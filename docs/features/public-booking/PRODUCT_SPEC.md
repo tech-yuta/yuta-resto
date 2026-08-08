@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA product and engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 Authority: `docs/features/public-booking/README.md` for implemented behavior
 
@@ -21,6 +21,36 @@ is not a current progress tracker.
 **Application:** Public restaurant booking  
 **Primary language of the product:** French  
 **Documentation language:** English
+
+---
+
+## 0. Current Phase 0/1 reconciliation
+
+This master specification contains durable requirements and future design
+direction; it is not a statement that every described capability exists.
+`STATUS.md` contains the authoritative feature-by-feature implementation and
+release matrix.
+
+The current Phase 0/1 implementation differs from the broader target in these
+material ways:
+
+- guest email is required, not optional;
+- public branding renders a supported subset rather than custom themes or all
+  establishment profile fields;
+- source attribution stores a bounded source enum but not UTM/referrer/campaign
+  detail;
+- manual Backoffice creation is public-eligibility and capacity checked, uses
+  source `BACK_OFFICE`, and has no audited override;
+- existing service periods and exceptions support create/delete rather than
+  in-place edit;
+- notification records are enqueued, but no provider adapter or worker sends
+  them;
+- public API E2E, mobile/accessibility acceptance, launch-volume tests,
+  production deployment, and operational observability remain incomplete.
+
+These differences require either an approved product decision and
+implementation task or an explicit Phase 1 scope change. Do not silently infer
+the missing schema, provider, permission, route, or infrastructure.
 
 ---
 
@@ -346,7 +376,8 @@ This phase prepares the architecture before launching the public booking flow.
 
 ## 7.2 Phase 1 — Public booking MVP
 
-This is the first production-usable version.
+This section defines the target for the first production-usable version. It is
+not a claim of current release readiness; use `STATUS.md` for that assessment.
 
 ### Public guest features
 
@@ -685,6 +716,11 @@ Optional fields:
 - area preference in later phases.
 
 All fields must be configurable where appropriate, but the MVP may use a fixed safe subset.
+
+Current implementation note: the Phase 0/1 transport contract requires email
+and exposes one optional free-text special-requirements field. Making email
+optional requires an approved contract, persistence, notification, and form
+change.
 
 ## 8.5 Step 4 — Confirmation
 
@@ -1359,6 +1395,11 @@ Each establishment may configure:
 
 Theme configuration must use controlled design tokens. Do not allow arbitrary CSS in the MVP.
 
+Current implementation note: only establishment name, configured logo or YUTA
+fallback, welcome copy, visible phone/address, and booking policy are rendered.
+The cover image and visible public email are resolved but not rendered. Custom
+theme fields, map/social links, and multilingual content are not implemented.
+
 Recommended theme object:
 
 ```ts
@@ -1455,6 +1496,11 @@ other
 
 Manual creation may allow an authorized user to exceed online capacity, but the UI must show a clear warning and record the override.
 
+Current implementation note: manual creation requires an enabled public booking
+configuration, remains online-capacity checked, and records source
+`BACK_OFFICE`. Source selection and audited capacity override are not
+implemented.
+
 ---
 
 ## 21. Source attribution
@@ -1494,6 +1540,10 @@ https://reservation.yutapro.fr/luna?utm_source=google&utm_medium=organic
 ```
 
 Attribution must be sanitized and length-limited before storage.
+
+Current implementation note: the public page accepts a bounded `source` query
+value and stores the corresponding enum. UTM parameters, referring domain, and
+campaign details are not persisted.
 
 ---
 
@@ -1536,6 +1586,10 @@ interface BookingNotificationService {
 Use an outbox or durable job queue when production volume requires it.
 
 Avoid coupling reservation creation directly to a specific email or SMS provider.
+
+Current implementation note: booking transactions write provider-neutral
+`PENDING` outbox records. No worker, email adapter, retry processor, or queue
+observability owner exists, so email delivery is not implemented.
 
 ---
 
@@ -2043,6 +2097,10 @@ Recommended order:
 ## 36. Definition of done for Phase 1
 
 Phase 1 is complete only when all of the following are true:
+
+This checklist is not currently complete. In particular, production deployment,
+confirmation-email delivery, operational observability, full public E2E/mobile
+acceptance, and launch-volume verification remain open in `STATUS.md`.
 
 - `apps/booking-web` is deployed independently;
 - a public establishment page resolves from slug;

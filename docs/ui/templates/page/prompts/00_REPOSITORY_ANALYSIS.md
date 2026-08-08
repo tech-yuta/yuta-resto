@@ -1,6 +1,9 @@
 # Codex Prompt — Phase 0: Repository Analysis
 
-Read root and application instructions, current documentation, `docs/ui/README.md`, `docs/ui/YUTA_FRONTEND_RULES.md`, and every document in this page package.
+Read root and application instructions, current documentation,
+`docs/ui/README.md`, `docs/ui/YUTA_FRONTEND_RULES.md`, the target application's
+frontend rules (for Backoffice, `docs/ui/BACKOFFICE_FRONTEND_RULES.md`), and
+every document in this page package.
 
 Inspect the actual route, shell, current implementation, authorization, tenant scope, persistence, mutations, tests, `@yuta/ui` exports, semantic tokens, and visual references.
 

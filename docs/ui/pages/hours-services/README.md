@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA product and engineering
 
-Last updated: 2026-08-07
+Last updated: 2026-08-08
 
 Route: `/etablissement/horaires-services`
 
@@ -47,6 +47,7 @@ Read:
 - current public-booking documentation;
 - `docs/ui/README.md`;
 - `docs/ui/YUTA_FRONTEND_RULES.md`;
+- `docs/ui/BACKOFFICE_FRONTEND_RULES.md`;
 - this package;
 - the current route implementation and tests.
 

@@ -3,6 +3,7 @@ import { Clock3 } from 'lucide-react';
 import Link from 'next/link';
 import type { TodaySection, TodayServiceItem } from './today-data';
 import { TodaySectionUnavailable } from './today-section-unavailable';
+import { BOOKING_SCHEDULE_HREF } from './today-view-model';
 
 export function TodayServicesPanel({
   section,
@@ -17,9 +18,7 @@ export function TodayServicesPanel({
       action={
         canManageSettings ? (
           <Button asChild variant="secondary" size="sm">
-            <Link href="/etablissement/informations-generales#horaires-hebdomadaires">
-              Gérer
-            </Link>
+            <Link href={BOOKING_SCHEDULE_HREF}>Gérer</Link>
           </Button>
         ) : undefined
       }

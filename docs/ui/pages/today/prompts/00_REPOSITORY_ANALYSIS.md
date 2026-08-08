@@ -7,8 +7,8 @@ Read:
 - root and `apps/backoffice/AGENTS.md`;
 - `docs/README.md` and `docs/CURRENT_STATE.md`;
 - current booking and reputation documentation;
-- `docs/ui/README.md`, `docs/ui/YUTA_FRONTEND_RULES.md`, and
-  `docs/ui/PAGE_PACK_PROTOCOL.md`;
+- `docs/ui/README.md`, `docs/ui/YUTA_FRONTEND_RULES.md`,
+  `docs/ui/BACKOFFICE_FRONTEND_RULES.md`, and `docs/ui/PAGE_PACK_PROTOCOL.md`;
 - every document in `docs/ui/pages/today/`;
 - current route, shell, fixture dashboard, repositories, permissions, and tests.
 

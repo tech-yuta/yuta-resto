@@ -9,9 +9,10 @@ Analyze the repository for `/etablissement/informations-generales`. Do not edit 
 3. `docs/CURRENT_STATE.md` and current product/architecture documents;
 4. `docs/ui/README.md`;
 5. `docs/ui/YUTA_FRONTEND_RULES.md`;
-6. `docs/ui/PAGE_PACK_PROTOCOL.md`;
-7. every file in `docs/ui/pages/establishment-general-information/`;
-8. the attached visual reference.
+6. `docs/ui/BACKOFFICE_FRONTEND_RULES.md`;
+7. `docs/ui/PAGE_PACK_PROTOCOL.md`;
+8. every file in `docs/ui/pages/establishment-general-information/`;
+9. the attached visual reference.
 
 ## Required analysis
 

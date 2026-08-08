@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA product and engineering
 
-Last updated: 2026-08-06
+Last updated: 2026-08-08
 
 ## Trusted context
 
@@ -110,6 +110,9 @@ implementations. Their placeholder routes are not data sources.
 ## Interactions
 
 - Summary and `Voir tout` links use real current routes.
+- Booking-service management links to
+  `/etablissement/horaires-services#horaires-hebdomadaires`, the canonical
+  owner of weekly schedules and service periods.
 - The reservation action navigates to the existing reservation creation
   workflow or uses its established mutation path.
 - Do not add reservation filter chips until their URL or local-filter semantics

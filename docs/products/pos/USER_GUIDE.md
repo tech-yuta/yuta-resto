@@ -6,7 +6,7 @@ Visibility: Local operator
 
 Owner: YUTA restaurant operations
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 This guide describes how to use the current YuTa POS MVP for internal restaurant operations.
 
@@ -48,8 +48,9 @@ pnpm dev:site-agent
 pnpm dev:pos
 ```
 
-Kitchen and receipt commands create durable print jobs in `site-agent`.
-Physical printer transport remains a documented MVP limit.
+Kitchen production commands create durable print jobs in `site-agent`.
+Physical internal-ticket printing uses the restaurant Linux server and one
+Bluetooth EPSON TM-m30. Customer receipts are not printed.
 
 The QA checklist lives in:
 
@@ -238,8 +239,12 @@ kitchen ticket. Instructions can be changed only while the item is pending;
 they are locked after the item is sent to the kitchen. Never promise that
 cross-contamination is impossible without confirmation from the kitchen.
 
-For `Mochi glace (2 pcs)`, choose quantities of `Mangue`, `Matcha`, and `Cacao`.
+For `Mochi glacé (2 pcs)`, choose quantities of `Mangue`, `Matcha`, and `Cacao`.
 The total must equal two pieces per ordered portion before kitchen send.
+When a pending Mochi selection is incomplete, the order screen displays a
+French recovery alert and disables `Envoyer en cuisine`. Open
+`Notes / allergie` under the Mochi, select the required flavours, and save; the
+send action becomes available without losing the order.
 
 ### Send To Kitchen
 
@@ -421,16 +426,16 @@ The selected POS employee is stored as paidBy
 The order stays open until the remaining amount reaches 0
 ```
 
-Payment submission and its final customer receipt job are committed in one
-database transaction. Retrying the same browser submission cannot create a
-second payment. The same protection applies to a kitchen send and its kitchen
-ticket job.
+Payment submission is committed in one database transaction. Retrying the same
+browser submission cannot create a second payment. Payment does not create a
+customer receipt print job. The same retry protection applies to a kitchen send
+and its internal kitchen ticket job.
 
 When the full order is completely paid:
 
 ```txt
 The order is marked paid
-A customer_receipt print job is created
+No customer receipt print job is created
 ```
 
 ### Split Equally
@@ -463,7 +468,9 @@ Choose 3 -> Client 1, Client 2, Client 3
 Choose 4 -> Client 1, Client 2, Client 3, Client 4
 ```
 
-Assign item quantities to each client, then create checks. Each check can be paid fully or in partial payments. A `customer_receipt` print job is created when the check is completely paid.
+Assign item quantities to each client, then create checks. Each check can be
+paid fully or in partial payments. Completing a check does not create a
+customer receipt print job.
 
 The selected POS employee is stored as `paidBy` for each payment.
 
@@ -541,6 +548,11 @@ A hidden category removes the whole category and its items from new order
 entry. An unavailable item remains in local history but is not offered for new
 orders. Administrators and managers may perform these changes. Categories and
 items are never physically deleted by this workflow.
+
+After a clean Luna seed, `Plat spécial du samedi` is unavailable and has a
+zero price. Before Saturday service, an administrator or manager must edit its
+description and real selling price, then mark it available. After service,
+mark it unavailable again; never sell the zero-price placeholder.
 
 On the order item screen, the search field filters the items in the selected
 category immediately as staff type. It does not require submitting the search
@@ -629,8 +641,8 @@ failed
 Print job types:
 
 ```txt
-kitchen_ticket     created when staff sends items to kitchen
-customer_receipt   created after full payment or paid split check
+kitchen_ticket     created when staff sends items to production
+customer_receipt   retained only for historical compatibility; not created
 ```
 
 Manual actions:
@@ -649,12 +661,14 @@ browser.
 
 ## Physical Printer Adapter
 
-The current MVP persists and manages print jobs but does not send ESC/POS data
-to a physical printer. There is no active mock worker and no printer secret in
-the browser bundle. A future `site-agent` hardware adapter will claim pending
-jobs and use the same state machine. Do not add `printers` or
-`printer_routes` tables until the real USB, system-spooler, or network
-transport is selected.
+When `POS_PRINTER_DEVICE` is configured, `site-agent` claims pending
+`kitchen_ticket` jobs, renders an ASCII-safe ESC/POS ticket, writes it to the
+Linux RFCOMM character device in raw TTY mode, and marks the job `printed` or
+`failed`.
+The single internal ticket separates `kitchen` items under `CUISINE` and
+`bar`/`dessert` items under `CAISSE - BOISSONS / DESSERTS`; station `none` is
+excluded. Raw payloads and the device path never reach the browser. The current
+Luna host exposes the paired TM-m30 as `/dev/rfcomm1` through a systemd service.
 
 ## Important Behavior Notes
 

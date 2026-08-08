@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering and operations
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 ## Status and authority
 
@@ -83,11 +83,26 @@ Root Directory: apps/booking-web
 Domain:         reservation.yutapro.fr
 ```
 
-Set `PUBLIC_BOOKING_BASE_URL=https://reservation.yutapro.fr` and a unique
+Set `CLOUD_DATABASE_URL`, `CLOUD_DATABASE_SSL`,
+`PUBLIC_BOOKING_BASE_URL=https://reservation.yutapro.fr`, and a unique
 `BOOKING_RATE_LIMIT_SECRET` of at least 32 random characters. The booking app
-receives `CLOUD_DATABASE_URL` but no authentication cookie secret and no local
-POS/display database URL. Its `vercel.json` also disables automatic Git
-deployments.
+validates all four values during server startup and production build. It
+receives no authentication cookie secret and no local POS/display database
+URL. Its `vercel.json` also disables automatic Git deployments.
+
+Reservation transactions currently write a provider-neutral notification
+outbox, but this repository has no configured email adapter or worker. Do not
+claim confirmation-email delivery or launch it as an active dependency until
+an approved cloud worker atomically claims the outbox, records `SENT` or
+`FAILED`, and has an operational retry and observability owner.
+
+Before a public-booking production launch, operations must also verify the
+Vercel project, DNS/TLS, production secrets and rotation ownership, cloud
+migration journal, managed-database backup/PITR and restore evidence, external
+health probes, telemetry/alerts, approved privacy/legal copy, and a named
+release owner. The authoritative current dependency and acceptance register is
+`docs/features/public-booking/STATUS.md`; do not duplicate provider choices or
+temporary owner assignments here.
 
 The public feedback application uses a separate project:
 
@@ -174,6 +189,8 @@ SITE_AGENT_HOST=0.0.0.0
 SITE_AGENT_PORT=3100
 SITE_AGENT_ALLOWED_ORIGIN=https://pos.restaurant.local
 SITE_AGENT_URL=http://site-agent:3100
+POS_PRINTER_DEVICE=/dev/rfcomm1
+POS_PRINT_POLL_INTERVAL_MS=1000
 YUTA_INSTALLATION_ID=...
 YUTA_SITE_ID=...
 LOCAL_BACKUP_PATH=/var/backups/yuta-pos
@@ -186,6 +203,14 @@ as a `NEXT_PUBLIC_*` variable.
 `SITE_AGENT_ALLOWED_ORIGIN` must be the exact POS client origin; do not use a
 wildcard origin. Bind `SITE_AGENT_HOST=0.0.0.0` only inside the trusted local
 container or LAN boundary.
+
+`POS_PRINTER_DEVICE` is local device configuration, never browser input. At
+Luna, the Linux host pairs the single EPSON TM-m30 as a trusted Bluetooth
+device and a systemd service keeps RFCOMM channel 1 available as
+`/dev/rfcomm1`. The path must be a character device owned by `root:dialout`.
+Run `site-agent` on the host with `dialout` access, or pass the character device
+and the host `dialout` group into its trusted local container. Do not expose the
+RFCOMM device to the POS browser container.
 
 ### Standalone display
 
@@ -280,8 +305,16 @@ Cloud and POS seed jobs are separate maintenance operations. A cloud seed job
 receives `CLOUD_DATABASE_URL` and `YUTA_CLOUD_SEED_PASSWORD`; a POS seed job
 receives `POS_DATABASE_URL` and the three seed PIN variables. Do not include
 either seed in normal application startup,
-and do not run development fixtures automatically during production
-deployment.
+and do not run a seed automatically during production deployment. The POS seed
+is the approved Luna operating catalog; it is still an explicit maintenance
+operation because rerunning it can overwrite current catalog configuration.
+
+For a specifically approved clean Luna commissioning, stop POS writes, take
+and verify a final POS-only backup, resolve the exact POS database or volume on
+the host, recreate only that POS database, apply every `db-pos` migration, and
+run the explicit POS seed once. Never remove a volume by a broad name or reset
+cloud/display storage. Start `site-agent` and the POS only after the seeded
+catalog and the unavailable zero-price Saturday special have been verified.
 
 The optional `pnpm db:cloud:seed:demo` command is only for local databases or
 explicitly approved demo environments. It requires
@@ -302,6 +335,19 @@ The local POS deployment must:
 - persist printer jobs and device state locally;
 - provide guarded backup and restore procedures;
 - never start a POS-to-cloud synchronization worker.
+
+For the selected Luna printer transport, verify before starting `site-agent`:
+
+```bash
+systemctl is-active yuta-tm-m30.service
+rfcomm
+test -c /dev/rfcomm1
+```
+
+The expected RFCOMM peer is `00:01:90:7B:79:DD` on channel `1`. The systemd
+unit owns reconnection; `site-agent` only opens `/dev/rfcomm1` to write ESC/POS
+jobs. If the printer is unavailable, the worker marks the claimed job failed
+and an administrator can retry it from `/management/printing` after recovery.
 
 `apps/yuta-pos/docker-compose.yml` now builds only the POS client service. It
 requires `SITE_AGENT_URL` and joins the external trusted local network; it has
@@ -353,6 +399,10 @@ access-control facilities. Do not copy POS operational data into cloud backups.
 ## Health checks
 
 - Cloud health checks validate only cloud runtime dependencies.
+- The current booking-web `/api/health` response is process liveness only; it
+  does not prove database readiness or successful booking queries. Do not use
+  it as the sole production readiness gate until an approved dependency-safe
+  readiness contract is implemented and externally monitored.
 - `site-agent` health validates the local API, POS DB, and relevant device
   subsystems.
 - POS health must not fail merely because Internet or cloud is unavailable.

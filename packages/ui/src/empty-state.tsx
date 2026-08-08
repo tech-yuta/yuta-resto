@@ -7,6 +7,7 @@ export interface EmptyStateProps extends Omit<
 > {
   icon?: ReactNode;
   title: ReactNode;
+  titleAs?: 'h1' | 'h2' | 'h3';
   description?: ReactNode;
   action?: ReactNode;
 }
@@ -14,6 +15,7 @@ export interface EmptyStateProps extends Omit<
 export function EmptyState({
   icon,
   title,
+  titleAs: Title = 'h3',
   description,
   action,
   className,
@@ -29,9 +31,9 @@ export function EmptyState({
     >
       <div>
         {icon && <div className="mx-auto mb-4 text-primary/35">{icon}</div>}
-        <h3 className="font-bold text-primary">{title}</h3>
+        <Title className="font-bold text-primary">{title}</Title>
         {description && (
-          <p className="mt-1 text-sm font-medium text-primary/55">
+          <p className="mt-1 text-sm font-medium text-secondary">
             {description}
           </p>
         )}

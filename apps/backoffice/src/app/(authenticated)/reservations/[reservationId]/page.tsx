@@ -2,6 +2,7 @@ import { getReservationDetails } from '@yuta/db-cloud';
 import { Button } from '@yuta/ui';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { z } from 'zod';
 import { BackofficePage } from '../../../../components/backoffice-page';
 import { requireBookingTenant } from '../../../../server/auth/session';
 import { cloudDatabase } from '../../../../server/cloud-database';
@@ -12,11 +13,14 @@ import { ReservationOverview } from './reservation-overview';
 
 type PageProps = { params: Promise<{ reservationId: string }> };
 
+const reservationIdSchema = z.string().uuid();
+
 export default async function Page({ params }: PageProps) {
   const { reservationId } = await params;
   const { tenant } = await requireBookingTenant(
     `/reservations/${reservationId}`,
   );
+  if (!reservationIdSchema.safeParse(reservationId).success) notFound();
   const details = await getReservationDetails(
     cloudDatabase,
     tenant,

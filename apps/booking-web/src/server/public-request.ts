@@ -2,6 +2,7 @@ import 'server-only';
 import { BookingRepositoryError } from '@yuta/db-cloud';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { bookingWebEnvironment } from './environment';
 
 export function clientAddress(request: Request): string {
   return (
@@ -12,13 +13,7 @@ export function clientAddress(request: Request): string {
 }
 
 export function rateLimitSecret(): string {
-  const value = process.env.BOOKING_RATE_LIMIT_SECRET;
-  if (value && value.length >= 32) return value;
-  if (process.env.NODE_ENV !== 'production')
-    return 'local-booking-rate-limit-secret-change-me';
-  throw new Error(
-    'BOOKING_RATE_LIMIT_SECRET must contain at least 32 characters.',
-  );
+  return bookingWebEnvironment.BOOKING_RATE_LIMIT_SECRET;
 }
 
 export function publicApiError(error: unknown): NextResponse {

@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-06
+Last updated: 2026-08-08
 
 ## Product scope
 
@@ -76,9 +76,11 @@ Its canonical back-office routes are `/reservations` and
 `/reservations/parametres`; legacy `/operations/reservations` URLs redirect to
 their canonical equivalents.
 Manual creation reports a visible success state after persistence. Reservation
-detail keeps status changes, guest updates, internal notes, and status history
-tenant-scoped; note and history timestamps use the establishment locale and
-timezone.
+creation, guest updates, internal notes, and status changes expose pending,
+field-validation, conflict, save-error, and recovery feedback while preserving
+the submitted values after failures. Reservation detail keeps those mutations
+and status history tenant-scoped; note and history timestamps use the
+establishment locale and timezone.
 
 Reputation surfaces use the canonical capability routes
 `/visibilite-reputation/avis` and `/visibilite-reputation/satisfaction`;

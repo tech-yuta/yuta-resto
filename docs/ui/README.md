@@ -6,11 +6,17 @@ Visibility: Engineering
 
 Owner: YUTA product and engineering
 
-Last updated: 2026-08-06
+Last updated: 2026-08-08
 
 ## Purpose
 
-This directory governs design-to-code work for YUTA applications, primarily `apps/backoffice`.
+This directory governs design-to-code work for YUTA frontend applications.
+
+The shared rules cover public cloud applications, the restaurant Backoffice,
+the local POS client, and the standalone Display. Current page packages are
+Backoffice-specific; other applications remain governed by their nearest
+`AGENTS.md` and current product or feature documentation until they receive a
+page package.
 
 It turns an approved visual direction into maintainable UI without treating a screenshot as authority for product scope, navigation, data, authorization, or persistence.
 
@@ -21,6 +27,8 @@ Read this directory together with:
 - `docs/CURRENT_STATE.md`;
 - the relevant current feature or product documentation;
 - `YUTA_FRONTEND_RULES.md`;
+- the target application's frontend rules, including
+  `BACKOFFICE_FRONTEND_RULES.md` for Backoffice work;
 - the current page package under `pages/<page-slug>/`;
 - `packages/ui/src/index.ts` and `packages/ui/src/styles/global.css`.
 
@@ -44,6 +52,7 @@ Images may guide hierarchy, proportions, density, spacing, and visual tone. They
 docs/ui/
 ├── README.md
 ├── YUTA_FRONTEND_RULES.md
+├── BACKOFFICE_FRONTEND_RULES.md
 ├── PAGE_PACK_PROTOCOL.md
 ├── references/
 │   ├── README.md
@@ -115,7 +124,7 @@ For an existing route:
 - preserve authorization, server boundaries, data loading, and mutations;
 - make the smallest visual change that establishes the approved hierarchy.
 
-Use the relevant widths from:
+For current Backoffice page packages, use:
 
 ```text
 1440 px
@@ -169,7 +178,7 @@ Use:
 - shared components exported by `packages/ui/src/index.ts`;
 - semantic tokens defined in `packages/ui/src/styles/global.css`;
 - `lucide-react`;
-- Geist Sans with the repository fallback stack.
+- the typography approved by the target application's current instructions.
 
 Use role-based classes such as:
 
@@ -194,20 +203,21 @@ Do not introduce a second token vocabulary, copy color values from references, o
 
 ## Verification
 
-Use commands that actually exist in the repository:
+Use the repository-wide commands defined by `YUTA_FRONTEND_RULES.md`, then the
+target application's typecheck, tests, and build. For Backoffice work, also use
+the commands and browser widths in `BACKOFFICE_FRONTEND_RULES.md`.
+
+Common repository checks are:
 
 ```text
 pnpm docs:check
 pnpm format:check
 pnpm architecture:check
-pnpm --filter @yuta/backoffice typecheck
-pnpm --filter @yuta/backoffice test
-pnpm --filter @yuta/backoffice build
+pnpm -r --if-present typecheck
 ```
 
-Run affected auth, tenant, contract, booking, and database tests when their behavior changes.
-
-The Backoffice currently has no lint script. Do not report lint as passed unless one is deliberately added and run.
+Run affected auth, tenant, contract, domain, database, local runtime, and device
+tests when their behavior changes.
 
 Browser QA verifies:
 

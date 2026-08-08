@@ -15,6 +15,7 @@ import {
   createSiteAgentService,
   type SiteAgentService,
 } from './services/site-agent-service';
+import { createLocalPrinterWorker } from './services/local-printer-worker';
 
 config({ path: '.env.local' });
 config({ path: '.env' });
@@ -97,6 +98,13 @@ function applyCors(
 async function startSiteAgent(): Promise<void> {
   const env = readSiteAgentEnv(process.env);
   const db = createPosDatabaseClient(process.env);
+  const printerWorker = env.POS_PRINTER_DEVICE
+    ? createLocalPrinterWorker({
+        db,
+        devicePath: env.POS_PRINTER_DEVICE,
+        pollIntervalMs: env.POS_PRINT_POLL_INTERVAL_MS,
+      })
+    : null;
   const server = createSiteAgentServer({
     env,
     service: createSiteAgentService(db),
@@ -112,8 +120,15 @@ async function startSiteAgent(): Promise<void> {
   console.log(
     `YuTa site-agent listening on http://${env.SITE_AGENT_HOST}:${env.SITE_AGENT_PORT}`,
   );
+  if (printerWorker) {
+    await printerWorker.start();
+    console.log(
+      `YuTa local print worker enabled for ${env.POS_PRINTER_DEVICE}`,
+    );
+  }
 
   const shutdown = async () => {
+    await printerWorker?.stop();
     await new Promise<void>((resolveClose, rejectClose) => {
       server.close((error) => {
         if (error) {

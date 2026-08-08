@@ -11,6 +11,7 @@ Read:
 - current public-booking documentation;
 - `docs/ui/README.md`;
 - `docs/ui/YUTA_FRONTEND_RULES.md`;
+- `docs/ui/BACKOFFICE_FRONTEND_RULES.md`;
 - every document under `docs/ui/pages/hours-services/`;
 - the current route implementation and tests.
 

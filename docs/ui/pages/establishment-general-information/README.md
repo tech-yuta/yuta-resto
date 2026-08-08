@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA product and engineering
 
-Last updated: 2026-08-07
+Last updated: 2026-08-08
 
 Route: `/etablissement/informations-generales`
 
@@ -45,9 +45,10 @@ read the canonical establishment profile and respects its visibility settings.
 ## Authority
 
 Read root and Backoffice instructions, current architecture and product docs,
-the implemented schema/contracts/repositories, shared UI rules, this package,
-then the visual reference. The image controls hierarchy and visual direction
-only.
+the implemented schema/contracts/repositories,
+`docs/ui/YUTA_FRONTEND_RULES.md`,
+`docs/ui/BACKOFFICE_FRONTEND_RULES.md`, this package, then the visual reference.
+The image controls hierarchy and visual direction only.
 
 ## Documents
 

@@ -6,6 +6,10 @@ Visibility: Engineering
 
 Each active page-specific design package has one stable lowercase slug directory.
 
+The current packages all target `apps/backoffice`. Read both
+`../YUTA_FRONTEND_RULES.md` and `../BACKOFFICE_FRONTEND_RULES.md` before using
+them.
+
 Current packages:
 
 - `hours-services/` — integrated Backoffice route `/etablissement/horaires-services`.

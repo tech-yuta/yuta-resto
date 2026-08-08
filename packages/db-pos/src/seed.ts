@@ -6,6 +6,11 @@ import { v7 as uuidv7 } from 'uuid';
 import type { PosDatabaseClient } from './client';
 import { hashLocalPin } from './local-auth-crypto';
 import {
+  lunaCategorySeeds,
+  lunaComboSeeds,
+  lunaMenuItemSeeds,
+} from './luna-seed-data';
+import {
   comboRuleGroupItems,
   comboRuleGroups,
   comboRules,
@@ -30,134 +35,6 @@ export type PosSeedContext = {
   menuItems: Record<string, MenuItem>;
   comboRules: Record<string, ComboRule>;
 };
-
-const categorySeeds = [
-  { name: 'Entrees', sortOrder: 10 },
-  { name: 'Plats', sortOrder: 20 },
-  { name: 'Boissons', sortOrder: 30 },
-  { name: 'Desserts', sortOrder: 40 },
-] as const;
-
-const menuItemSeeds = [
-  {
-    name: 'Bun bo',
-    category: 'Plats',
-    priceCents: 1300,
-    kitchenStation: 'kitchen',
-    sortOrder: 10,
-  },
-  {
-    name: 'Com ga',
-    category: 'Plats',
-    priceCents: 1200,
-    kitchenStation: 'kitchen',
-    sortOrder: 20,
-  },
-  {
-    name: 'Pho',
-    category: 'Plats',
-    priceCents: 1400,
-    kitchenStation: 'kitchen',
-    sortOrder: 30,
-  },
-  {
-    name: 'Coca',
-    category: 'Boissons',
-    priceCents: 300,
-    kitchenStation: 'bar',
-    sortOrder: 10,
-  },
-  {
-    name: 'The glace maison',
-    category: 'Boissons',
-    priceCents: 400,
-    kitchenStation: 'bar',
-    sortOrder: 20,
-  },
-  {
-    name: 'Che',
-    category: 'Desserts',
-    priceCents: 500,
-    kitchenStation: 'dessert',
-    sortOrder: 10,
-  },
-  {
-    name: 'Mochi',
-    category: 'Desserts',
-    priceCents: 400,
-    kitchenStation: 'dessert',
-    sortOrder: 20,
-  },
-] as const;
-
-const comboSeeds = [
-  {
-    name: 'Combo A',
-    comboPriceCents: 1400,
-    priority: 10,
-    groups: [
-      {
-        name: 'Plat',
-        minQuantity: 1,
-        maxQuantity: 1,
-        sortOrder: 10,
-        items: [
-          { name: 'Bun bo', extraPriceCents: 0 },
-          { name: 'Com ga', extraPriceCents: 0 },
-          { name: 'Pho', extraPriceCents: 100 },
-        ],
-      },
-      {
-        name: 'Boisson',
-        minQuantity: 1,
-        maxQuantity: 1,
-        sortOrder: 20,
-        items: [
-          { name: 'Coca', extraPriceCents: 0 },
-          { name: 'The glace maison', extraPriceCents: 100 },
-        ],
-      },
-    ],
-  },
-  {
-    name: 'Combo B',
-    comboPriceCents: 1700,
-    priority: 20,
-    groups: [
-      {
-        name: 'Plat',
-        minQuantity: 1,
-        maxQuantity: 1,
-        sortOrder: 10,
-        items: [
-          { name: 'Bun bo', extraPriceCents: 0 },
-          { name: 'Com ga', extraPriceCents: 0 },
-          { name: 'Pho', extraPriceCents: 100 },
-        ],
-      },
-      {
-        name: 'Boisson',
-        minQuantity: 1,
-        maxQuantity: 1,
-        sortOrder: 20,
-        items: [
-          { name: 'Coca', extraPriceCents: 0 },
-          { name: 'The glace maison', extraPriceCents: 100 },
-        ],
-      },
-      {
-        name: 'Dessert',
-        minQuantity: 1,
-        maxQuantity: 1,
-        sortOrder: 30,
-        items: [
-          { name: 'Che', extraPriceCents: 0 },
-          { name: 'Mochi', extraPriceCents: 0 },
-        ],
-      },
-    ],
-  },
-] as const;
 
 export async function seedPosData(
   seedDb?: PosDatabaseClient,
@@ -192,7 +69,7 @@ export async function seedPosData(
   });
 
   const categories: Record<string, MenuCategory> = {};
-  for (const categorySeed of categorySeeds) {
+  for (const categorySeed of lunaCategorySeeds) {
     categories[categorySeed.name] = await upsertCategory(
       activeDb,
       categorySeed,
@@ -200,18 +77,20 @@ export async function seedPosData(
   }
 
   const seededMenuItems: Record<string, MenuItem> = {};
-  for (const itemSeed of menuItemSeeds) {
+  for (const itemSeed of lunaMenuItemSeeds) {
     seededMenuItems[itemSeed.name] = await upsertMenuItem(activeDb, {
       categoryId: categories[itemSeed.category].id,
       name: itemSeed.name,
+      description: itemSeed.description ?? null,
       priceCents: itemSeed.priceCents,
       kitchenStation: itemSeed.kitchenStation,
+      isAvailable: itemSeed.isAvailable ?? true,
       sortOrder: itemSeed.sortOrder,
     });
   }
 
   const seededComboRules: Record<string, ComboRule> = {};
-  for (const comboSeed of comboSeeds) {
+  for (const comboSeed of lunaComboSeeds) {
     const comboRule = await upsertComboRule(activeDb, comboSeed);
     seededComboRules[comboRule.name] = comboRule;
 
@@ -315,8 +194,10 @@ async function upsertMenuItem(
   values: {
     categoryId: string;
     name: string;
+    description: string | null;
     priceCents: number;
     kitchenStation: 'kitchen' | 'bar' | 'dessert' | 'none';
+    isAvailable: boolean;
     sortOrder: number;
   },
 ): Promise<MenuItem> {
@@ -327,7 +208,7 @@ async function upsertMenuItem(
   if (existing) {
     const [updated] = await seedDb
       .update(menuItems)
-      .set({ ...values, isAvailable: true })
+      .set(values)
       .where(eq(menuItems.id, existing.id))
       .returning();
     return updated;
@@ -342,7 +223,16 @@ async function upsertMenuItem(
 
 async function upsertComboRule(
   seedDb: PosDatabaseClient,
-  values: { name: string; comboPriceCents: number; priority: number },
+  values: {
+    name: string;
+    pricingMode: 'fixed' | 'base_item_plus_delta';
+    comboPriceCents: number;
+    priceDeltaCents: number;
+    basePricingGroupName: string | null;
+    priority: number;
+    maxApplications: number | null;
+    isActive: boolean;
+  },
 ): Promise<ComboRule> {
   const existing = await seedDb.query.comboRules.findFirst({
     where: eq(comboRules.name, values.name),
@@ -351,7 +241,7 @@ async function upsertComboRule(
   if (existing) {
     const [updated] = await seedDb
       .update(comboRules)
-      .set({ ...values, isActive: true })
+      .set(values)
       .where(eq(comboRules.id, existing.id))
       .returning();
     return updated;

@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA product and engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 Authority: `docs/products/pos/README.md` and
 `docs/architecture/DATABASE_BOUNDARIES.md`
@@ -132,10 +132,8 @@ Kitchen must see real production items only. Kitchen must not see combo names or
 Example:
 
 ```txt
-Customer gets Combo A from Bun bo + Coca.
-Kitchen sees:
-- Bun bo
-- Coca
+Customer gets Gua Bao Happy from Gua Bao - Porc laque + The glace maison 25 cl.
+Kitchen and caisse see the two production items, not the formula name.
 ```
 
 Combos are payment/discount logic, not kitchen production logic.
@@ -147,18 +145,18 @@ Staff should add individual menu items quickly without thinking about combos.
 Correct workflow:
 
 ```txt
-Add Bun bo 13 EUR
-Add Coca 3 EUR
+Add Gua Bao - Porc laque 11 EUR
+Add The glace maison 25 cl 3.50 EUR
 
 At payment:
-System detects Combo A = main dish + drink = 14 EUR
+System detects Gua Bao Happy = 12.50 EUR
 System adds discount -2 EUR
 
 Final:
-Bun bo 13 EUR
-Coca 3 EUR
-Combo A discount -2 EUR
-Total 14 EUR
+Gua Bao - Porc laque 11 EUR
+The glace maison 25 cl 3.50 EUR
+Gua Bao Happy discount -2 EUR
+Total 12.50 EUR
 ```
 
 Combos are represented as automatic discounts. Do not replace order items with combo items.
@@ -559,6 +557,9 @@ printJobs {
 }
 ```
 
+`customer_receipt` remains in the schema only for historical compatibility;
+current payment flows do not create it.
+
 For MVP, print gateway behavior can run in mock mode and write printable content to logs or files.
 
 ## 9. Order Service Requirements
@@ -647,7 +648,7 @@ Open payment screen
   -> show final total
   -> create payment
   -> mark order as paid if paid amount covers total
-  -> create customer receipt print job only when the order is fully paid
+  -> do not create a customer receipt print job
 ```
 
 ### 11.2 Split By Items
@@ -661,7 +662,7 @@ Create checks
   -> run optimizeCheckCombos for each check
   -> each check can be paid separately
   -> order is paid when all checks are paid
-  -> create a customer receipt print job only when a check is fully paid
+  -> do not create a customer receipt print job
 ```
 
 Assigned check item quantities cannot exceed the original order item quantity.
@@ -731,7 +732,8 @@ Rules:
 
 ## 14. Print Gateway MVP
 
-For MVP, the print gateway can be implemented as a mock workflow before physical printer integration.
+The current print gateway uses one EPSON TM-m30 Bluetooth printer for internal
+production tickets only.
 
 Required features:
 
@@ -739,16 +741,17 @@ Required features:
 Create print job by HTTP API or service function
 Store job in print_jobs
 Worker processes pending jobs
-Mock printer output to text/log file
+Render ASCII-safe ESC/POS and write to the configured Linux RFCOMM device
 Mark job as printed or failed
 Retry failed jobs
 ```
 
 Kitchen tickets are batch-based. If additional items are added after an earlier kitchen send, the next kitchen ticket should contain only the newly sent items.
 
-Physical printer integration remains behind `apps/site-agent`, which can convert
-jobs to ESC/POS for a real thermal printer without exposing device access to the
-POS browser client.
+Physical printer integration remains behind `apps/site-agent`. One ticket
+contains a `CUISINE` section for `kitchen` and a `CAISSE` section for `bar` and
+`dessert`; station `none` is excluded. Payment never creates a customer receipt
+job, and the POS browser receives no device access.
 
 ## 15. Implementation Order
 
@@ -776,39 +779,29 @@ Recommended order:
 
 ## 16. Seed Data
 
-Categories:
+The POS seed is the approved Luna operating catalog, not demonstration menu
+fixtures. Its authoritative structured source is
+`packages/db-pos/src/luna-seed-data.ts`.
+
+It creates 12 categories and 53 catalog rows across entrees, Bun, Gua Bao,
+soups, daily dishes, desserts, soft drinks, cocktails and mocktails, hot
+drinks, alcohol, supplements, and formulas. Fifty-two products are available
+after a clean seed. `Plat special du samedi` is the additional row; it starts
+unavailable at zero price so a manager must enter the weekly description and
+price before enabling it.
+
+The seed creates these active combo rules:
 
 ```txt
-Entrees
-Plats
-Boissons
-Desserts
+Gua Bao Happy = one Gua Bao + The glace maison 25 cl for 12.50 EUR
+Menu Express = eligible main dish + 4 EUR, with one entree or dessert
+Menu Gourmand = eligible main dish + 8 EUR, with one entree and one dessert
+Combo Ete = daily dish + The glace maison 25 cl for daily dish price + 2.50 EUR
 ```
 
-Menu items:
-
-```txt
-Bun bo - 13.00 EUR - Plats - kitchen
-Com ga - 12.00 EUR - Plats - kitchen
-Pho - 14.00 EUR - Plats - kitchen
-Coca - 3.00 EUR - Boissons - bar
-The glace maison - 4.00 EUR - Boissons - bar
-Che - 5.00 EUR - Desserts - dessert
-Mochi - 4.00 EUR - Desserts - dessert
-```
-
-Combo rules:
-
-```txt
-Combo A: main dish + drink = 14.00 EUR
-- Main dish: Bun bo, Com ga, Pho (+1 EUR)
-- Drink: Coca, The glace maison (+1 EUR)
-
-Combo B: main dish + drink + dessert = 17.00 EUR
-- Main dish: Bun bo, Com ga, Pho (+1 EUR)
-- Drink: Coca, The glace maison (+1 EUR)
-- Dessert: Che, Mochi
-```
+Eligible main dishes for Menu Express and Menu Gourmand are all Bun, Gua Bao,
+soups, and daily dishes. Seeded products route to `kitchen`, `bar`, or
+`dessert`; none uses station `none`.
 
 ## 17. Acceptance Criteria
 

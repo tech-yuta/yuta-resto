@@ -22,6 +22,7 @@ import {
   payments,
   printJobs,
 } from '@yuta/db-pos/schema';
+import { createLocalPrinterWorker } from '../src/services/local-printer-worker';
 import { createSiteAgentService } from '../src/services/site-agent-service';
 
 config({ path: '.env.test' });
@@ -45,6 +46,7 @@ integrationTest('site-agent financial transaction integration', () => {
   const orderId = uuidv7();
   const mainOrderItemId = uuidv7();
   const drinkOrderItemId = uuidv7();
+  const kitchenSendKey = uuidv7();
   const paymentKey = uuidv7();
 
   beforeAll(async () => {
@@ -193,7 +195,7 @@ integrationTest('site-agent financial transaction integration', () => {
     await db.$client.end({ timeout: 5 });
   });
 
-  it('allocates a check combo, captures payment, prints once, and replays', async () => {
+  it('prints an internal ticket, captures payment once, and replays', async () => {
     const service = createSiteAgentService(db);
     const catalog = await service.getCatalog();
     expect(
@@ -208,6 +210,41 @@ integrationTest('site-agent financial transaction integration', () => {
         items: [expect.objectContaining({ menuItemId: drinkItemId })],
       }),
     ]);
+
+    await service.executeOrderCommand(orderId, {
+      action: 'send_to_kitchen',
+      staffUserId: userId,
+      idempotencyKey: kitchenSendKey,
+      allergyAcknowledged: false,
+    });
+    const kitchenJob = await db.query.printJobs.findFirst({
+      where: eq(printJobs.idempotencyKey, kitchenSendKey),
+    });
+    expect(kitchenJob?.printerName).toBe('tm-m30-internal');
+    if (!kitchenJob) throw new Error('Expected kitchen print job.');
+
+    const output: Buffer[] = [];
+    const worker = createLocalPrinterWorker({
+      db,
+      devicePath: '/dev/rfcomm-test',
+      pollIntervalMs: 1_000,
+      write: async (_devicePath, data) => {
+        output.push(data);
+      },
+    });
+    expect(await worker.processNext()).toBe(true);
+    expect(output).toHaveLength(1);
+    const printedOutput = output[0];
+    expect(printedOutput).toBeDefined();
+    expect(printedOutput?.toString('ascii')).toContain('=== CUISINE ===');
+    expect(printedOutput?.toString('ascii')).toContain(
+      '=== CAISSE - BOISSONS / DESSERTS ===',
+    );
+    const [printedJob] = await db
+      .select({ status: printJobs.status })
+      .from(printJobs)
+      .where(eq(printJobs.id, kitchenJob.id));
+    expect(printedJob?.status).toBe('printed');
     const singleSummary = await service.getPaymentSummary(orderId);
     expect(singleSummary.order.totalCents).toBe(1400);
     const discountedDetail = await service.getOrderDetail(orderId);
@@ -278,12 +315,12 @@ integrationTest('site-agent financial transaction integration', () => {
     };
     const captured = await service.payCheck(orderId, input);
     expect(captured.replayed).toBe(false);
-    expect(captured.printJob?.type).toBe('customer_receipt');
+    expect(captured.printJob).toBeNull();
 
     const replayed = await service.payCheck(orderId, input);
     expect(replayed.replayed).toBe(true);
     expect(replayed.payment.id).toBe(captured.payment.id);
-    expect(replayed.printJob?.id).toBe(captured.printJob?.id);
+    expect(replayed.printJob).toBeNull();
 
     const paymentCount = await db
       .select({ id: payments.id })
@@ -295,5 +332,16 @@ integrationTest('site-agent financial transaction integration', () => {
         ),
       );
     expect(paymentCount).toHaveLength(1);
+
+    const receiptJobs = await db
+      .select({ id: printJobs.id })
+      .from(printJobs)
+      .where(
+        and(
+          eq(printJobs.orderId, orderId),
+          eq(printJobs.jobType, 'customer_receipt'),
+        ),
+      );
+    expect(receiptJobs).toHaveLength(0);
   });
 });

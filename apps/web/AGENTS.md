@@ -3,6 +3,8 @@
 `apps/web` is the public YUTA website and an approved public cloud boundary.
 User-facing content is French.
 
+For UI work, also follow `docs/ui/YUTA_FRONTEND_RULES.md`.
+
 - Describe implemented capabilities accurately; label pilot, planned, and
   unavailable behavior.
 - Do not invent customers, testimonials, certifications, ratings, prices,

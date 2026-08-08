@@ -2,6 +2,9 @@
 
 `apps/yuta-pos` is a local-only restaurant POS client. UI text is French.
 
+For UI work, also follow `docs/ui/YUTA_FRONTEND_RULES.md` while preserving the
+local-only runtime and product rules below.
+
 - Access operational persistence only through `apps/site-agent`; never import
   `@yuta/db-cloud` or `@yuta/db-pos` into the POS client.
 - Never add cloud synchronization for orders, payments, kitchen state, print

@@ -27,7 +27,7 @@ const printJobSnapshot = {
   type: 'kitchen_ticket' as const,
   source: 'pos' as const,
   status: 'pending' as const,
-  printerName: 'mock-kitchen',
+  printerName: 'tm-m30-internal',
   summary: {
     orderNumber: 'POS-TEST',
     tableLabel: 'Terrasse 5',
@@ -50,6 +50,7 @@ describe('site-agent HTTP boundary', () => {
         SITE_AGENT_HOST: '127.0.0.1',
         SITE_AGENT_PORT: 3004,
         SITE_AGENT_ALLOWED_ORIGIN: 'http://localhost:3003',
+        POS_PRINT_POLL_INTERVAL_MS: 1_000,
       },
       service: createMockService(),
     });

@@ -1,6 +1,5 @@
 import {
   Badge,
-  Button,
   Card,
   SimpleTable,
   SimpleTableBody,
@@ -10,7 +9,7 @@ import {
   SimpleTableRow,
 } from '@yuta/ui';
 import Link from 'next/link';
-import { updateReservationStatusAction } from './reservation-actions';
+import { ReservationStatusActionForm } from './reservation-status-action-form';
 import {
   getReservationStatusTone,
   getReservationStatusTransitions,
@@ -83,21 +82,12 @@ function ReservationStatusActions({
   return (
     <div className="flex flex-wrap gap-1">
       {transitions.map((value) => (
-        <form action={updateReservationStatusAction} key={value}>
-          <input type="hidden" name="reservationId" value={id} />
-          <input type="hidden" name="status" value={value} />
-          <Button
-            size="sm"
-            variant={
-              value === 'CANCELLED' || value === 'DECLINED'
-                ? 'danger'
-                : 'outline'
-            }
-            type="submit"
-          >
-            {value}
-          </Button>
-        </form>
+        <ReservationStatusActionForm
+          key={value}
+          reservationId={id}
+          nextStatus={value}
+          size="sm"
+        />
       ))}
     </div>
   );

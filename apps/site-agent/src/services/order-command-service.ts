@@ -461,7 +461,7 @@ async function sendToKitchen(
   }
   const incompleteMochi = pendingItems.find(
     (item) =>
-      item.itemNameSnapshot === 'Mochi glace (2 pcs)' &&
+      item.itemNameSnapshot === 'Mochi glacé (2 pcs)' &&
       item.selectedVariants.reduce(
         (sum, variant) => sum + variant.quantity,
         0,
@@ -538,7 +538,7 @@ async function sendToKitchen(
       id: uuidv7(),
       orderId,
       source: 'pos',
-      printerName: 'mock-kitchen',
+      printerName: 'tm-m30-internal',
       jobType: 'kitchen_ticket',
       payload: buildKitchenPayload(sentOrder, sentItems),
       idempotencyKey: command.idempotencyKey,

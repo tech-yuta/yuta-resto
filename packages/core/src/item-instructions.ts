@@ -169,7 +169,7 @@ const itemConfigs: Array<{
     ),
   },
   {
-    matches: (name) => name.startsWith('Xiu Mai'),
+    matches: (name) => name.startsWith('Xíu Maï'),
     value: config([
       'SAUCE_SOJA_A_PART',
       'SANS_SAUCE_SOJA',
@@ -178,7 +178,7 @@ const itemConfigs: Array<{
     ]),
   },
   {
-    matches: (name) => name.startsWith('Banh Bao'),
+    matches: (name) => name.startsWith('Bánh Bao'),
     value: config([
       'SANS_SAUCE',
       'SAUCE_A_PART',
@@ -187,14 +187,14 @@ const itemConfigs: Array<{
     ]),
   },
   {
-    matches: (name) => name === 'Rouleaux de printemps',
+    matches: (name) => name.startsWith('Rouleaux de printemps'),
     value: config(
       ['SANS_CORIANDRE', 'SANS_MENTHE', 'SANS_CRUDITES', 'SAUCE_A_PART'],
       ['SANS_SAUCE', 'SANS_VERMICELLES', 'SANS_CONCOMBRE'],
     ),
   },
   {
-    matches: (name) => name === 'Poulet croustillant entree',
+    matches: (name) => name === 'Poulet croustillant',
     value: config([
       'SAUCE_A_PART',
       'SANS_SAUCE',
@@ -210,7 +210,7 @@ const itemConfigs: Array<{
     ),
   },
   {
-    matches: (_name, category) => category === 'Bun Vermicelles de riz',
+    matches: (_name, category) => category === 'Bún – vermicelles de riz',
     value: config(
       [
         'SANS_CACAHUETES',
@@ -243,14 +243,14 @@ const itemConfigs: Array<{
     ),
   },
   {
-    matches: (name) => name === 'Pho Boeuf',
+    matches: (name) => name === 'Pho Bœuf',
     value: config(
       ['SANS_CORIANDRE', 'SANS_CIBOULE', 'SANS_OIGNON', 'SANS_BOULETTES'],
       ['SANS_HERBES', 'BOUILLON_A_PART', 'NOUILLES_A_PART', 'SANS_PIMENT'],
     ),
   },
   {
-    matches: (name) => name === 'Mi Quang poulet',
+    matches: (name) => name === 'Mì Quảng poulet',
     value: config(
       ['SANS_CORIANDRE', 'SANS_CIBOULE', 'SANS_CACAHUETES', 'SANS_PIMENT'],
       ['SANS_HERBES', 'PEU_EPICE', 'BOUILLON_A_PART', 'NOUILLES_A_PART'],
@@ -273,7 +273,7 @@ const itemConfigs: Array<{
     ]),
   },
   {
-    matches: (name) => name === 'Mochi glace (2 pcs)',
+    matches: (name) => name === 'Mochi glacé (2 pcs)',
     value: {
       ...config([]),
       variantOptions: [
@@ -295,7 +295,8 @@ const itemConfigs: Array<{
     ]),
   },
   {
-    matches: (_name, category) => category === 'Boissons',
+    matches: (_name, category) =>
+      category === 'Softs' || category === 'Cocktails & mocktails',
     value: config(
       [
         'SANS_GLACONS',

@@ -345,7 +345,7 @@ describe('yuta-pos site-agent client', () => {
       type: 'kitchen_ticket' as const,
       source: 'pos' as const,
       status: 'pending' as const,
-      printerName: 'mock-kitchen',
+      printerName: 'tm-m30-internal',
       summary: {
         orderNumber: 'POS-TEST',
         tableLabel: 'Terrasse 5',

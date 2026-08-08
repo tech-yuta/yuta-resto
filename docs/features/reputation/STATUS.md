@@ -6,7 +6,7 @@ Visibility: Engineering
 
 Owner: YUTA engineering
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 This file is the operational implementation tracker for
 the reputation feature. Durable behavior belongs in the adjacent `README.md`.
@@ -28,6 +28,8 @@ Implement idempotent Google review import and a manual synchronization action.
 - `/parametres/utilisateurs-acces` membership administration for owners and administrators.
 - Multi-tenant and multi-location persistence model.
 - Authentication and membership audit events.
+- Canonical `/visibilite-reputation` Backoffice routes with permanent redirects
+  from the former `/clients/*` route group.
 
 ## Completed operational inbox
 
