@@ -748,10 +748,13 @@ Retry failed jobs
 
 Kitchen tickets are batch-based. If additional items are added after an earlier kitchen send, the next kitchen ticket should contain only the newly sent items.
 
-Physical printer integration remains behind `apps/site-agent`. One ticket
-contains a `CUISINE` section for `kitchen` and a `CAISSE` section for `bar` and
-`dessert`; station `none` is excluded. Payment never creates a customer receipt
-job, and the POS browser receives no device access.
+Physical printer integration remains behind `apps/site-agent`. Each send batch
+creates separate `CUISINE` and `BOISSONS & DESSERTS` jobs for the stations that
+have items; station `none` is excluded. The one TM-m30 prints and cuts the jobs
+sequentially. Local managers configure 1 to 3 copies per destination and a
+compact, standard, or large font preset. Jobs snapshot those presentation
+settings. Payment never creates a customer receipt job, and the POS browser
+receives no device path or access.
 
 ## 15. Implementation Order
 

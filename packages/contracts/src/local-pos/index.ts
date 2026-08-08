@@ -23,6 +23,7 @@ export const localPosRoutes = {
   orderItems: `${localPosApiBasePath}/order-items`,
   payments: `${localPosApiBasePath}/payments`,
   printJobs: `${localPosApiBasePath}/print-jobs`,
+  printSettings: `${localPosApiBasePath}/print-settings`,
 } as const;
 
 export const siteAgentHealthResponseSchema = z
@@ -801,6 +802,25 @@ export const printJobCommandSchema = z.discriminatedUnion('action', [
     .strict(),
   z.object({ action: z.literal('retry') }).strict(),
 ]);
+export const printFontSizePresetSchema = z.enum([
+  'compact',
+  'standard',
+  'large',
+]);
+export const localPrintSettingsSchema = z
+  .object({
+    kitchenCopies: z.number().int().min(1).max(3),
+    counterCopies: z.number().int().min(1).max(3),
+    fontSizePreset: printFontSizePresetSchema,
+  })
+  .strict();
+export const updateLocalPrintSettingsInputSchema = z
+  .object({
+    kitchenCopies: z.coerce.number().int().min(1).max(3),
+    counterCopies: z.coerce.number().int().min(1).max(3),
+    fontSizePreset: printFontSizePresetSchema,
+  })
+  .strict();
 
 export type SiteAgentHealthResponse = z.infer<
   typeof siteAgentHealthResponseSchema
@@ -863,4 +883,9 @@ export type CreateLocalChecksByItemsInput = z.infer<
 export type CreatePrintJobInput = z.infer<typeof createPrintJobInputSchema>;
 export type PrintJobsQuery = z.infer<typeof printJobsQuerySchema>;
 export type PrintJobCommand = z.infer<typeof printJobCommandSchema>;
+export type PrintFontSizePreset = z.infer<typeof printFontSizePresetSchema>;
+export type LocalPrintSettings = z.infer<typeof localPrintSettingsSchema>;
+export type UpdateLocalPrintSettingsInput = z.infer<
+  typeof updateLocalPrintSettingsInputSchema
+>;
 export type LocalPrintJob = z.infer<typeof localPrintJobSchema>;

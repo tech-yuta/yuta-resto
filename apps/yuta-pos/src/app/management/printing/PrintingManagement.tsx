@@ -1,6 +1,11 @@
 'use client';
 
-import type { LocalPrintJob, PrintJobCommand } from '@yuta/contracts/local-pos';
+import type {
+  LocalPrintJob,
+  LocalPrintSettings,
+  PrintFontSizePreset,
+  PrintJobCommand,
+} from '@yuta/contracts/local-pos';
 import {
   Alert,
   AlertDescription,
@@ -17,6 +22,11 @@ import {
   EmptyState,
   FormField,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
   StatCard,
 } from '@yuta/ui';
@@ -25,6 +35,7 @@ import {
   CirclePlay,
   Printer,
   RefreshCw,
+  Settings2,
   TriangleAlert,
   XCircle,
 } from 'lucide-react';
@@ -34,12 +45,19 @@ import { useActionState, useEffect, useState } from 'react';
 import {
   failPrintJobAction,
   runPrintJobCommandAction,
+  savePrintSettingsAction,
   type PrintingActionState,
 } from './actions';
 
 const initialState: PrintingActionState = { error: null, success: null };
 
-export function PrintingManagement({ jobs }: { jobs: LocalPrintJob[] }) {
+export function PrintingManagement({
+  jobs,
+  settings,
+}: {
+  jobs: LocalPrintJob[];
+  settings: LocalPrintSettings;
+}) {
   const counters = {
     pending: jobs.filter((job) => job.status === 'pending').length,
     printing: jobs.filter((job) => job.status === 'printing').length,
@@ -49,6 +67,8 @@ export function PrintingManagement({ jobs }: { jobs: LocalPrintJob[] }) {
 
   return (
     <div className="grid gap-5">
+      <PrintSettingsCard settings={settings} />
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="En attente" value={String(counters.pending)} />
         <StatCard label="En impression" value={String(counters.printing)} />
@@ -82,6 +102,146 @@ export function PrintingManagement({ jobs }: { jobs: LocalPrintJob[] }) {
           </div>
         )}
       </Card>
+    </div>
+  );
+}
+
+function PrintSettingsCard({ settings }: { settings: LocalPrintSettings }) {
+  const [kitchenCopies, setKitchenCopies] = useState(
+    String(settings.kitchenCopies),
+  );
+  const [counterCopies, setCounterCopies] = useState(
+    String(settings.counterCopies),
+  );
+  const [fontSizePreset, setFontSizePreset] = useState<PrintFontSizePreset>(
+    settings.fontSizePreset,
+  );
+  const [state, action, pending] = useActionState(
+    savePrintSettingsAction,
+    initialState,
+  );
+
+  return (
+    <Card padding="lg" className="grid gap-5">
+      <div className="flex items-start gap-3">
+        <Settings2 className="mt-0.5 h-5 w-5 text-secondary" />
+        <div>
+          <h2 className="text-lg font-black">Paramètres des tickets</h2>
+          <p className="mt-1 text-sm text-secondary">
+            Les tickets Cuisine et Boissons &amp; Desserts sont imprimés et
+            coupés séparément sur l’EPSON TM-m30.
+          </p>
+        </div>
+      </div>
+
+      <form action={action} className="grid gap-5">
+        <input type="hidden" name="kitchenCopies" value={kitchenCopies} />
+        <input type="hidden" name="counterCopies" value={counterCopies} />
+        <input type="hidden" name="fontSizePreset" value={fontSizePreset} />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <FormField label="Copies Cuisine">
+            <Select value={kitchenCopies} onValueChange={setKitchenCopies}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 copie</SelectItem>
+                <SelectItem value="2">2 copies</SelectItem>
+                <SelectItem value="3">3 copies</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="Copies Boissons & Desserts">
+            <Select value={counterCopies} onValueChange={setCounterCopies}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 copie</SelectItem>
+                <SelectItem value="2">2 copies</SelectItem>
+                <SelectItem value="3">3 copies</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="Taille du texte">
+            <Select
+              value={fontSizePreset}
+              onValueChange={(value) =>
+                setFontSizePreset(value as PrintFontSizePreset)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="compact">Compacte</SelectItem>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="large">Grande</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TicketPreview
+            title="CUISINE"
+            subtitle={`${kitchenCopies} copie${kitchenCopies === '1' ? '' : 's'}`}
+            preset={fontSizePreset}
+          />
+          <TicketPreview
+            title="BOISSONS & DESSERTS"
+            subtitle={`${counterCopies} copie${counterCopies === '1' ? '' : 's'}`}
+            preset={fontSizePreset}
+          />
+        </div>
+
+        {state.error && (
+          <Alert tone="danger">
+            <TriangleAlert className="h-4 w-4" />
+            <AlertDescription>{state.error}</AlertDescription>
+          </Alert>
+        )}
+        {state.success && (
+          <Alert tone="success">
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertDescription>{state.success}</AlertDescription>
+          </Alert>
+        )}
+        <div className="flex justify-end">
+          <Button type="submit" loading={pending}>
+            Enregistrer les paramètres
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+function TicketPreview({
+  title,
+  subtitle,
+  preset,
+}: {
+  title: string;
+  subtitle: string;
+  preset: PrintFontSizePreset;
+}) {
+  const itemClass =
+    preset === 'large'
+      ? 'text-lg font-black'
+      : preset === 'compact'
+        ? 'text-sm font-semibold'
+        : 'text-base font-bold';
+  return (
+    <div className="rounded-lg border border-border bg-surface p-4">
+      <p className="text-center text-xl font-black">{title}</p>
+      <Separator className="my-3" />
+      <p className="text-xs font-semibold uppercase text-secondary">
+        {subtitle} · Papier 80 mm
+      </p>
+      <p className={`mt-3 ${itemClass}`}>2 × Exemple d’article</p>
+      <p className="mt-1 text-sm text-secondary">&gt; Option ou remarque</p>
     </div>
   );
 }

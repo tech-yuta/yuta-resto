@@ -21,6 +21,7 @@ import {
   orders,
   payments,
   printJobs,
+  printSettings,
 } from '../src/schema';
 
 const tablesWithBusinessIds: PgTable[] = [
@@ -69,5 +70,15 @@ describe('POS schema boundaries', () => {
 
   it('uses an RFC UUIDv7 generator for seed-created records', () => {
     expect(uuidVersion(uuidv7())).toBe(7);
+  });
+
+  it('constrains the singleton print settings and copy counts', () => {
+    const config = getTableConfig(printSettings);
+    expect(config.checks.map((check) => check.name).sort()).toEqual([
+      'print_settings_counter_copies_check',
+      'print_settings_font_size_preset_check',
+      'print_settings_kitchen_copies_check',
+      'print_settings_singleton_check',
+    ]);
   });
 });

@@ -33,9 +33,15 @@ const kitchenPrintPayloadSchema = z
           allergySeverity: z.enum(['mild', 'severe']).nullable(),
           allergyNote: z.string().nullable(),
           station: z.enum(['kitchen', 'bar', 'dessert', 'none']),
+          categoryName: z.string().min(1).default('Autres'),
         })
         .passthrough(),
     ),
+    ticketDestination: z.enum(['kitchen', 'counter']).optional(),
+    copies: z.number().int().min(1).max(3).default(1),
+    fontSizePreset: z
+      .enum(['compact', 'standard', 'large'])
+      .default('standard'),
   })
   .passthrough();
 
@@ -146,35 +152,21 @@ export function createLocalPrinterWorker(input: {
 
 export function renderInternalKitchenTicket(job: PrintJob): Buffer | null {
   const payload = kitchenPrintPayloadSchema.parse(job.payload);
-  const kitchenItems = payload.items.filter(
-    (item) => item.station === 'kitchen',
-  );
-  const counterItems = payload.items.filter(
-    (item) => item.station === 'bar' || item.station === 'dessert',
-  );
-  if (kitchenItems.length === 0 && counterItems.length === 0) {
-    return null;
-  }
-
-  const lines = [
-    'YUTA - TICKET INTERNE',
-    `COMMANDE ${payload.orderNumber}`,
-    ...(payload.tableLabel ? [`TABLE ${payload.tableLabel}`] : []),
-    orderType(payload.orderType),
-    formatDateTime(payload.createdAt),
-    separator(),
-  ];
-  if (payload.orderNote) lines.push(`NOTE: ${payload.orderNote}`, separator());
-  appendSection(lines, 'CUISINE', kitchenItems);
-  appendSection(lines, 'CAISSE - BOISSONS / DESSERTS', counterItems);
-  lines.push('', '', '');
-
-  const body = ascii(lines.join('\r\n'));
-  return Buffer.concat([
-    Buffer.from([0x1b, 0x40]),
-    Buffer.from(body, 'ascii'),
-    Buffer.from([0x1d, 0x56, 0x00]),
-  ]);
+  const destinations = payload.ticketDestination
+    ? [payload.ticketDestination]
+    : (['kitchen', 'counter'] as const);
+  const tickets = destinations.flatMap((destination) => {
+    const items = payload.items.filter((item) =>
+      destination === 'kitchen'
+        ? item.station === 'kitchen'
+        : item.station === 'bar' || item.station === 'dessert',
+    );
+    if (items.length === 0) return [];
+    return Array.from({ length: payload.copies }, () =>
+      renderProductionTicket(payload, destination, items),
+    );
+  });
+  return tickets.length > 0 ? Buffer.concat(tickets) : null;
 }
 
 async function writePrinterDevice(
@@ -213,32 +205,103 @@ async function writePrinterDevice(
   });
 }
 
-function appendSection(
-  lines: string[],
-  title: string,
+function renderProductionTicket(
+  payload: z.infer<typeof kitchenPrintPayloadSchema>,
+  destination: 'kitchen' | 'counter',
   items: z.infer<typeof kitchenPrintPayloadSchema>['items'],
-): void {
-  if (items.length === 0) return;
-  lines.push(`=== ${title} ===`);
+): Buffer {
+  const chunks: Buffer[] = [];
+  const write = (value: string) => {
+    chunks.push(Buffer.from(ascii(`${value}\r\n`), 'ascii'));
+  };
+  const command = (...bytes: number[]) => chunks.push(Buffer.from(bytes));
+  const setAlign = (value: 0 | 1) => command(0x1b, 0x61, value);
+  const setBold = (enabled: boolean) => command(0x1b, 0x45, enabled ? 1 : 0);
+  const setReverse = (enabled: boolean) => command(0x1d, 0x42, enabled ? 1 : 0);
+  const setSize = (value: number) => command(0x1d, 0x21, value);
+  const itemSize = payload.fontSizePreset === 'large' ? 0x11 : 0x00;
+  const itemWidth = payload.fontSizePreset === 'large' ? 21 : 42;
+
+  command(0x1b, 0x40);
+  setAlign(1);
+  setBold(true);
+  setSize(0x11);
+  if (destination === 'kitchen') {
+    write('CUISINE');
+  } else {
+    write('BOISSONS');
+    write('& DESSERTS');
+  }
+  setSize(0x00);
+  setBold(false);
+  write(separator());
+
+  setAlign(0);
+  setBold(true);
+  if (payload.tableLabel) write(`TABLE       ${payload.tableLabel}`);
+  write(orderType(payload.orderType));
+  write(formatDateTime(payload.createdAt));
+  write(`${items.reduce((sum, item) => sum + item.quantity, 0)} ARTICLES`);
+  if (payload.orderNote) write(`NOTE: ${payload.orderNote}`);
+  setBold(false);
+  write(separator());
+
+  const groupedItems = new Map<string, typeof items>();
   for (const item of items) {
-    lines.push(`${item.quantity} x ${item.name}`);
-    for (const instruction of item.quickInstructions) {
-      lines.push(`  - ${instruction.labelSnapshot}`);
-    }
-    for (const variant of item.selectedVariants) {
-      lines.push(`  - ${variant.quantity} x ${variant.labelSnapshot}`);
-    }
-    if (item.note) lines.push(`  NOTE: ${item.note}`);
-    if (item.hasAllergy) {
-      const allergy = [
-        item.allergySeverity === 'severe' ? 'GRAVE' : 'LEGERE',
-        ...item.allergenCodes,
-        item.allergyNote,
-      ].filter((value): value is string => Boolean(value));
-      lines.push(`  !!! ALLERGIE: ${allergy.join(', ')}`);
+    const group = groupedItems.get(item.categoryName) ?? [];
+    group.push(item);
+    groupedItems.set(item.categoryName, group);
+  }
+  for (const [categoryName, categoryItems] of groupedItems) {
+    setAlign(1);
+    setBold(true);
+    setReverse(true);
+    write(centerText(categoryName.toUpperCase(), 42));
+    setReverse(false);
+    setBold(false);
+    write(separator());
+    setAlign(0);
+    for (const item of categoryItems) {
+      setSize(itemSize);
+      setBold(payload.fontSizePreset !== 'compact');
+      for (const line of wrapText(
+        `${item.quantity > 1 ? `${item.quantity} x ` : ''}${item.name}`,
+        itemWidth,
+      )) {
+        write(line);
+      }
+      setSize(0x00);
+      setBold(false);
+      for (const instruction of item.quickInstructions) {
+        write(`  > ${instruction.labelSnapshot}`);
+      }
+      for (const variant of item.selectedVariants) {
+        write(
+          `  > ${variant.labelSnapshot}${variant.quantity > 1 ? ` x${variant.quantity}` : ''}`,
+        );
+      }
+      if (item.note) write(`  > NOTE: ${item.note}`);
+      if (item.hasAllergy) {
+        const allergy = [
+          item.allergySeverity === 'severe' ? 'GRAVE' : 'LEGERE',
+          ...item.allergenCodes,
+          item.allergyNote,
+        ].filter((value): value is string => Boolean(value));
+        setBold(true);
+        setReverse(true);
+        write(`!!! ALLERGIE: ${allergy.join(', ')}`);
+        setReverse(false);
+        setBold(false);
+      }
+      write('');
     }
   }
-  lines.push(separator());
+  write(separator());
+  write('');
+  write('');
+  write('');
+  command(0x1d, 0x56, 0x00);
+  return Buffer.concat(chunks);
 }
 
 function orderType(value: 'dine_in' | 'takeaway' | 'delivery'): string {
@@ -248,15 +311,53 @@ function orderType(value: 'dine_in' | 'takeaway' | 'delivery'): string {
 }
 
 function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
+  const date = new Date(value);
+  const time = new Intl.DateTimeFormat('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: false,
-  }).format(new Date(value));
+  }).format(date);
+  const day = new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+  return `${time} - ${day}`;
 }
 
 function separator(): string {
   return '-'.repeat(42);
+}
+
+function centerText(value: string, width: number): string {
+  const text = ascii(value).slice(0, width - 2);
+  const left = Math.max(1, Math.floor((width - text.length) / 2));
+  return `${' '.repeat(left)}${text}`.padEnd(width, ' ');
+}
+
+function wrapText(value: string, width: number): string[] {
+  const words = ascii(value).split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    if (word.length > width) {
+      if (line) lines.push(line);
+      for (let index = 0; index < word.length; index += width) {
+        lines.push(word.slice(index, index + width));
+      }
+      line = '';
+      continue;
+    }
+    const candidate = line ? `${line} ${word}` : word;
+    if (candidate.length > width) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.length > 0 ? lines : [''];
 }
 
 function ascii(value: string): string {

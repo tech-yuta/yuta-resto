@@ -337,6 +337,54 @@ describe('site-agent HTTP boundary', () => {
     expect(await command.json()).toEqual(printJobSnapshot);
   });
 
+  it('protects and validates local print settings', async () => {
+    const unauthorized = await fetch(`${baseUrl}/api/v1/print-settings`);
+    expect(unauthorized.status).toBe(401);
+
+    const current = await fetch(`${baseUrl}/api/v1/print-settings`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    expect(current.status).toBe(200);
+    expect(await current.json()).toEqual({
+      kitchenCopies: 1,
+      counterCopies: 1,
+      fontSizePreset: 'standard',
+    });
+
+    const updated = await fetch(`${baseUrl}/api/v1/print-settings`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        kitchenCopies: 2,
+        counterCopies: 1,
+        fontSizePreset: 'large',
+      }),
+    });
+    expect(updated.status).toBe(200);
+    expect(await updated.json()).toEqual({
+      kitchenCopies: 2,
+      counterCopies: 1,
+      fontSizePreset: 'large',
+    });
+
+    const invalid = await fetch(`${baseUrl}/api/v1/print-settings`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        kitchenCopies: 4,
+        counterCopies: 1,
+        fontSizePreset: 'standard',
+      }),
+    });
+    expect(invalid.status).toBe(400);
+  });
+
   it('requires UUIDv7 idempotency keys for kitchen commands', async () => {
     const response = await fetch(
       `${baseUrl}/api/v1/orders/${orderId}/commands`,
@@ -561,5 +609,11 @@ function createMockService(): SiteAgentService {
     },
     listPrintJobs: async () => ({ printJobs: [printJobSnapshot] }),
     executePrintJobCommand: async () => printJobSnapshot,
+    getPrintSettings: async () => ({
+      kitchenCopies: 1,
+      counterCopies: 1,
+      fontSizePreset: 'standard',
+    }),
+    updatePrintSettings: async (input) => input,
   };
 }

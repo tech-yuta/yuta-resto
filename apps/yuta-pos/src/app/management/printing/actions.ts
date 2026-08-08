@@ -2,6 +2,7 @@
 
 import {
   printJobCommandSchema,
+  updateLocalPrintSettingsInputSchema,
   type PrintJobCommand,
 } from '@yuta/contracts/local-pos';
 import { revalidatePath } from 'next/cache';
@@ -58,6 +59,27 @@ export async function failPrintJobAction(
     );
     revalidatePath('/management/printing');
     return { error: null, success: 'Échec enregistré.' };
+  } catch (error: unknown) {
+    return toActionError(error);
+  }
+}
+
+export async function savePrintSettingsAction(
+  _previousState: PrintingActionState,
+  formData: FormData,
+): Promise<PrintingActionState> {
+  const input = updateLocalPrintSettingsInputSchema.safeParse({
+    kitchenCopies: formData.get('kitchenCopies'),
+    counterCopies: formData.get('counterCopies'),
+    fontSizePreset: formData.get('fontSizePreset'),
+  });
+  if (!input.success) return validationError();
+
+  try {
+    const { token } = await requireLocalManagementCredentials();
+    await siteAgentClient.updatePrintSettings(token, input.data);
+    revalidatePath('/management/printing');
+    return { error: null, success: 'Paramètres d’impression enregistrés.' };
   } catch (error: unknown) {
     return toActionError(error);
   }

@@ -220,8 +220,16 @@ integrationTest('site-agent financial transaction integration', () => {
     const kitchenJob = await db.query.printJobs.findFirst({
       where: eq(printJobs.idempotencyKey, kitchenSendKey),
     });
-    expect(kitchenJob?.printerName).toBe('tm-m30-internal');
+    expect(kitchenJob?.printerName).toBe('tm-m30-cuisine');
     if (!kitchenJob) throw new Error('Expected kitchen print job.');
+    const productionJobs = await db
+      .select()
+      .from(printJobs)
+      .where(eq(printJobs.orderId, orderId));
+    expect(productionJobs.map((job) => job.printerName).sort()).toEqual([
+      'tm-m30-bar-desserts',
+      'tm-m30-cuisine',
+    ]);
 
     const output: Buffer[] = [];
     const worker = createLocalPrinterWorker({
@@ -233,13 +241,11 @@ integrationTest('site-agent financial transaction integration', () => {
       },
     });
     expect(await worker.processNext()).toBe(true);
-    expect(output).toHaveLength(1);
-    const printedOutput = output[0];
-    expect(printedOutput).toBeDefined();
-    expect(printedOutput?.toString('ascii')).toContain('=== CUISINE ===');
-    expect(printedOutput?.toString('ascii')).toContain(
-      '=== CAISSE - BOISSONS / DESSERTS ===',
-    );
+    expect(await worker.processNext()).toBe(true);
+    expect(output).toHaveLength(2);
+    expect(output[0]?.toString('ascii')).toContain('CUISINE');
+    expect(output[0]?.toString('ascii')).not.toContain('BOISSONS');
+    expect(output[1]?.toString('ascii')).toContain('BOISSONS');
     const [printedJob] = await db
       .select({ status: printJobs.status })
       .from(printJobs)

@@ -659,16 +659,29 @@ shows the printer-name snapshot, source, linked order, creation time, and a
 safe summary of the ticket payload. Raw print payloads are not exposed to the
 browser.
 
+The top of the same page contains the persisted ticket settings:
+
+```txt
+Cuisine copies: 1 to 3
+Boissons & Desserts copies: 1 to 3
+Text size: Compact, Standard, or Large
+```
+
+Settings apply to newly created jobs. Each job keeps its copy count and font
+preset snapshot, so retrying an older failed job does not silently change its
+layout. Paper width remains fixed at 80 mm. The physical device path is trusted
+site-agent configuration and cannot be edited in the browser.
+
 ## Physical Printer Adapter
 
 When `POS_PRINTER_DEVICE` is configured, `site-agent` claims pending
-`kitchen_ticket` jobs, renders an ASCII-safe ESC/POS ticket, writes it to the
-Linux RFCOMM character device in raw TTY mode, and marks the job `printed` or
-`failed`.
-The single internal ticket separates `kitchen` items under `CUISINE` and
-`bar`/`dessert` items under `CAISSE - BOISSONS / DESSERTS`; station `none` is
-excluded. Raw payloads and the device path never reach the browser. The current
-Luna host exposes the paired TM-m30 as `/dev/rfcomm1` through a systemd service.
+`kitchen_ticket` jobs, renders an ASCII-safe ESC/POS ticket, writes it once to
+the bound Linux RFCOMM character device, and marks the job `printed` or
+`failed`. A kitchen send creates an independent `CUISINE` ticket and an
+independent `BOISSONS & DESSERTS` ticket when each destination has items. The
+single TM-m30 prints and cuts them sequentially; station `none` is excluded.
+Raw payloads and the device path never reach the browser. The current Luna host
+exposes the paired TM-m30 as `/dev/rfcomm1` through a systemd binding.
 
 ## Important Behavior Notes
 

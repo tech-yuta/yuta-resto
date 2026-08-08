@@ -7,6 +7,7 @@ import { handleOrderItemsRoute } from './order-items';
 import { handleOrdersRoute } from './orders';
 import { handlePaymentRoutes } from './payments';
 import { handlePrintJobRoutes } from './print-jobs';
+import { handlePrintSettingsRoutes } from './print-settings';
 
 export const siteAgentRoutes: RouteHandler[] = [
   handleHealthRoute,
@@ -17,4 +18,5 @@ export const siteAgentRoutes: RouteHandler[] = [
   handleOrderItemsRoute,
   handlePaymentRoutes,
   handlePrintJobRoutes,
+  handlePrintSettingsRoutes,
 ];

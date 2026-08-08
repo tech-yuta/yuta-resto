@@ -32,6 +32,7 @@ import {
   localPaymentSummaryResponseSchema,
   localPrintJobsResponseSchema,
   localPrintJobSchema,
+  localPrintSettingsSchema,
   localPosRoutes,
   localUserResponseSchema,
   localUsersResponseSchema,
@@ -49,6 +50,7 @@ import {
   resetLocalUserPinInputSchema,
   updateLocalUserInputSchema,
   updateLocalOrderItemInputSchema,
+  updateLocalPrintSettingsInputSchema,
   type AddLocalOrderItemInput,
   type CreateLocalCatalogCategoryInput,
   type CreateLocalCatalogItemInput,
@@ -74,6 +76,7 @@ import {
   type UpdateLocalComboRuleInput,
   type UpdateLocalUserInput,
   type UpdateLocalOrderItemInput,
+  type UpdateLocalPrintSettingsInput,
 } from '@yuta/contracts/local-pos';
 import { z } from 'zod';
 
@@ -420,6 +423,22 @@ export function createSiteAgentClient(input?: {
         localPrintJobsResponseSchema,
         { headers: { Authorization: `Bearer ${token}` } },
       );
+    },
+    async getPrintSettings(token: string) {
+      return request(localPosRoutes.printSettings, localPrintSettingsSchema, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    async updatePrintSettings(
+      token: string,
+      input: UpdateLocalPrintSettingsInput,
+    ) {
+      const body = updateLocalPrintSettingsInputSchema.parse(input);
+      return request(localPosRoutes.printSettings, localPrintSettingsSchema, {
+        method: 'PATCH',
+        headers: managementJsonHeaders(token),
+        body: JSON.stringify(body),
+      });
     },
     async executePrintJobCommand(
       token: string,

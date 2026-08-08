@@ -29,11 +29,13 @@ import { createFinancialService } from './financial-service';
 import { createLocalAuthService } from './local-auth-service';
 import { createLocalUserManagementService } from './local-user-management-service';
 import { createPrintJobService } from './print-job-service';
+import { createPrintSettingsService } from './print-settings-service';
 
 export function createSiteAgentService(db: PosDatabaseClient) {
   const orderCommands = createOrderCommandService(db);
   const financial = createFinancialService(db);
   const printing = createPrintJobService(db);
+  const printSettings = createPrintSettingsService(db);
   const authentication = createLocalAuthService(db);
   const userManagement = createLocalUserManagementService(db);
   const catalogManagement = createCatalogManagementService(db);
@@ -218,6 +220,7 @@ export function createSiteAgentService(db: PosDatabaseClient) {
     ...orderCommands,
     ...financial,
     ...printing,
+    ...printSettings,
   };
 }
 

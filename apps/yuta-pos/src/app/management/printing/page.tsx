@@ -9,9 +9,14 @@ export default async function LocalPrintingManagementPage() {
   const { token } = await requireLocalManagementCredentials();
 
   let jobs;
+  let settings;
   try {
-    jobs = (await siteAgentClient.listPrintJobs(token, { limit: 100 }))
-      .printJobs;
+    const [jobsResponse, settingsResponse] = await Promise.all([
+      siteAgentClient.listPrintJobs(token, { limit: 100 }),
+      siteAgentClient.getPrintSettings(token),
+    ]);
+    jobs = jobsResponse.printJobs;
+    settings = settingsResponse;
   } catch {
     return (
       <main className="grid min-h-dvh place-items-center bg-canvas p-4">
@@ -49,7 +54,7 @@ export default async function LocalPrintingManagementPage() {
             </Button>
           }
         />
-        <PrintingManagement jobs={jobs} />
+        <PrintingManagement jobs={jobs} settings={settings} />
       </div>
     </main>
   );

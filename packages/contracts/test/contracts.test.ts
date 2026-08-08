@@ -12,11 +12,13 @@ import {
   cloudUserSchema,
   moneySchema,
   localOrderCommandSchema,
+  localPrintSettingsSchema,
   localPosApiBasePath,
   orderStatusSchema,
   publicFeedbackSubmissionSchema,
   saveReplySchema,
   updateFeedbackSchema,
+  updateLocalPrintSettingsInputSchema,
   uuidV7Schema,
   tenantMembershipContractSchema,
 } from '../src';
@@ -63,6 +65,24 @@ describe('@yuta/contracts', () => {
       throw new Error('Expected a send-to-kitchen command.');
     }
     expect(sendCommand.allergyAcknowledged).toBe(false);
+    expect(
+      updateLocalPrintSettingsInputSchema.parse({
+        kitchenCopies: '2',
+        counterCopies: '1',
+        fontSizePreset: 'large',
+      }),
+    ).toEqual({
+      kitchenCopies: 2,
+      counterCopies: 1,
+      fontSizePreset: 'large',
+    });
+    expect(
+      localPrintSettingsSchema.safeParse({
+        kitchenCopies: 4,
+        counterCopies: 1,
+        fontSizePreset: 'standard',
+      }).success,
+    ).toBe(false);
   });
 
   it('validates strict common and order contracts', () => {

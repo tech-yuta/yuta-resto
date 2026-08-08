@@ -386,6 +386,35 @@ describe('yuta-pos site-agent client', () => {
     });
   });
 
+  it('reads and updates validated print settings with management auth', async () => {
+    const settings = {
+      kitchenCopies: 1,
+      counterCopies: 1,
+      fontSizePreset: 'standard' as const,
+    };
+    const updated = { ...settings, kitchenCopies: 2 };
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json(settings))
+      .mockResolvedValueOnce(Response.json(updated));
+    const client = createSiteAgentClient({
+      baseUrl: 'http://site-agent.test',
+      fetchImplementation,
+    });
+
+    await client.getPrintSettings(sessionToken);
+    await client.updatePrintSettings(sessionToken, updated);
+
+    expect(fetchImplementation.mock.calls.map(([url]) => url)).toEqual([
+      'http://site-agent.test/api/v1/print-settings',
+      'http://site-agent.test/api/v1/print-settings',
+    ]);
+    expect(fetchImplementation.mock.calls[1]?.[1]).toMatchObject({
+      method: 'PATCH',
+      body: JSON.stringify(updated),
+    });
+  });
+
   it('sends validated create-order input to the versioned API', async () => {
     const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json(

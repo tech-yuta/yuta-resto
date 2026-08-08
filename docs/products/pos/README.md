@@ -199,6 +199,8 @@ POST /api/v1/orders/:orderId/payments
 POST /api/v1/orders/:orderId/checks/:checkId/payments
 GET  /api/v1/print-jobs
 POST /api/v1/print-jobs/:printJobId/commands
+GET  /api/v1/print-settings
+PATCH /api/v1/print-settings
 ```
 
 Request and response schemas live under `@yuta/contracts/local-pos`. Contracts
@@ -237,11 +239,11 @@ The offline acceptance run also verifies real local-user, catalog, and combo
 management against a freshly seeded database and creates a UUIDv7 order
 without cloud services.
 
-There is intentionally no `/tables` or physical `/printers` configuration
-resource. The current POS uses free-text table labels and printer-name
-snapshots; physical table maps and printer configuration remain deferred until
-a real hardware transport is selected. The authenticated `/api/v1/print-jobs`
-resource is the implemented local queue boundary.
+There is intentionally no `/tables` or browser-controlled physical
+`/printers` resource. The authenticated print settings resource owns only safe
+ticket presentation settings: Cuisine and counter copy counts plus a compact,
+standard, or large font preset. The trusted `POS_PRINTER_DEVICE` remains
+site-agent environment configuration and never becomes browser input.
 
 POS setup and reporting are local workflows, not cloud back-office workflows:
 
@@ -373,9 +375,9 @@ The MVP print flow is site-agent-owned:
 
 ```txt
 POS send to kitchen
-Create print_jobs row with status pending
+Create independent Cuisine and Boissons/Desserts print_jobs rows when present
 Local printer adapter claims the pending job
-Adapter renders separate Cuisine and Caisse sections and sends ESC/POS to the configured device
+Adapter renders one station ticket and sends ESC/POS to the configured device
 Adapter marks the job printed or failed
 ```
 
@@ -384,10 +386,13 @@ Kitchen ticket jobs are batch-based. If an order is sent to kitchen, then more i
 `site-agent` owns print-job creation, queue maintenance, ESC/POS rendering, and
 the physical device write. The selected local transport is one Linux-hosted
 EPSON TM-m30 Bluetooth RFCOMM character device, configured with
-`POS_PRINTER_DEVICE` (currently `/dev/rfcomm1` at Luna). Kitchen items and
-bar/dessert items print as separate sections on the same internal ticket. Items
-with station `none` do not print. Payment capture does not create a customer
-receipt job.
+`POS_PRINTER_DEVICE` (currently `/dev/rfcomm1` at Luna). Each kitchen send
+creates a Cuisine job for `kitchen` items and a Boissons & Desserts job for
+`bar`/`dessert` items when those stations are present. The single TM-m30 prints
+and cuts those tickets sequentially. Jobs snapshot their configured copy count
+and font preset so retries remain stable after settings change. Items with
+station `none` do not print. Payment capture does not create a customer receipt
+job.
 
 `@yuta/core` is now database-independent. Its legacy repositories,
 transactions, print worker, environment loading, and filesystem code have been
@@ -449,5 +454,6 @@ safe print-job summaries and applies the persisted state machine:
 `pending/printing -> failed -> pending` through retry. Queue reads and manual
 commands require a local admin or manager session. Raw payloads remain inside
 `site-agent`; the browser receives only order/table/item-count summaries.
-Physical ESC/POS transport and printer-routing configuration remain outside
-the current MVP.
+The same screen manages Cuisine and Boissons/Desserts copy counts and the
+compact, standard, or large ESC/POS font preset. Physical device paths and
+printer routing remain outside browser control.

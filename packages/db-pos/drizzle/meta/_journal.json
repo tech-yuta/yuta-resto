@@ -15,6 +15,13 @@
       "when": 1785275807004,
       "tag": "0001_local_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786215084075,
+      "tag": "0002_print_settings",
+      "breakpoints": true
     }
   ]
 }

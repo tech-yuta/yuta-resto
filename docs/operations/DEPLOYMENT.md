@@ -295,6 +295,8 @@ Do not deploy legacy shared migrations or compatibility/backfill migrations.
 Test every baseline against an empty database before production.
 After the baseline, apply feature migrations in journal order. POS local
 authentication starts with `packages/db-pos/drizzle/0001_local_auth.sql`.
+Persisted station copy counts and font presets are added by
+`packages/db-pos/drizzle/0002_print_settings.sql`.
 
 Supply unique four-to-eight-digit `YUTA_POS_SEED_ADMIN_PIN`,
 `YUTA_POS_SEED_STAFF_PIN`, and `YUTA_POS_SEED_KITCHEN_PIN` values to the

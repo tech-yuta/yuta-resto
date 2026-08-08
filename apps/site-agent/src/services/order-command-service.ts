@@ -11,6 +11,7 @@ import type { PosDatabaseExecutor } from '@yuta/db-pos/client';
 import {
   checks,
   localUsers,
+  menuCategories,
   menuItems,
   orderDiscountItems,
   orderDiscounts,
@@ -20,6 +21,7 @@ import {
   printJobs,
   type Order,
   type OrderItem,
+  type PrintSettings,
 } from '@yuta/db-pos/schema';
 import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { v7 as uuidv7 } from 'uuid';
@@ -29,6 +31,7 @@ import {
   buildVariantSnapshots,
 } from './instruction-snapshots';
 import { toOrderSummary } from './site-agent-service';
+import { ensurePrintSettings } from './print-settings-service';
 
 const knownAllergenCodes = new Set([
   'PEANUTS',
@@ -459,6 +462,25 @@ async function sendToKitchen(
       'Order has no pending items to send.',
     );
   }
+  const [settings, itemCategories] = await Promise.all([
+    ensurePrintSettings(db),
+    db
+      .select({
+        menuItemId: menuItems.id,
+        categoryName: menuCategories.name,
+      })
+      .from(menuItems)
+      .innerJoin(menuCategories, eq(menuItems.categoryId, menuCategories.id))
+      .where(
+        inArray(
+          menuItems.id,
+          pendingItems.map((item) => item.menuItemId),
+        ),
+      ),
+  ]);
+  const categoryByMenuItemId = new Map(
+    itemCategories.map((item) => [item.menuItemId, item.categoryName]),
+  );
   const incompleteMochi = pendingItems.find(
     (item) =>
       item.itemNameSnapshot === 'Mochi glacé (2 pcs)' &&
@@ -532,18 +554,33 @@ async function sendToKitchen(
         ? now
         : item.allergyAcknowledgedAt,
   }));
-  const [printJob] = await db
+  const ticketPlans = buildTicketPlans(sentItems, settings);
+  const createdPrintJobs = await db
     .insert(printJobs)
-    .values({
-      id: uuidv7(),
-      orderId,
-      source: 'pos',
-      printerName: 'tm-m30-internal',
-      jobType: 'kitchen_ticket',
-      payload: buildKitchenPayload(sentOrder, sentItems),
-      idempotencyKey: command.idempotencyKey,
-    })
+    .values(
+      ticketPlans.map((plan, index) => ({
+        id: uuidv7(),
+        orderId,
+        source: 'pos' as const,
+        printerName:
+          plan.destination === 'kitchen'
+            ? 'tm-m30-cuisine'
+            : 'tm-m30-bar-desserts',
+        jobType: 'kitchen_ticket' as const,
+        payload: buildKitchenPayload(
+          sentOrder,
+          plan.items,
+          plan.destination,
+          plan.copies,
+          settings.fontSizePreset,
+          categoryByMenuItemId,
+        ),
+        idempotencyKey: index === 0 ? command.idempotencyKey : null,
+      })),
+    )
     .returning();
+  const printJob = createdPrintJobs[0];
+  if (!printJob) throw new Error('Kitchen send did not create a print job.');
   const detail = await loadOrderDetail(db, sentOrder);
 
   return localKitchenSendResponseSchema.parse({
@@ -810,7 +847,54 @@ function toPrintJob(job: typeof printJobs.$inferSelect) {
   };
 }
 
-function buildKitchenPayload(order: Order, items: OrderItem[]) {
+function buildTicketPlans(items: OrderItem[], settings: PrintSettings) {
+  const kitchenItems = items.filter(
+    (item) => item.kitchenStationSnapshot === 'kitchen',
+  );
+  const counterItems = items.filter(
+    (item) =>
+      item.kitchenStationSnapshot === 'bar' ||
+      item.kitchenStationSnapshot === 'dessert',
+  );
+  const plans = [
+    ...(kitchenItems.length > 0
+      ? [
+          {
+            destination: 'kitchen' as const,
+            items: kitchenItems,
+            copies: settings.kitchenCopies,
+          },
+        ]
+      : []),
+    ...(counterItems.length > 0
+      ? [
+          {
+            destination: 'counter' as const,
+            items: counterItems,
+            copies: settings.counterCopies,
+          },
+        ]
+      : []),
+  ];
+  return plans.length > 0
+    ? plans
+    : [
+        {
+          destination: 'kitchen' as const,
+          items,
+          copies: settings.kitchenCopies,
+        },
+      ];
+}
+
+function buildKitchenPayload(
+  order: Order,
+  items: OrderItem[],
+  ticketDestination: 'kitchen' | 'counter',
+  copies: number,
+  fontSizePreset: PrintSettings['fontSizePreset'],
+  categoryByMenuItemId: Map<string, string>,
+) {
   return {
     orderId: order.id,
     orderNumber: order.orderNumber,
@@ -821,6 +905,9 @@ function buildKitchenPayload(order: Order, items: OrderItem[]) {
     allergyNote: order.allergyNote,
     allergyAcknowledgedAt: order.allergyAcknowledgedAt?.toISOString() ?? null,
     createdAt: new Date().toISOString(),
+    ticketDestination,
+    copies,
+    fontSizePreset,
     items: items.map((item) => ({
       orderItemId: item.id,
       name: item.itemNameSnapshot,
@@ -836,6 +923,7 @@ function buildKitchenPayload(order: Order, items: OrderItem[]) {
       allergyKitchenConfirmedAt:
         item.allergyKitchenConfirmedAt?.toISOString() ?? null,
       station: item.kitchenStationSnapshot,
+      categoryName: categoryByMenuItemId.get(item.menuItemId) ?? 'Autres',
     })),
   };
 }

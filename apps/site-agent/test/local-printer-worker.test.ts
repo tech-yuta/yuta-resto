@@ -32,6 +32,7 @@ const baseJob: PrintJob = {
         allergySeverity: 'severe',
         allergyNote: null,
         station: 'kitchen',
+        categoryName: 'Nos entrées',
       },
       {
         name: 'Mochi glacé',
@@ -44,6 +45,7 @@ const baseJob: PrintJob = {
         allergySeverity: null,
         allergyNote: null,
         station: 'dessert',
+        categoryName: 'Nos desserts',
       },
       {
         name: 'Sac papier',
@@ -56,6 +58,7 @@ const baseJob: PrintJob = {
         allergySeverity: null,
         allergyNote: null,
         station: 'none',
+        categoryName: 'Suppléments',
       },
     ],
   },
@@ -66,21 +69,56 @@ const baseJob: PrintJob = {
 };
 
 describe('local TM-m30 print rendering', () => {
-  it('renders one internal ticket with kitchen and counter sections', () => {
-    const output = renderInternalKitchenTicket(baseJob);
+  it('renders a large kitchen ticket grouped by category', () => {
+    const output = renderInternalKitchenTicket({
+      ...baseJob,
+      payload: {
+        ...baseJob.payload,
+        ticketDestination: 'kitchen',
+        copies: 1,
+        fontSizePreset: 'large',
+      },
+    });
     expect(output).not.toBeNull();
     if (!output) throw new Error('Expected a physical ticket.');
     const text = output.toString('ascii');
 
     expect([...output.subarray(0, 2)]).toEqual([0x1b, 0x40]);
     expect([...output.subarray(-3)]).toEqual([0x1d, 0x56, 0x00]);
-    expect(text).toContain('=== CUISINE ===');
+    expect(text).toContain('CUISINE');
+    expect(text).toContain('NOS ENTREES');
     expect(text).toContain('2 x Pho special');
     expect(text).toContain('!!! ALLERGIE: GRAVE, arachides');
-    expect(text).toContain('=== CAISSE - BOISSONS / DESSERTS ===');
-    expect(text).toContain('1 x Mochi glace');
+    expect(text).not.toContain('BOISSONS');
+    expect(text).not.toContain('Mochi glace');
     expect(text).not.toContain('Sac papier');
     expect(text).not.toContain('€');
+  });
+
+  it('renders and cuts the configured number of counter copies', () => {
+    const output = renderInternalKitchenTicket({
+      ...baseJob,
+      payload: {
+        ...baseJob.payload,
+        ticketDestination: 'counter',
+        copies: 2,
+        fontSizePreset: 'standard',
+      },
+    });
+    expect(output).not.toBeNull();
+    if (!output) throw new Error('Expected counter tickets.');
+    const text = output.toString('ascii');
+    expect(text.match(/BOISSONS/g)).toHaveLength(2);
+    expect(text.match(/Mochi glace/g)).toHaveLength(2);
+    expect(countSequence(output, [0x1d, 0x56, 0x00])).toBe(2);
+    expect(text).not.toContain('Pho special');
+  });
+
+  it('keeps legacy combined jobs printable as two cut tickets', () => {
+    const output = renderInternalKitchenTicket(baseJob);
+    expect(output).not.toBeNull();
+    if (!output) throw new Error('Expected legacy tickets.');
+    expect(countSequence(output, [0x1d, 0x56, 0x00])).toBe(2);
   });
 
   it('skips a physical ticket without internal production items', () => {
@@ -101,6 +139,7 @@ describe('local TM-m30 print rendering', () => {
               allergySeverity: null,
               allergyNote: null,
               station: 'none',
+              categoryName: 'Suppléments',
             },
           ],
         },
@@ -108,3 +147,13 @@ describe('local TM-m30 print rendering', () => {
     ).toBeNull();
   });
 });
+
+function countSequence(buffer: Buffer, sequence: number[]): number {
+  let count = 0;
+  for (let index = 0; index <= buffer.length - sequence.length; index += 1) {
+    if (sequence.every((value, offset) => buffer[index + offset] === value)) {
+      count += 1;
+    }
+  }
+  return count;
+}
