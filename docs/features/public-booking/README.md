@@ -46,7 +46,7 @@ Phase 1 includes:
 In the Backoffice, weekly service periods, service summaries, and dated
 exceptions are managed under `/etablissement/horaires-services`. Global
 booking rules are managed independently under
-`/operations/reservations/parametres`.
+`/reservations/parametres`.
 
 Waitlists, table assignment, floor plans, deposits, SMS, widgets, custom
 domains, and channel synchronization are intentionally outside Phase 1.

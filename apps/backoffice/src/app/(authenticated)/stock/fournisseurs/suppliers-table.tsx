@@ -2,18 +2,7 @@
 
 import {
   Badge,
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
   IconButton,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   SimpleTable,
   SimpleTableBody,
   SimpleTableCell,
@@ -22,14 +11,8 @@ import {
   SimpleTableRow,
   cn,
 } from '@yuta/ui';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  MoreVertical,
-  Truck,
-} from 'lucide-react';
+import { MoreVertical, Truck } from 'lucide-react';
+import { StockPrototypeTableFooter } from '../stock-prototype-table-footer';
 import { SupplierLogo } from './supplier-logo';
 import type { Supplier } from './suppliers-model';
 
@@ -39,7 +22,7 @@ export function SuppliersTable({
   onSelect,
 }: {
   suppliers: readonly Supplier[];
-  selectedId: string;
+  selectedId: string | null;
   onSelect(id: string): void;
 }) {
   return (
@@ -112,24 +95,14 @@ export function SuppliersTable({
                 </Badge>
               </SimpleTableCell>
               <SimpleTableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <IconButton
-                      size="sm"
-                      disabled
-                      aria-label={`Actions pour ${supplier.name}`}
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </IconButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                    <DropdownMenuItem>Nouvelle commande</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem destructive>Désactiver</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <IconButton
+                  size="sm"
+                  disabled
+                  aria-label={`Actions indisponibles pour ${supplier.name}`}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </IconButton>
               </SimpleTableCell>
             </SimpleTableRow>
           ))}
@@ -144,56 +117,10 @@ export function SuppliersTable({
           </p>
         </div>
       )}
-      <SuppliersPagination visibleCount={suppliers.length} />
+      <StockPrototypeTableFooter
+        visibleCount={suppliers.length}
+        itemLabel="fournisseur"
+      />
     </>
-  );
-}
-
-function SuppliersPagination({ visibleCount }: { visibleCount: number }) {
-  return (
-    <footer className="flex flex-col gap-3 border-t border-border-default px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm">
-        <strong>1 à {visibleCount}</strong> sur 28 fournisseurs
-      </p>
-      <div className="flex items-center gap-2">
-        <IconButton
-          variant="secondary"
-          size="sm"
-          aria-label="Première page"
-          disabled
-        >
-          <ChevronsLeft className="h-4 w-4" />
-        </IconButton>
-        <IconButton
-          variant="secondary"
-          size="sm"
-          aria-label="Page précédente"
-          disabled
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </IconButton>
-        <Button size="sm" className="w-9 px-0">
-          1
-        </Button>
-        <Button variant="secondary" size="sm" className="w-9 px-0">
-          2
-        </Button>
-        <IconButton variant="secondary" size="sm" aria-label="Page suivante">
-          <ChevronRight className="h-4 w-4" />
-        </IconButton>
-        <IconButton variant="secondary" size="sm" aria-label="Dernière page">
-          <ChevronsRight className="h-4 w-4" />
-        </IconButton>
-      </div>
-      <Select defaultValue="25">
-        <SelectTrigger className="w-28">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="25">25 / page</SelectItem>
-          <SelectItem value="50">50 / page</SelectItem>
-        </SelectContent>
-      </Select>
-    </footer>
   );
 }

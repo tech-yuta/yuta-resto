@@ -32,7 +32,7 @@ It:
 - uses `@yuta/ui`, semantic tokens, and `lucide-react`.
 
 Global booking rules are managed on the separate integrated route
-`/operations/reservations/parametres`.
+`/reservations/parametres`.
 
 This package guides visual and interaction improvements. It must not replace the route with fixture data or discard current authorization and persistence.
 

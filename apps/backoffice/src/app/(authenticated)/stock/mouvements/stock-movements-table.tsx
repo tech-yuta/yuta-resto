@@ -3,19 +3,8 @@
 import {
   Avatar,
   Badge,
-  Button,
   Checkbox,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
   IconButton,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   SimpleTable,
   SimpleTableBody,
   SimpleTableCell,
@@ -24,14 +13,8 @@ import {
   SimpleTableRow,
   cn,
 } from '@yuta/ui';
-import {
-  ArrowLeftRight,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  MoreVertical,
-} from 'lucide-react';
+import { ArrowLeftRight, MoreVertical } from 'lucide-react';
+import { StockPrototypeTableFooter } from '../stock-prototype-table-footer';
 import { movementTypePresentation } from './stock-movement-presentation';
 import {
   formatStockCurrency,
@@ -49,7 +32,7 @@ export function StockMovementsTable({
   onToggleAll,
 }: {
   movements: readonly StockMovement[];
-  selectedId: string;
+  selectedId: string | null;
   checkedIds: readonly string[];
   allChecked: boolean;
   onSelect(id: string): void;
@@ -164,26 +147,14 @@ export function StockMovementsTable({
                   {formatStockCurrency(movement.value)}
                 </SimpleTableCell>
                 <SimpleTableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <IconButton
-                        size="sm"
-                        disabled
-                        aria-label={`Actions pour ${movement.reference}`}
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </IconButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                      <DropdownMenuItem>Imprimer</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem destructive>
-                        Annuler le mouvement
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <IconButton
+                    size="sm"
+                    disabled
+                    aria-label={`Actions indisponibles pour ${movement.reference}`}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </IconButton>
                 </SimpleTableCell>
               </SimpleTableRow>
             );
@@ -191,7 +162,10 @@ export function StockMovementsTable({
         </SimpleTableBody>
       </SimpleTable>
       {movements.length === 0 && <StockMovementsEmptyState />}
-      <StockMovementsPagination visibleCount={movements.length} />
+      <StockPrototypeTableFooter
+        visibleCount={movements.length}
+        itemLabel="mouvement"
+      />
     </>
   );
 }
@@ -205,58 +179,5 @@ function StockMovementsEmptyState() {
         Modifiez votre recherche ou vos filtres.
       </p>
     </div>
-  );
-}
-
-function StockMovementsPagination({ visibleCount }: { visibleCount: number }) {
-  return (
-    <footer className="flex flex-col gap-3 border-t border-border-default px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm">
-        <strong>1 à {visibleCount}</strong> sur 403 mouvements
-      </p>
-      <div className="flex items-center gap-2">
-        <IconButton
-          variant="secondary"
-          size="sm"
-          aria-label="Première page"
-          disabled
-        >
-          <ChevronsLeft className="h-4 w-4" />
-        </IconButton>
-        <IconButton
-          variant="secondary"
-          size="sm"
-          aria-label="Page précédente"
-          disabled
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </IconButton>
-        {[1, 2, 3, 4, 5].map((page) => (
-          <Button
-            key={page}
-            size="sm"
-            variant={page === 1 ? 'primary' : 'secondary'}
-            className="w-9 px-0"
-          >
-            {page}
-          </Button>
-        ))}
-        <IconButton variant="secondary" size="sm" aria-label="Page suivante">
-          <ChevronRight className="h-4 w-4" />
-        </IconButton>
-        <IconButton variant="secondary" size="sm" aria-label="Dernière page">
-          <ChevronsRight className="h-4 w-4" />
-        </IconButton>
-      </div>
-      <Select defaultValue="25">
-        <SelectTrigger className="w-28">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="25">25 / page</SelectItem>
-          <SelectItem value="50">50 / page</SelectItem>
-        </SelectContent>
-      </Select>
-    </footer>
   );
 }

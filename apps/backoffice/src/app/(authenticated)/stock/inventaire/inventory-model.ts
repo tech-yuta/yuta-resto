@@ -58,8 +58,9 @@ export function filterInventoryItems(
 
 export function getSelectedInventoryItem(
   items: readonly InventoryItem[],
-  selectedId: string,
+  selectedId: string | null,
 ): InventoryItem | undefined {
+  if (selectedId === null) return undefined;
   return items.find((item) => item.id === selectedId) ?? items[0];
 }
 

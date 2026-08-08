@@ -60,7 +60,7 @@ The page may improve presentation of:
 
 Global booking rules, including confirmation, slot, duration, notice, and
 booking-window settings, are managed on
-`/operations/reservations/parametres`.
+`/reservations/parametres`.
 
 ## Out of scope without separate approval
 

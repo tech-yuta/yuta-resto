@@ -59,7 +59,6 @@ export function CreativeGeneratorPanel({
           <Button
             variant="secondary"
             size="sm"
-            disabled
             className="mt-2"
             onClick={() =>
               setPrompt(
@@ -108,6 +107,7 @@ export function CreativeGeneratorPanel({
             </div>
             <button
               type="button"
+              disabled
               className="mt-3 flex items-center gap-1 text-sm font-semibold text-brand-800"
             >
               <Pencil className="h-4 w-4" /> Modifier le style
@@ -180,7 +180,7 @@ export function CreativeGeneratorPanel({
           <WandSparkles className="h-5 w-5" /> Générer mes visuels
         </Button>
         <p className="-mt-3 text-xs text-muted">
-          Générations restantes : 48 ce mois-ci
+          La génération reste indisponible dans ce prototype.
         </p>
       </div>
     </Card>

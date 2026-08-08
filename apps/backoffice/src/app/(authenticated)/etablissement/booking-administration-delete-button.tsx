@@ -3,7 +3,7 @@
 import { ConfirmDialog, IconButton } from '@yuta/ui';
 import { Trash2 } from 'lucide-react';
 import { useActionState, useRef, useState } from 'react';
-import type { BookingAdministrationActionState } from '../operations/reservations/actions';
+import type { BookingAdministrationActionState } from './booking-administration-action-state';
 import { initialBookingAdministrationActionState } from './booking-administration-action-feedback';
 
 type DeleteAction = (

@@ -55,8 +55,9 @@ export function filterStockMovements(
 
 export function getSelectedStockMovement(
   movements: readonly StockMovement[],
-  selectedId: string,
+  selectedId: string | null,
 ): StockMovement | undefined {
+  if (selectedId === null) return undefined;
   return (
     movements.find((movement) => movement.id === selectedId) ?? movements[0]
   );

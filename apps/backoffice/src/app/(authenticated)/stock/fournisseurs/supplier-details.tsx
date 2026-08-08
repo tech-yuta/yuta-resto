@@ -3,7 +3,13 @@ import { MessageCircle, PackageCheck, Pencil, X } from 'lucide-react';
 import { SupplierLogo } from './supplier-logo';
 import type { Supplier } from './suppliers-model';
 
-export function SupplierDetails({ supplier }: { supplier: Supplier }) {
+export function SupplierDetails({
+  supplier,
+  onClose,
+}: {
+  supplier: Supplier;
+  onClose: () => void;
+}) {
   return (
     <Card padding="none" className="overflow-hidden 2xl:sticky 2xl:top-0">
       <div className="flex items-start justify-between p-4">
@@ -19,24 +25,31 @@ export function SupplierDetails({ supplier }: { supplier: Supplier }) {
             <p className="mt-2 text-sm text-muted">{supplier.id}</p>
           </div>
         </div>
-        <IconButton size="sm" aria-label="Fermer les détails">
+        <IconButton size="sm" aria-label="Fermer les détails" onClick={onClose}>
           <X className="h-5 w-5" />
         </IconButton>
       </div>
-      <div className="flex overflow-x-auto border-y border-border-default px-2">
+      <div
+        className="flex overflow-x-auto border-y border-border-default px-2"
+        aria-label="Sections du fournisseur"
+      >
         {['Détails', 'Produits', 'Commandes', 'Livraisons'].map(
           (tab, index) => (
-            <button
-              key={tab}
-              type="button"
-              className={
-                index === 0
-                  ? 'min-w-max border-b-2 border-action-primary px-4 py-3 text-sm font-semibold text-brand-800'
-                  : 'min-w-max px-4 py-3 text-sm font-semibold text-secondary'
-              }
-            >
-              {tab}
-            </button>
+            <span key={tab}>
+              {index === 0 ? (
+                <span className="block min-w-max border-b-2 border-action-primary px-4 py-3 text-sm font-semibold text-brand-800">
+                  {tab}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="min-w-max px-4 py-3 text-sm font-semibold text-secondary"
+                >
+                  {tab}
+                </button>
+              )}
+            </span>
           ),
         )}
       </div>

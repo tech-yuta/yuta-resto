@@ -26,7 +26,7 @@ export function TodayDashboard({ data }: { data: TodayDashboardData }) {
         {data.bookingEnabled && (
           <Button asChild variant="success" className="self-start lg:self-end">
             <Link
-              href={`/operations/reservations?date=${data.localDate}`}
+              href={`/reservations?date=${data.localDate}`}
               aria-label="Ajouter une réservation"
             >
               <CalendarPlus className="h-4 w-4" aria-hidden />

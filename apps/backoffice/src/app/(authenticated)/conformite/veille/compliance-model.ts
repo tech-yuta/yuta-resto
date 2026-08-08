@@ -31,8 +31,9 @@ export type ComplianceTab = (typeof complianceTabs)[number];
 
 export function getSelectedPriorityAction(
   actions: readonly PriorityAction[],
-  selectedId: string,
+  selectedId: string | null,
 ): PriorityAction | undefined {
+  if (selectedId === null) return undefined;
   return actions.find((action) => action.id === selectedId) ?? actions[0];
 }
 

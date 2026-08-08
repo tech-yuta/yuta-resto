@@ -24,7 +24,7 @@
 
 - [ ] Current service-period fields remain authoritative.
 - [ ] Global booking settings remain on
-      `/operations/reservations/parametres` and are not duplicated here.
+      `/reservations/parametres` and are not duplicated here.
 - [ ] Current exception kinds remain authoritative.
 - [ ] No distinct opening-exception kind is invented.
 - [ ] No per-service reservation window is persisted.

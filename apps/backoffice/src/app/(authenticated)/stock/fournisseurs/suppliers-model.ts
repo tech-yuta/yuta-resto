@@ -60,7 +60,8 @@ export function filterSuppliers(
 
 export function getSelectedSupplier(
   items: readonly Supplier[],
-  selectedId: string,
+  selectedId: string | null,
 ): Supplier | undefined {
+  if (selectedId === null) return undefined;
   return items.find((supplier) => supplier.id === selectedId) ?? items[0];
 }

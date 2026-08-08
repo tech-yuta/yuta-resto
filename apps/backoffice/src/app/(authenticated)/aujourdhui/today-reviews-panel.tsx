@@ -17,7 +17,9 @@ export function TodayReviewsPanel({
       title="Avis à traiter"
       action={
         <Button asChild variant="secondary" size="sm">
-          <Link href="/clients/avis?sort=unanswered">Voir tout</Link>
+          <Link href="/visibilite-reputation/avis?sort=unanswered">
+            Voir tout
+          </Link>
         </Button>
       }
     >
@@ -51,7 +53,7 @@ export function TodayReviewsPanel({
 function ReviewRow({ review }: { review: TodayReviewItem }) {
   return (
     <Link
-      href={`/clients/avis?selected=${review.id}`}
+      href={`/visibilite-reputation/avis?selected=${review.id}`}
       className="block px-5 py-4 transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
     >
       <div className="flex items-center justify-between gap-3">

@@ -31,9 +31,9 @@ Implement idempotent Google review import and a manual synchronization action.
 
 ## Completed operational inbox
 
-`/clients/avis` is now a persistent, tenant-scoped operational inbox:
+`/visibilite-reputation/avis` is now a persistent, tenant-scoped operational inbox:
 
-`/clients/satisfaction` reuses the same tenant-scoped inbox and mutation
+`/visibilite-reputation/satisfaction` reuses the same tenant-scoped inbox and mutation
 boundary while forcing the source to direct feedback submitted through the
 public feedback website. Browser query parameters cannot broaden that page to
 Google reviews.

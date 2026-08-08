@@ -94,7 +94,7 @@ export function InventoryToolbar({
         </div>
         <Button variant="secondary" onClick={onReset}>
           <Filter className="h-4 w-4" />
-          Filtres
+          Réinitialiser
         </Button>
       </div>
     </>

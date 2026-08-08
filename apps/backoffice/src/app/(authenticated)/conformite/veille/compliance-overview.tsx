@@ -16,7 +16,7 @@ export function ComplianceOverview({
   selectedId,
   onSelect,
 }: {
-  selectedId: string;
+  selectedId: string | null;
   onSelect(id: string): void;
 }) {
   return (

@@ -1,5 +1,5 @@
 import { Card, Skeleton } from '@yuta/ui';
-import { BackofficePage } from '../../../../../components/backoffice-page';
+import { BackofficePage } from '../../../../components/backoffice-page';
 
 export default function Loading() {
   return (

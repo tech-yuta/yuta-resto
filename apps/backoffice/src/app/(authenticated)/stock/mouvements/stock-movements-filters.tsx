@@ -34,7 +34,7 @@ export function StockMovementsFilters({
 
   return (
     <div className="grid gap-3 border-b border-border-default p-4 sm:grid-cols-2 lg:grid-cols-[240px_140px_170px_150px_minmax(240px,1fr)_auto]">
-      <Button variant="secondary" className="justify-start">
+      <Button variant="secondary" className="justify-start" disabled>
         <CalendarDays className="h-4 w-4" />
         01/07/2025 <span className="text-muted">→</span> 31/07/2025
         <ChevronDown className="ml-auto h-4 w-4" />
@@ -100,7 +100,7 @@ export function StockMovementsFilters({
       </div>
       <Button variant="secondary" onClick={onReset}>
         <Filter className="h-4 w-4" />
-        Filtres
+        Réinitialiser
       </Button>
     </div>
   );

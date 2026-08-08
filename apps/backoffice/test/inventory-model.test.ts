@@ -83,6 +83,7 @@ describe('inventory model', () => {
 
   it('falls back to the first item and derives multi-selection', () => {
     expect(getSelectedInventoryItem(items, 'missing')).toBe(items[0]);
+    expect(getSelectedInventoryItem(items, null)).toBeUndefined();
     expect(areAllInventoryItemsChecked(items, ['STK-1'])).toBe(false);
     expect(areAllInventoryItemsChecked(items, ['STK-1', 'STK-2'])).toBe(true);
     expect(toggleInventoryItemSelection(['STK-1'], 'STK-1', true)).toEqual([

@@ -26,6 +26,7 @@ const actions = [
 describe('compliance model', () => {
   it('falls back to the first priority action', () => {
     expect(getSelectedPriorityAction(actions, 'missing')).toBe(actions[0]);
+    expect(getSelectedPriorityAction(actions, null)).toBeUndefined();
   });
 
   it('maps domain and due tones to semantic classes', () => {

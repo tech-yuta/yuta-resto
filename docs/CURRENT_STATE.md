@@ -70,6 +70,20 @@ current restaurant back-office surfaces fall into three groups:
 Business Profile connector, although it is not currently a primary navigation
 item.
 
+The reservation list defaults to the establishment-local date, supports day and
+inclusive seven-day views, and uses persisted tenant-scoped reservation data.
+Its canonical back-office routes are `/reservations` and
+`/reservations/parametres`; legacy `/operations/reservations` URLs redirect to
+their canonical equivalents.
+Manual creation reports a visible success state after persistence. Reservation
+detail keeps status changes, guest updates, internal notes, and status history
+tenant-scoped; note and history timestamps use the establishment locale and
+timezone.
+
+Reputation surfaces use the canonical capability routes
+`/visibilite-reputation/avis` and `/visibilite-reputation/satisfaction`;
+legacy `/clients/*` URLs redirect to their canonical equivalents.
+
 ### UI prototypes with fixture data only
 
 - room and table map;
@@ -83,8 +97,12 @@ generation, and similar controls must not be described as implemented product
 capabilities. Each prototype displays a shared demonstration-data notice, and
 controls that would imply a persisted mutation, generated artifact, or export
 are disabled. Local filtering and selection remain available for interface
-evaluation. Integrating one requires an approved product scope, data owner,
-authorization model, contracts, persistence, and tests.
+evaluation, and selected prototype detail panels can be closed. Controls with
+no local behavior or persisted owner are disabled instead of appearing
+actionable. Fixture-backed stock tables report only the demonstration rows
+currently visible and do not present fabricated totals or pagination.
+Integrating one requires an approved product scope, data owner, authorization
+model, contracts, persistence, and tests.
 
 ### Planned empty surfaces
 

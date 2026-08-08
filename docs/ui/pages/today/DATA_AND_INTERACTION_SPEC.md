@@ -69,7 +69,7 @@ new transport contract.
 - Derive counters from the same scoped result as the list.
 - Exclude or classify terminal statuses according to current booking behavior;
   do not invent a dashboard-only status.
-- Link to `/operations/reservations` with a date filter and to current detail
+- Link to `/reservations` with a date filter and to current detail
   routes where permitted.
 - Do not expose phone, email, special requirements, or other guest data unless
   the summary explicitly needs it and current privacy conventions allow it.

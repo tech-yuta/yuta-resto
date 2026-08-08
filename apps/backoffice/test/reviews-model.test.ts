@@ -3,7 +3,7 @@ import {
   getInitials,
   statusLabels,
   urgencyTone,
-} from '../src/app/(authenticated)/clients/avis/reviews-model';
+} from '../src/app/(authenticated)/visibilite-reputation/avis/reviews-model';
 
 describe('reviews presentation model', () => {
   it('keeps stable French labels and initials', () => {

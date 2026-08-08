@@ -12,7 +12,7 @@ export function ComplianceContent({
   onSelect,
 }: {
   activeTab: ComplianceTab;
-  selectedId: string;
+  selectedId: string | null;
   onTabChange(tab: ComplianceTab): void;
   onSelect(id: string): void;
 }) {

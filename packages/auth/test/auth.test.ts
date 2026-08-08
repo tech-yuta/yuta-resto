@@ -47,11 +47,11 @@ describe('@yuta/auth', () => {
     expect(
       switchTenantInputSchema.parse({
         membershipId: '00000000-0000-4000-8000-000000000001',
-        returnTo: '/clients/avis',
+        returnTo: '/visibilite-reputation/avis',
       }),
     ).toEqual({
       membershipId: '00000000-0000-4000-8000-000000000001',
-      returnTo: '/clients/avis',
+      returnTo: '/visibilite-reputation/avis',
     });
     expect(() =>
       switchTenantInputSchema.parse({ membershipId: 'untrusted-slug' }),

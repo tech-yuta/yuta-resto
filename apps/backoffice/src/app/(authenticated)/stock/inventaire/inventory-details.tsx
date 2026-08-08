@@ -7,7 +7,13 @@ import {
 } from './inventory-model';
 import { inventoryStatusTones } from './inventory-presentation';
 
-export function InventoryDetails({ item }: { item: InventoryItem }) {
+export function InventoryDetails({
+  item,
+  onClose,
+}: {
+  item: InventoryItem;
+  onClose: () => void;
+}) {
   return (
     <Card padding="none" className="overflow-hidden 2xl:sticky 2xl:top-0">
       <div className="flex items-start justify-between p-4">
@@ -25,25 +31,27 @@ export function InventoryDetails({ item }: { item: InventoryItem }) {
             </p>
           </div>
         </div>
-        <IconButton size="sm" aria-label="Fermer les détails">
+        <IconButton size="sm" aria-label="Fermer les détails" onClick={onClose}>
           <X className="h-5 w-5" />
         </IconButton>
       </div>
-      <div className="flex overflow-x-auto border-y border-border-default px-3">
-        <button
-          type="button"
-          className="min-w-max border-b-2 border-action-primary px-4 py-3 text-sm font-semibold text-brand-800"
-        >
+      <div
+        className="flex overflow-x-auto border-y border-border-default px-3"
+        aria-label="Sections de l’article"
+      >
+        <span className="min-w-max border-b-2 border-action-primary px-4 py-3 text-sm font-semibold text-brand-800">
           Détails
-        </button>
+        </span>
         <button
           type="button"
+          disabled
           className="min-w-max px-4 py-3 text-sm font-semibold text-secondary"
         >
           Mouvements
         </button>
         <button
           type="button"
+          disabled
           className="min-w-max px-4 py-3 text-sm font-semibold text-secondary"
         >
           Fiche technique

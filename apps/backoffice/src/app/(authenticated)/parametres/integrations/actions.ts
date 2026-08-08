@@ -63,7 +63,7 @@ export async function selectGoogleLocationAction(
             actorUserId: session.userId,
           });
           revalidatePath('/parametres/integrations');
-          revalidatePath('/clients/avis');
+          revalidatePath('/visibilite-reputation/avis');
         }
       }
     }

@@ -83,5 +83,6 @@ describe('suppliers model', () => {
 
   it('falls back to the first supplier for an unknown selection', () => {
     expect(getSelectedSupplier(suppliers, 'missing')).toBe(suppliers[0]);
+    expect(getSelectedSupplier(suppliers, null)).toBeUndefined();
   });
 });

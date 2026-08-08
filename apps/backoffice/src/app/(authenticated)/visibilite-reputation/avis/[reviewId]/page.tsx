@@ -6,5 +6,7 @@ export default async function ReviewDetailPage({
   params: Promise<{ reviewId: string }>;
 }) {
   const { reviewId } = await params;
-  redirect(`/clients/avis?selected=${encodeURIComponent(reviewId)}`);
+  redirect(
+    `/visibilite-reputation/avis?selected=${encodeURIComponent(reviewId)}`,
+  );
 }

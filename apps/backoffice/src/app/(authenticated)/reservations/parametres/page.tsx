@@ -1,14 +1,12 @@
 import { getBookingAdministration } from '@yuta/db-cloud';
-import { BackofficePage } from '../../../../../components/backoffice-page';
-import { requireBookingPermission } from '../../../../../server/auth/permissions';
-import { requireBookingTenant } from '../../../../../server/auth/session';
-import { cloudDatabase } from '../../../../../server/cloud-database';
-import { BookingRules } from '../../../etablissement/booking-rules-form';
+import { BackofficePage } from '../../../../components/backoffice-page';
+import { requireBookingPermission } from '../../../../server/auth/permissions';
+import { requireBookingTenant } from '../../../../server/auth/session';
+import { cloudDatabase } from '../../../../server/cloud-database';
+import { BookingRules } from '../../etablissement/booking-rules-form';
 
 export default async function Page() {
-  const { tenant } = await requireBookingTenant(
-    '/operations/reservations/parametres',
-  );
+  const { tenant } = await requireBookingTenant('/reservations/parametres');
   requireBookingPermission(tenant, 'booking.settings.manage');
   const data = await getBookingAdministration(cloudDatabase, tenant);
 

@@ -2,7 +2,7 @@
 
 import { Alert, AlertDescription, Button } from '@yuta/ui';
 import { useFormStatus } from 'react-dom';
-import type { BookingAdministrationActionState } from '../operations/reservations/actions';
+import type { BookingAdministrationActionState } from './booking-administration-action-state';
 
 export const initialBookingAdministrationActionState: BookingAdministrationActionState =
   {

@@ -102,7 +102,7 @@ function redirectToScopeRecovery(returnTo: string): never {
 }
 
 export async function requireReputationTenant(
-  returnTo = '/clients/avis',
+  returnTo = '/visibilite-reputation/avis',
 ): Promise<{
   session: AuthenticatedSession;
   tenant: TenantContext;
@@ -124,9 +124,7 @@ export async function requireUserManagementTenant(): Promise<{
   return context;
 }
 
-export async function requireBookingTenant(
-  returnTo = '/operations/reservations',
-) {
+export async function requireBookingTenant(returnTo = '/reservations') {
   const context = await requireAuthenticatedTenant(returnTo);
   requireEstablishment(context.tenant);
   requireEntitlement(context.tenant, 'booking.enabled');

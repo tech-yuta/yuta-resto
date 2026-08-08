@@ -21,7 +21,9 @@ export async function loadReviewsPage(
   mode: ReviewsPageMode,
 ) {
   const returnTo =
-    mode === 'direct' ? '/clients/satisfaction' : '/clients/avis';
+    mode === 'direct'
+      ? '/visibilite-reputation/satisfaction'
+      : '/visibilite-reputation/avis';
   const { tenant } = await requireReputationTenant(returnTo);
   const queryResult = feedbackListQuerySchema.safeParse({
     source: mode === 'direct' ? 'DIRECT' : filterValue(rawSearchParams.source),

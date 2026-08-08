@@ -26,7 +26,7 @@ const initialFilters: SupplierFilters = {
 export function SuppliersPage() {
   const [activeTab, setActiveTab] = useState<SupplierTab>('all');
   const [filters, setFilters] = useState(initialFilters);
-  const [selectedId, setSelectedId] = useState('F-0001');
+  const [selectedId, setSelectedId] = useState<string | null>('F-0001');
   const filteredSuppliers = useMemo(
     () => filterSuppliers(supplierFixtures, activeTab, filters),
     [activeTab, filters],
@@ -53,7 +53,12 @@ export function SuppliersPage() {
             onSelect={setSelectedId}
           />
         </Card>
-        {selectedSupplier && <SupplierDetails supplier={selectedSupplier} />}
+        {selectedSupplier && (
+          <SupplierDetails
+            supplier={selectedSupplier}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
       </div>
     </div>
   );

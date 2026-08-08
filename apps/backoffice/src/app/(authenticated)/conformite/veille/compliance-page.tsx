@@ -14,7 +14,7 @@ import { ComplianceSummary } from './compliance-summary';
 
 export function CompliancePage() {
   const [activeTab, setActiveTab] = useState<ComplianceTab>('Vue d’ensemble');
-  const [selectedId, setSelectedId] = useState('ACT-001');
+  const [selectedId, setSelectedId] = useState<string | null>('ACT-001');
   const selectedAction = getSelectedPriorityAction(
     priorityActionFixtures,
     selectedId,
@@ -32,7 +32,12 @@ export function CompliancePage() {
           onTabChange={setActiveTab}
           onSelect={setSelectedId}
         />
-        {selectedAction && <ComplianceDetails action={selectedAction} />}
+        {selectedAction && (
+          <ComplianceDetails
+            action={selectedAction}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ const initialFilters: StockMovementFiltersValue = {
 
 export function StockMovementsPage() {
   const [filters, setFilters] = useState(initialFilters);
-  const [selectedId, setSelectedId] = useState('MVT-001');
+  const [selectedId, setSelectedId] = useState<string | null>('MVT-001');
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
   const filteredMovements = useMemo(
     () => filterStockMovements(stockMovementFixtures, filters),
@@ -70,7 +70,10 @@ export function StockMovementsPage() {
           />
         </Card>
         {selectedMovement && (
-          <StockMovementDetails movement={selectedMovement} />
+          <StockMovementDetails
+            movement={selectedMovement}
+            onClose={() => setSelectedId(null)}
+          />
         )}
       </div>
     </div>

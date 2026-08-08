@@ -9,8 +9,10 @@ import {
 
 export function StockMovementDetails({
   movement,
+  onClose,
 }: {
   movement: StockMovement;
+  onClose: () => void;
 }) {
   const config = movementTypePresentation[movement.type];
   const TypeIcon = config.icon;
@@ -19,7 +21,7 @@ export function StockMovementDetails({
     <Card padding="none" className="overflow-hidden 2xl:sticky 2xl:top-0">
       <div className="flex items-center justify-between p-4">
         <h2 className="font-black">Détail du mouvement</h2>
-        <IconButton size="sm" aria-label="Fermer les détails">
+        <IconButton size="sm" aria-label="Fermer les détails" onClick={onClose}>
           <X className="h-5 w-5" />
         </IconButton>
       </div>

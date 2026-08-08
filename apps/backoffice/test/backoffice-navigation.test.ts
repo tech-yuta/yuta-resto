@@ -150,9 +150,12 @@ describe('back-office navigation', () => {
     expect(
       getActiveNavigationHref('/etablissement/horaires-services', sections),
     ).toBe('/etablissement/horaires-services');
+    expect(getActiveNavigationHref('/reservations/booking-1', sections)).toBe(
+      '/reservations',
+    );
     expect(
-      getActiveNavigationHref('/operations/reservations/booking-1', sections),
-    ).toBe('/operations/reservations');
+      getActiveNavigationHref('/visibilite-reputation/avis/review-1', sections),
+    ).toBe('/visibilite-reputation/avis');
   });
 
   it('uses canonical routes that match each owning group', () => {
@@ -166,11 +169,12 @@ describe('back-office navigation', () => {
       'Salle & tables': '/etablissement/salles-tables',
       'Carte & menus': '/etablissement/carte-menus',
       'Ressources internes': '/etablissement/ressources-internes',
-      'Paramètres de réservation': '/operations/reservations/parametres',
+      'Paramètres de réservation': '/reservations/parametres',
       'Fiches techniques': '/stock/fiches-techniques',
       Salariés: '/equipe/salaries',
       'Formalités du personnel': '/equipe/formalites-personnel',
-      'Satisfaction client': '/clients/satisfaction',
+      'Satisfaction client': '/visibilite-reputation/satisfaction',
+      'Avis & commentaires': '/visibilite-reputation/avis',
       'Utilisateurs & accès': '/parametres/utilisateurs-acces',
     });
   });

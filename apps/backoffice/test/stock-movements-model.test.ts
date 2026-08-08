@@ -74,6 +74,7 @@ describe('stock movements model', () => {
 
   it('falls back to the first movement when selection is unknown', () => {
     expect(getSelectedStockMovement(movements, 'missing')).toBe(movements[0]);
+    expect(getSelectedStockMovement(movements, null)).toBeUndefined();
   });
 
   it('derives and updates multi-selection without duplicates', () => {

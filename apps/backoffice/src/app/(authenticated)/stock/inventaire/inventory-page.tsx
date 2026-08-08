@@ -28,7 +28,7 @@ const initialFilters: InventoryFilters = {
 export function InventoryPage() {
   const [activeTab, setActiveTab] = useState<InventoryTab>('Stock actuel');
   const [filters, setFilters] = useState(initialFilters);
-  const [selectedId, setSelectedId] = useState('STK-0048');
+  const [selectedId, setSelectedId] = useState<string | null>('STK-0048');
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
   const filteredItems = useMemo(
     () => filterInventoryItems(inventoryItemFixtures, activeTab, filters),
@@ -71,7 +71,12 @@ export function InventoryPage() {
             }
           />
         </Card>
-        {selectedItem && <InventoryDetails item={selectedItem} />}
+        {selectedItem && (
+          <InventoryDetails
+            item={selectedItem}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
       </div>
     </div>
   );

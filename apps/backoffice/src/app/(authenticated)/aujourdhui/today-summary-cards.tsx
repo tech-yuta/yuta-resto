@@ -58,7 +58,7 @@ function buildSummaries(data: TodayDashboardData): TodaySummary[] {
         data.reservations.state === 'ready'
           ? `${data.reservations.data.confirmedCount} confirmée(s) · ${data.reservations.data.pendingCount} en attente`
           : stateHelper(data.reservations.state, 'Aucune réservation prévue'),
-      href: `/operations/reservations?date=${data.localDate}`,
+      href: `/reservations?date=${data.localDate}`,
       linkLabel: 'Voir le planning',
       icon: CalendarCheck,
       tone: 'success',
@@ -77,7 +77,7 @@ function buildSummaries(data: TodayDashboardData): TodaySummary[] {
           : stateHelper(data.services.state, 'Aucun service configuré'),
       href: data.canManageBookingSettings
         ? '/etablissement/informations-generales#horaires-hebdomadaires'
-        : `/operations/reservations?date=${data.localDate}`,
+        : `/reservations?date=${data.localDate}`,
       linkLabel: data.canManageBookingSettings
         ? 'Gérer les horaires'
         : 'Voir le planning',
@@ -98,7 +98,7 @@ function buildSummaries(data: TodayDashboardData): TodaySummary[] {
         data.reviews.state === 'ready'
           ? 'Sans réponse publiée'
           : stateHelper(data.reviews.state, 'Aucun avis à traiter'),
-      href: '/clients/avis?sort=unanswered',
+      href: '/visibilite-reputation/avis?sort=unanswered',
       linkLabel: 'Voir les avis',
       icon: MessageSquareText,
       tone: 'warning',

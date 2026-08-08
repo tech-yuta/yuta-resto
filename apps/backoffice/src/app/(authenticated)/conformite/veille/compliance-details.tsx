@@ -12,7 +12,13 @@ import {
 } from 'lucide-react';
 import type { PriorityAction } from './compliance-model';
 
-export function ComplianceDetails({ action }: { action: PriorityAction }) {
+export function ComplianceDetails({
+  action,
+  onClose,
+}: {
+  action: PriorityAction;
+  onClose: () => void;
+}) {
   return (
     <Card padding="none" className="overflow-hidden xl:sticky xl:top-0">
       <div className="flex items-center justify-between p-4">
@@ -20,7 +26,7 @@ export function ComplianceDetails({ action }: { action: PriorityAction }) {
           <Badge tone="brand">Action requise</Badge>
           <Badge tone="danger">Priorité élevée</Badge>
         </div>
-        <IconButton size="sm" aria-label="Fermer les détails">
+        <IconButton size="sm" aria-label="Fermer les détails" onClick={onClose}>
           <X className="h-5 w-5" />
         </IconButton>
       </div>

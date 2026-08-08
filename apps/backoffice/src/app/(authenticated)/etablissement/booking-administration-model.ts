@@ -24,6 +24,20 @@ export type BookingException = {
   kind: 'CLOSED_ALL_DAY' | 'CLOSED_SERVICE' | 'MODIFIED_HOURS' | 'BLOCKED_SLOT';
 };
 
+export function getBookingExceptionFieldVisibility(
+  kind: BookingException['kind'],
+): {
+  requiresService: boolean;
+  requiresTimes: boolean;
+  supportsCapacity: boolean;
+} {
+  return {
+    requiresService: kind === 'CLOSED_SERVICE',
+    requiresTimes: kind === 'MODIFIED_HOURS' || kind === 'BLOCKED_SLOT',
+    supportsCapacity: kind === 'MODIFIED_HOURS',
+  };
+}
+
 export function getBookingDayLabel(dayOfWeek: number): string {
   return (
     ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'][

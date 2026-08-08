@@ -24,9 +24,7 @@ export function TodayReservationsPanel({
       description="Les prochaines arrivées de l’établissement."
       action={
         <Button asChild variant="secondary" size="sm">
-          <Link href={`/operations/reservations?date=${localDate}`}>
-            Voir tout
-          </Link>
+          <Link href={`/reservations?date=${localDate}`}>Voir tout</Link>
         </Button>
       }
     >
@@ -56,7 +54,7 @@ function ReservationRow({
 }) {
   return (
     <Link
-      href={`/operations/reservations/${reservation.id}`}
+      href={`/reservations/${reservation.id}`}
       className="grid gap-3 px-5 py-4 transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring sm:grid-cols-[4rem_minmax(0,1fr)_auto_auto] sm:items-center"
     >
       <span className="font-bold tabular-nums">{reservation.localTime}</span>

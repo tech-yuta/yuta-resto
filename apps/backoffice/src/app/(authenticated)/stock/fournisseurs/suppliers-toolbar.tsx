@@ -87,7 +87,7 @@ export function SuppliersToolbar({
         />
         <Button variant="secondary" onClick={onReset}>
           <Filter className="h-4 w-4" />
-          Filtres
+          Réinitialiser
         </Button>
       </div>
     </>

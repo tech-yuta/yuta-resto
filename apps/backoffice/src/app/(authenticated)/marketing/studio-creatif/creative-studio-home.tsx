@@ -23,10 +23,9 @@ export function CreativeStudioHome({
         {creativeFormatCards.map((item) => {
           const Icon = item.icon;
           return (
-            <button
+            <article
               key={item.title}
-              type="button"
-              className="flex min-h-24 gap-3 rounded-lg border border-border-default bg-surface p-3 text-left transition hover:border-border-strong hover:bg-surface-muted"
+              className="flex min-h-24 gap-3 rounded-lg border border-border-default bg-surface p-3 text-left"
             >
               <span
                 className={cn(
@@ -42,7 +41,7 @@ export function CreativeStudioHome({
                   {item.description}
                 </span>
               </span>
-            </button>
+            </article>
           );
         })}
       </div>
@@ -52,12 +51,13 @@ export function CreativeStudioHome({
             <h2 className="text-lg font-black">Modèles populaires</h2>
             <button
               type="button"
+              disabled
               className="text-sm font-semibold text-brand-800"
             >
               Voir tous les modèles
             </button>
           </div>
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" disabled>
             Trier par : Populaires
           </Button>
         </div>
@@ -92,6 +92,7 @@ export function CreativeStudioHome({
           <h2 className="text-lg font-black">Mes créations récentes</h2>
           <button
             type="button"
+            disabled
             className="text-sm font-semibold text-brand-800"
           >
             Voir toutes mes créations

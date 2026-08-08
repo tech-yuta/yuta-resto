@@ -59,13 +59,13 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
         {
           label: 'Réservations',
           icon: CalendarCheck,
-          href: '/operations/reservations',
+          href: '/reservations',
           requires: ['bookingEnabled'],
         },
         {
           label: 'Paramètres de réservation',
           icon: Settings2,
-          href: '/operations/reservations/parametres',
+          href: '/reservations/parametres',
           requires: ['bookingEnabled', 'canManageBookingSettings'],
         },
       ],
@@ -153,13 +153,13 @@ export const backofficeNavigationSections: readonly BackofficeNavigationSection[
         {
           label: 'Satisfaction client',
           icon: Smile,
-          href: '/clients/satisfaction',
+          href: '/visibilite-reputation/satisfaction',
           requires: ['reputationEnabled'],
         },
         {
           label: 'Avis & commentaires',
           icon: MessageSquare,
-          href: '/clients/avis',
+          href: '/visibilite-reputation/avis',
           requires: ['reputationEnabled'],
         },
       ],
