@@ -345,9 +345,14 @@ test -c /dev/rfcomm1
 ```
 
 The expected RFCOMM peer is `00:01:90:7B:79:DD` on channel `1`. The systemd
-unit owns reconnection; `site-agent` only opens `/dev/rfcomm1` to write ESC/POS
-jobs. If the printer is unavailable, the worker marks the claimed job failed
-and an administrator can retry it from `/management/printing` after recovery.
+unit creates a persistent `rfcomm bind` for that peer; it must not keep the TTY
+open with `rfcomm connect`. The binding establishes the Bluetooth connection
+when `site-agent` opens `/dev/rfcomm1`. The worker writes each ESC/POS job with
+one device open and does not run `stty` first, because opening a bound RFCOMM
+TTY twice can leave the second open blocked or make a connected TTY report
+`Device or resource busy`. If the printer is unavailable, the worker marks the
+claimed job failed and an administrator can retry it from
+`/management/printing` after recovery.
 
 `apps/yuta-pos/docker-compose.yml` now builds only the POS client service. It
 requires `SITE_AGENT_URL` and joins the external trusted local network; it has

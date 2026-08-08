@@ -1,11 +1,8 @@
 import type { PosDatabaseExecutor } from '@yuta/db-pos/client';
 import { printJobs, type PrintJob } from '@yuta/db-pos/schema';
 import { and, asc, eq } from 'drizzle-orm';
-import { execFile, spawn } from 'node:child_process';
-import { promisify } from 'node:util';
+import { spawn } from 'node:child_process';
 import { z } from 'zod';
-
-const execFileAsync = promisify(execFile);
 
 const kitchenPrintPayloadSchema = z
   .object({
@@ -184,20 +181,14 @@ async function writePrinterDevice(
   devicePath: string,
   data: Buffer,
 ): Promise<void> {
-  await execFileAsync('stty', [
-    '-F',
-    devicePath,
-    'raw',
-    '-echo',
-    '-opost',
-    '-ixon',
-    '-ixoff',
-    '-crtscts',
-  ]);
   await new Promise<void>((resolve, reject) => {
-    const writer = spawn('timeout', ['10s', 'tee', devicePath], {
-      stdio: ['pipe', 'ignore', 'pipe'],
-    });
+    const writer = spawn(
+      'timeout',
+      ['--kill-after=2s', '10s', 'tee', devicePath],
+      {
+        stdio: ['pipe', 'ignore', 'pipe'],
+      },
+    );
     let stderr = '';
     writer.stderr.setEncoding('utf8');
     writer.stderr.on('data', (chunk: string) => {
